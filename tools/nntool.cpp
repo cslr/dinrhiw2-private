@@ -37,6 +37,8 @@
 #include "argparser.tab.h"
 #include "cpuid_threads.h"
 
+#if 0
+
 #ifndef _WIN32
 #undef __STRICT_ANSI__
 #include <fenv.h>
@@ -59,6 +61,8 @@ extern "C" {
 #endif
   
 }
+#endif
+
 #endif
 
 void print_usage(bool all);

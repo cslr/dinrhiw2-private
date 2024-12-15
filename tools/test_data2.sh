@@ -16,11 +16,15 @@ rm -f wdbc-test.ds
 
 ./dstool -list wdbc-test.ds
 
-ARCH="30-30-30-30-30-1"
+# ARCH="30-30-30-30-30-1"
+ARCH="30-60-60-60-60-1"
 # uses nntool trying to learn from dataset
 
+rm -f wdbcnn.cfg
+
 # ./nntool -v --negfb --time 400 wdbc-test.ds $ARCH wdbcnn.cfg random
-./nntool -v wdbc-test.ds $ARCH wdbcnn.cfg lbfgs
+# ./nntool -v wdbc-test.ds $ARCH wdbcnn.cfg lbfgs
+./nntool -v --time 600 wdbc-test.ds $ARCH wdbcnn.cfg grad
 
 ##################################################
 # testing
