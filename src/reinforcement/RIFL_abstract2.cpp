@@ -1296,8 +1296,11 @@ namespace whiteice
 	{
 	  std::lock_guard<std::mutex> locke(epsilon_mutex);
 	  
-	  if(rng.uniform() > (epsilon/sequentialRandomMoves) || random_counter > 0){ // 1-epsilon % are chosen randomly
-	    
+	  if(rng.uniform() > (epsilon/sequentialRandomMoves) && random_counter <= 0){
+	    random_counter = sequentialRandomMoves;
+	  }
+
+	  if(random_counter > 0){ // 1-epsilon % are chosen randomly
 	    // rng.normal(u); // Normal E[n]=0 StDev[n]=1
 
 	    rng.uniform(u); // [0,1] valued actions!
@@ -1306,8 +1309,6 @@ namespace whiteice
 	    for(unsigned int i=0;i<u.size();i++)
 	      u[i] = T(2.0f)*u[i] - T(1.0f); // [-1,+1]
 #endif
-
-	    random_counter = sequentialRandomMoves;
 	    random = true;
 	  }
 	  else{ // just adds random noise to action [mini-exploration]
