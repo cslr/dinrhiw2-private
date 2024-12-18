@@ -21,7 +21,8 @@ namespace whiteice
   template <typename T>
   RIFL_abstract2<T>::RIFL_abstract2(unsigned int numActions_,
 				    unsigned int numStates_,
-				    const bool alsoNegativeQValues) :
+				    const bool alsoNegativeQValues,
+				    const int sequentialRandomMoves_) :
     numActions(numActions_),
     numStates(numStates_)
   {
@@ -29,6 +30,11 @@ namespace whiteice
     {
       // zero = learn pure Q(state,action) = x function which action=policy(state) is optimized
       gamma = T(0.95); // how much weight future values Q() have: was 0.95 WAS: 0.80
+
+      if(sequentialRandomMoves_ >= 1)
+	this->sequentialRandomMoves = sequentialRandomMoves_;
+      else
+	this->sequentialRandomMoves = 1;
       
       {
 	std::lock_guard<std::mutex> locke(epsilon_mutex);
@@ -181,13 +187,19 @@ namespace whiteice
 				    unsigned int numStates_,
 				    const bool alsoNegativeQValues,
 				    std::vector<unsigned int> Q_arch,
-				    std::vector<unsigned int> policy_arch) :
+				    std::vector<unsigned int> policy_arch,
+				    const int sequentialRandomMoves_) :
     numActions(numActions_), numStates(numStates_)
   {
     // initializes parameters
     {
       // zero = learn pure Q(state,action) = x function which action=policy(state) is optimized
       gamma = T(0.95); // how much weight future values Q() have: WAS: 0.95
+
+      if(sequentialRandomMoves_ >= 1)
+	this->sequentialRandomMoves = sequentialRandomMoves_;
+      else
+	this->sequentialRandomMoves = 1;
       
       {
 	std::lock_guard<std::mutex> locke(epsilon_mutex);
@@ -1163,6 +1175,8 @@ namespace whiteice
     unsigned long database_counter = 0;
     unsigned long episodes_counter = 0;
 
+    int random_counter = 0; // how many times to do random action
+
     latestError = 0.0f;
     
     bool firstTime = true;
@@ -1282,7 +1296,7 @@ namespace whiteice
 	{
 	  std::lock_guard<std::mutex> locke(epsilon_mutex);
 	  
-	  if(rng.uniform() > epsilon){ // 1-epsilon % are chosen randomly
+	  if(rng.uniform() > (epsilon/sequentialRandomMoves) || random_counter > 0){ // 1-epsilon % are chosen randomly
 	    
 	    // rng.normal(u); // Normal E[n]=0 StDev[n]=1
 
@@ -1292,7 +1306,8 @@ namespace whiteice
 	    for(unsigned int i=0;i<u.size();i++)
 	      u[i] = T(2.0f)*u[i] - T(1.0f); // [-1,+1]
 #endif
-	    
+
+	    random_counter = sequentialRandomMoves;
 	    random = true;
 	  }
 	  else{ // just adds random noise to action [mini-exploration]
@@ -1414,6 +1429,10 @@ namespace whiteice
 	}
 	else{
 	  performActionFailed = 0;
+
+	  // did actual random action so reduce random_counter by one
+	  random_counter--;
+	  if(random_counter <= 0) random_counter = 0;
 	}
 	
       }

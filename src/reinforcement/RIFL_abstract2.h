@@ -61,12 +61,14 @@ namespace whiteice
     
     // parameters are dimensions of vectors dimActions and dimStates: R^d
     RIFL_abstract2(unsigned int numActions, unsigned int numStates,
-		   const bool alsoNegativeQValues = false);
+		   const bool alsoNegativeQValues = false,
+		   const int sequentialRandomMoves = 1);
     
     RIFL_abstract2(unsigned int numActions, unsigned int numStates,
 		   const bool alsoNegativeQValues, 
 		   std::vector<unsigned int> Q_arch,
-		   std::vector<unsigned int> policy_arch);
+		   std::vector<unsigned int> policy_arch,
+		   const int sequentialRandomMoves = 1);
 
     ~RIFL_abstract2() ;
 
@@ -185,6 +187,8 @@ namespace whiteice
     
     T epsilon;
     mutable std::mutex epsilon_mutex;
+    
+    int sequentialRandomMoves = 1; // make 1 random moves in the row when selecting action randomly (can be increased in ctor)
     
     T gamma;
     bool oneHotEncodedAction = false;
