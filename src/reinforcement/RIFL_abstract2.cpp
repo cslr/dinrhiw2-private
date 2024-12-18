@@ -1296,7 +1296,7 @@ namespace whiteice
 	{
 	  std::lock_guard<std::mutex> locke(epsilon_mutex);
 	  
-	  if(rng.uniform() < ((1.0f- epsilon)/sequentialRandomMoves) && random_counter <= 0){
+	  if(rng.uniform() < ((T(1.0f) - epsilon)/sequentialRandomMoves) && random_counter <= 0){
 	    random_counter = sequentialRandomMoves;
 	  }
 
