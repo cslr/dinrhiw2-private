@@ -19,12 +19,12 @@ namespace whiteice
   // uses database_lock for synchronization
   template <typename T>
   CreatePolicy4Dataset<T>::CreatePolicy4Dataset(RIFL_abstract4<T> const & rifl_, 
-						std::vector< rifl4_datapoint<T> > const & database_,
+						std::vector< std::vector< rifl4_datapoint<T> > > const & episodes_,
 						std::mutex & database_mutex_,
 						whiteice::dataset<T>& data_) : 
 
     rifl(rifl_),
-    database(database_),
+    episodes(episodes_),
     database_mutex(database_mutex_),
     data(data_)
   {
@@ -71,6 +71,7 @@ namespace whiteice
       NUMDATA = NUMDATAPOINTS;
       data.clear();
       data.createCluster("input-state", rifl.numStates+rifl.RECURRENT_DIMENSIONS);
+      data.createCluster("episode-range", 2);
       
       completed = false;
       
@@ -161,40 +162,65 @@ namespace whiteice
       logging.info(buf);
     }
 
-#pragma omp parallel for schedule(guided)
-    for(unsigned int i=0;i<NUMDATA;i++){
+    unsigned int numdata = 0;
+
+    while(numdata < NUMDATA){
 
       {
 	std::lock_guard<std::mutex> lock(thread_mutex);
 	
 	if(running == false) // we don't do anything anymore..
-	  continue; // exits OpenMP loop
+	  break; // exits OpenMP loop
       }
 
       database_mutex.lock();
-      
-      const unsigned int index = rng.rand() % database.size();
-      
-      const auto datum = database[index];
-      
+
+      const unsigned int index = rng.rand() % episodes.size();
+
+      auto e = episodes[index];
+
       database_mutex.unlock();
-      
-      
-#pragma omp critical
-      {
-	whiteice::math::vertex<T> state_plus_r(rifl.numStates + rifl.RECURRENT_DIMENSIONS);
 
-	state_plus_r.zero();
-	state_plus_r.write_subvertex(datum.state, 0);
-	state_plus_r.write_subvertex(datum.recurrent, rifl.numStates);
+      const unsigned int EPISODE_LENGTH = 15;
+      
+      unsigned int C = e.size()/EPISODE_LENGTH;
+      
+      if((e.size() % EPISODE_LENGTH) > 0)
+	C += 1;
+
+      for(unsigned int c=0;c<C;c++){
+	const unsigned int start = data.size(0);
+
+	for(unsigned int i=c*EPISODE_LENGTH;i<(c+1)*EPISODE_LENGTH && i<e.size();i++){
+	  const auto datum = e[i];
+	  
+	  whiteice::math::vertex<T> state_plus_r(rifl.numStates + rifl.RECURRENT_DIMENSIONS);
+	  
+	  state_plus_r.zero();
+	  state_plus_r.write_subvertex(datum.state, 0);
+	  state_plus_r.write_subvertex(datum.recurrent, rifl.numStates);
+	  
+	  data.add(0, state_plus_r);
+	}
+
+	const unsigned int end = data.size(0);
+
+	{
+	  whiteice::math::vertex<T> range(2);
+	  
+	  range[0] = start;
+	  range[1] = end;
+	  
+	  data.add(1, range);
+	}
 	
-	data.add(0, state_plus_r);
-
-	// std::cout << "policy dataset: state = " << datum.state << std::endl;
       }
-      
-    }
 
+
+      numdata += e.size();
+    }
+    
+    
     {
       std::lock_guard<std::mutex> lock(thread_mutex);
       
@@ -215,9 +241,11 @@ namespace whiteice
       
       {
 	database_mutex.lock();
-	
-	if(database.size() > 0){
-	  state_dimensions = database[0].state.size();
+
+	if(episodes.size() > 0){
+	  if(episodes[0].size() > 0){
+	    state_dimensions = episodes[0][0].state.size();
+	  }
 	}
 	
 	database_mutex.unlock();

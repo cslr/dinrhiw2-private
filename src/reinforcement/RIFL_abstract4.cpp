@@ -2025,7 +2025,7 @@ namespace whiteice
 	    data2.createCluster("input-state", numStates+RECURRENT_DIMENSIONS);
 	    
 	    dataset2_thread = new CreatePolicy4Dataset<T>(*this,
-							  database,
+							  episodes,
 							  database_mutex,
 							  data2);
 	    dataset2_thread->start(SAMPLESIZE);
