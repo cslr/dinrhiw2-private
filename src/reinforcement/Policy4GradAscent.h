@@ -13,6 +13,7 @@
 #include "dataset.h"
 #include "dinrhiw.h"
 #include "nnetwork.h"
+#include "RIFL_abstract4.h"
 
 #include "RNG.h"
 
@@ -30,8 +31,11 @@ namespace whiteice
     
     // if errorTerms is true then dataset output values are actual
     // errors rather than correct values
-    Policy4GradAscent(bool deep_pretraining = false);
+    Policy4GradAscent(RIFL_abstract4<T> const & rifl,
+		      bool deep_pretraining = false);
+    
     Policy4GradAscent(const Policy4GradAscent<T>& grad);
+    
     ~Policy4GradAscent();
     
     /*
@@ -104,6 +108,9 @@ namespace whiteice
     void reset();
     
   private:
+
+    RIFL_abstract4<T> const & rifl;
+    
     // calculates mean Q-value of the policy in dtest dataset (states are inputs)
     T getValue(const whiteice::nnetwork<T>& policy,
 	       const whiteice::nnetwork<T>& Q,

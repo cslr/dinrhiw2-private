@@ -16,7 +16,9 @@ namespace whiteice
 {
 
   template <typename T>
-  Policy4GradAscent<T>::Policy4GradAscent(bool deep_pretraining)
+  Policy4GradAscent<T>::Policy4GradAscent(RIFL_abstract4<T> const & rifl_,
+					  bool deep_pretraining) :
+    rifl(rifl_)
   {
     std::lock_guard<std::mutex> lock(solution_lock);
     
@@ -53,7 +55,8 @@ namespace whiteice
 
   
   template <typename T>
-  Policy4GradAscent<T>::Policy4GradAscent(const Policy4GradAscent<T>& grad)
+  Policy4GradAscent<T>::Policy4GradAscent(const Policy4GradAscent<T>& grad) :
+    rifl(grad.rifl)
   {
     std::lock_guard<std::mutex> lock(solution_lock);
     std::lock_guard<std::mutex> lock2(grad.solution_lock);
@@ -471,10 +474,10 @@ namespace whiteice
     {
       T vsum = T(0.0f);
 
-      math::vertex<T> in(policy.input_size() + policy.output_size());
+      math::vertex<T> in(rifl.numStates + rifl.numActions);
       in.zero();
 
-      whiteice::math::vertex<T> action, state;
+      whiteice::math::vertex<T> action, state, pure_action, pure_state;
       whiteice::math::vertex<T> q(1);
       q.zero();
       
@@ -486,11 +489,14 @@ namespace whiteice
 	if(policy.calculate(state, action) == false)
 	  assert(0);
 
-	dtest.invpreprocess(0, state);
+	state.subvertex(pure_state, 0, rifl.numStates);
+	action.subvertex(pure_action, 0, rifl.numActions);
+
+	dtest.invpreprocess(0, pure_state);
 	//dtest.invpreprocess(1, action);
 
-	if(in.write_subvertex(state, 0) == false) assert(0);
-	if(in.write_subvertex(action, state.size()) == false) assert(0);
+	if(in.write_subvertex(pure_state, 0) == false) assert(0);
+	if(in.write_subvertex(pure_action, state.size()) == false) assert(0);
 
 	if(Q_preprocess.preprocess(0, in) == false) assert(0);
 
@@ -560,10 +566,10 @@ namespace whiteice
     dtest  = data;
     
     dtrain.clearData(0);
-    //dtrain.clearData(1);
+    dtrain.clearData(1);
     
     dtest.clearData(0);
-    //dtest.clearData(1);
+    dtest.clearData(1);
 
     unsigned int counter = 0;
     
@@ -574,20 +580,51 @@ namespace whiteice
       dtest.clearData(0);
       //dtest.clearData(1);
       
-      for(unsigned int i=0;i<data.size(0);i++){
+      for(unsigned int i=0;i<data.size(1);i++){
+
+	auto startend = data.access(1, i);
+	unsigned int start = 0, end = 0;
+
+	assert(startend.size() == 2);
+
+	whiteice::math::convert(start, startend[0]);
+	whiteice::math::convert(end, startend[1]);
+
 	const unsigned int r = (whiteice::rng.rand() & 3);
-	
-	const math::vertex<T>& in  = data.access(0, i);
-	//const math::vertex<T>& out = data.access(1, i);
-	
-	if(r != 0){ // 75% will got to training data
-	  dtrain.add(0, in,  true);
-	  //dtrain.add(1, out, true);
+
+	if(r != 0){ // 75% will go to training data
+	  unsigned int newstart = dtrain.size(0);
+
+	  for(unsigned int k=start;k<end;k++){
+	    dtrain.add(0, data.access(0, k), true);
+	  }
+
+	  unsigned int newend = dtrain.size(0);
+
+	  whiteice::math::vertex<T> e;
 	  
+	  e.resize(2);
+	  e[0] = newstart;
+	  e[1] = newend;
+
+	  dtrain.add(1, e);	  
 	}
 	else{
-	  dtest.add(0, in,  true);
-	  //dtest.add(1, out, true);
+	  unsigned int newstart = dtest.size(0);
+
+	  for(unsigned int k=start;k<end;k++){
+	    dtest.add(0, data.access(0, k), true);
+	  }
+
+	  unsigned int newend = dtest.size(0);
+
+	  whiteice::math::vertex<T> e;
+	  
+	  e.resize(2);
+	  e[0] = newstart;
+	  e[1] = newend;
+
+	  dtest.add(1, e);
 	}
       }
 
@@ -695,16 +732,196 @@ namespace whiteice
       
 
       
-      if(policy->getBatchNorm()){ // all layers batch normalization..
-	std::vector< whiteice::math::vertex<T> > xdata;
-	
-	dtrain.getData(0, xdata);
-	
-	policy->calculateBatchNorm(xdata, 2);
-      }
-	    
-
       
+      {
+	do{
+
+	  if(policy->getBatchNorm()){ // all layers batch normalization..
+	    std::vector< whiteice::math::vertex<T> > xdata;
+	    
+	    dtrain.getData(0, xdata);
+	    
+	    policy->calculateBatchNorm(xdata, 2);
+	  }
+
+	  
+	  // 2. episode by episode calculation of gradient ascent
+
+	  math::vertex<T> weights, w0;
+
+	  // recurrent neural network!
+	  math::vertex<T> sumgrad;
+	  sumgrad.resize(policy->exportdatasize());
+	  sumgrad.zero();
+	
+	  const unsigned int INPUT_DATA_DIM = rifl.numStates;
+	  const unsigned int OUTPUT_DATA_DIM = rifl.numActions;
+	  const unsigned int RDIM = policy->output_size() - OUTPUT_DATA_DIM;
+	  const unsigned int RDIM2 = policy->input_size() - INPUT_DATA_DIM;
+	  assert(RDIM == RDIM2);
+	  assert(RDIM == rifl.RECURRENT_DIMENSIONS);
+	
+	  whiteice::nnetwork<T> nnet(*policy);
+      
+#pragma omp parallel shared(sumgrad)
+	  {
+	    math::vertex<T> grad, err;
+	    math::vertex<T> sgrad;
+	    sgrad.resize(policy->exportdatasize());
+	    sgrad.zero();
+	    grad.resize(policy->exportdatasize());
+	    grad.zero();
+	    
+	    math::vertex<T> inq, input, output, output_r;
+	    input.resize(INPUT_DATA_DIM+RDIM);
+	    output.resize(OUTPUT_DATA_DIM+RDIM);
+	    output_r.resize(RDIM);
+
+	    inq.resize(INPUT_DATA_DIM+OUTPUT_DATA_DIM);
+	    inq.zero();
+	    
+	    math::matrix<T> UGRAD;
+	    UGRAD.resize(OUTPUT_DATA_DIM+RDIM, nnet.gradient_size());
+
+	    math::matrix<T> URGRAD;
+	    URGRAD.resize(RDIM, nnet.gradient_size());
+
+	    math::matrix<T> UYGRAD;
+	    UYGRAD.resize(OUTPUT_DATA_DIM, nnet.gradient_size());
+
+	    math::matrix<T> FGRAD;
+	    FGRAD.resize(OUTPUT_DATA_DIM+RDIM, nnet.gradient_size());
+
+	    math::matrix<T> FRGRAD;
+	    FRGRAD.resize(RDIM, nnet.output_size());
+
+	    math::matrix<T> FGRADTMP;
+	    FGRADTMP.resize(OUTPUT_DATA_DIM+RDIM, RDIM);
+
+
+	    whiteice::math::matrix<T> gradQ;
+	    whiteice::math::vertex<T> Qvalue;
+	    
+	    whiteice::math::matrix<T> full_gradQ;
+	    
+	    whiteice::math::matrix<T> Qpostprocess_grad;
+	    whiteice::math::matrix<T> Qpreprocess_grad_full;
+			
+	    whiteice::math::matrix<T> Qpreprocess_grad;
+	    
+	    
+#pragma omp for nowait schedule(auto)
+	for(unsigned int episode=0;episode<dtrain.size(1);episode++){
+	  
+	  math::vertex<T> range = dtrain.access(2,episode);
+
+	  unsigned int start = 0; 
+	  unsigned int length = 0;
+
+	  whiteice::math::convert(start, range[0]);
+	  whiteice::math::convert(length, range[1]);
+	  
+	  UGRAD.zero();
+	  grad.zero();
+	  input.zero();
+	  
+	  for(unsigned int i=start;i<length;i++){
+	    input.write_subvertex(dtrain.access(0,i), 0);
+	      
+	    if(nnet.jacobian(input, FGRAD) == false) assert(0);
+	    // df/dw (dtrain.dimension(1)+RDIM, nnet.gradient_size())
+
+	    {
+	      if(nnet.gradient_value(input, FGRADTMP) == false) assert(0);
+	      // df/dinput (dtrain.dimension(1)+RDIM,dtrain.dimension(0)+RDIM)
+
+	      // df/dr
+	      if(FGRADTMP.submatrix(FRGRAD,
+				    INPUT_DATA_DIM, 0,
+				    RDIM, nnet.output_size()) == false) assert(0);
+
+	      // KAPPA_r = I
+
+	      // df/dr (dtrain.dimension(1)+RDIM, RDIM)
+	      // dU/dw (dtrain.dimension(1)+RDIM, nnet.gradient_size())
+
+	      // KAPPA_r operation to UGRAD to select only R terms
+	      if(UGRAD.submatrix(URGRAD,
+				 0, OUTPUT_DATA_DIM,
+				 nnet.gradient_size(), RDIM) == false) assert(0);
+	    }
+
+	    // dU(n+1)/dw = df/dw + df/dr * KAPPA_r * dU(n)/dw
+	    UGRAD = FGRAD + FRGRAD*URGRAD;
+
+	    // selects only Y terms from UGRAD
+	    if(UGRAD.submatrix
+	       (UYGRAD,
+		0,0,
+		nnet.gradient_size(), OUTPUT_DATA_DIM) == false) assert(0);
+	  
+	    // now calculates gradQ to calculate combined gradient
+	    {
+	      whiteice::math::vertex<T> output, state(rifl.numStates), action(rifl.numActions);
+	      nnet.calculate(input, output);
+
+	      input.subvertex(state, 0, rifl.numStates);
+	      output.subvertex(action, 0, rifl.numActions);
+
+	      dtrain.invpreprocess(0, state); // original state for Q network
+	      // dtrain.invpreprocess(1, action);
+	      
+	      inq.write_subvertex(state, 0);
+	      inq.write_subvertex(action, state.size());
+		  
+	      this->Q_preprocess->preprocess(0, inq);
+	      
+	      this->Q->calculate(inq, Qvalue);
+	      
+	      this->Q->gradient_value(inq, full_gradQ);
+	      
+	      this->Q_preprocess->preprocess_grad(0, Qpreprocess_grad_full);
+	      this->Q_preprocess->invpreprocess_grad(1, Qpostprocess_grad);
+		  
+	      Qpreprocess_grad_full.submatrix(Qpreprocess_grad,
+					      state.size(), 0,
+					      action.size(),
+					      Qpreprocess_grad_full.ysize());
+	      
+	      
+	      gradQ = Qpostprocess_grad * full_gradQ * Qpreprocess_grad;
+	    }
+	    
+	    // grad = gradQ * gradP;
+	    grad = gradQ * UYGRAD;
+	    
+	    //sgrad += ninv*grad;
+	    sgrad += grad;
+	    
+	    output.subvertex(output_r, OUTPUT_DATA_DIM, RDIM);
+	    if(input.write_subvertex(output_r, INPUT_DATA_DIM) == false) assert(0);
+	  }
+	}
+	
+#pragma omp critical
+	{
+	  sumgrad += sgrad;
+	}
+	
+      }
+	  
+      sumgrad /= T(dtrain.size(0));
+      
+#if 0
+      {
+	// regularizer exp(-0.5*||w||^2) term, w ~ Normal(0,I)
+	
+	sumgrad += alpha*x;
+      }
+#endif
+	
+      
+#if 0      
       // 2. normal gradient ascent
       ///////////////////////////////////////
       {
@@ -870,9 +1087,10 @@ namespace whiteice
 	      
 	    }
 	  }
-
+	  
 	  sumgrad *= ninv;
-
+#endif
+	  
 	  {
 	    char buffer[80];
 	    double gradlen = 0.0;
@@ -915,7 +1133,7 @@ namespace whiteice
 
 	  // sumgrad.normalize(); // normalizes gradient length to unit..
 	  
-	  lrate = T(0.5f);
+	  // lrate = T(0.5f);
 	  
 	  { // use ADAM optimizer
 	    

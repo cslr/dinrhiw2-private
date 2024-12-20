@@ -1158,7 +1158,7 @@ namespace whiteice
     const bool deep = false;
     whiteice::dataset<T> data2;
     whiteice::CreatePolicy4Dataset<T>* dataset2_thread = nullptr;
-    whiteice::Policy4GradAscent<T> grad2(deep);   // policy(state)=action model optimizer
+    whiteice::Policy4GradAscent<T> grad2(*this, deep);   // policy(state)=action model optimizer
 
     whiteice::linear_ETA<double> eta, eta2; // estimates how long single epoch of optimization takes
     
@@ -1553,7 +1553,7 @@ namespace whiteice
 
 	{
 	  if(database.size() >= DATASIZE){
-	    const unsigned int index = rng.rand() % database.size();
+	    const unsigned int index = database_counter % database.size();
 
 	    database[index] = datum;
 	  }
@@ -1575,7 +1575,7 @@ namespace whiteice
       // 5. update/optimize Q(state, action) network
       // activates batch learning if it is not running
       if(database.size() >= MINIMUM_DATASIZE &&
-	 (episodes.size() > MINIMUM_EPISODE_SIZE || useEpisodes == false))
+	 (episodes.size() > MINIMUM_EPISODE_SIZE || useEpisodes == true))
       {
 	
 	// skip if other optimization step (policy network)
@@ -1902,7 +1902,7 @@ namespace whiteice
       // activates batch learning if it is not running
       
       if(database.size() >= MINIMUM_DATASIZE &&
-	 (episodes.size() > MINIMUM_EPISODE_SIZE || useEpisodes == false))
+	 (episodes.size() > MINIMUM_EPISODE_SIZE || useEpisodes == true))
       {
 	
 	// skip if other optimization step is behind us
@@ -2023,7 +2023,7 @@ namespace whiteice
 	  if(dataset2_thread == nullptr){
 	    data2.clear();
 	    data2.createCluster("input-state", numStates+RECURRENT_DIMENSIONS);
-
+	    
 	    dataset2_thread = new CreatePolicy4Dataset<T>(*this,
 							  database,
 							  database_mutex,

@@ -42,10 +42,14 @@
 namespace whiteice
 {
   template <typename T>
-    class CreateRIFL4dataset;
+  class CreateRIFL4dataset;
+  
+  template <typename T>
+  class CreatePolicy4Dataset;
 
   template <typename T>
-    class CreatePolicy4Dataset;
+  class Policy4GradAscent;
+  
   
   template <typename T>
   struct rifl4_datapoint
@@ -216,7 +220,8 @@ namespace whiteice
     friend class CreateRIFL4dataset<T>;
 
     friend class CreatePolicy4Dataset<T>;
-    
+
+    friend class Policy4GradAscent<T>;
     };
 
 
@@ -227,5 +232,6 @@ namespace whiteice
 
 #include "CreateRIFL4dataset.h"
 #include "CreatePolicy4Dataset.h"
+#include "Policy4GradAscent.h"
 
 #endif
