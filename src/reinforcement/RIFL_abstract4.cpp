@@ -127,7 +127,7 @@ namespace whiteice
 
 	// NOW: 10-layer small width neural network
 	arch.clear();
-	arch.push_back(numStates);
+	arch.push_back(numStates + RECURRENT_DIMENSIONS);
 	arch.push_back(50);
 	arch.push_back(50);
 	arch.push_back(50);
@@ -148,7 +148,7 @@ namespace whiteice
 	//arch.push_back(50);
 	//arch.push_back(50);
 	//arch.push_back(50);	
-	arch.push_back(numActions);
+	arch.push_back(numActions + RECURRENT_DIMENSIONS);
 
 	// policy outputs action is (should be) +[0,+1]^D vector
 	{
@@ -239,8 +239,8 @@ namespace whiteice
 	policy_arch.resize(2);
       }
 
-      policy_arch[0] = numStates;
-      policy_arch[policy_arch.size()-1] = numActions;
+      policy_arch[0] = numStates + RECURRENT_DIMENSIONS;
+      policy_arch[policy_arch.size()-1] = numActions + RECURRENT_DIMENSIONS;
       
     }
 
