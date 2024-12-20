@@ -6,6 +6,7 @@ CXX= @CXX@
 
 OBJECTS = RIFL_abstract.o RIFL_abstract3.o CartPole.o PolicyGradAscent.o RIFL_abstract2.o CartPole2.o \
 	CreateRIFLdataset.o CreateRIFL3dataset.o CreateRIFL2dataset.o CreatePolicyDataset.o \
+	RIFL_abstract4.o CreateRIFL4dataset.o CreatePolicy4Dataset.o \
 	RotationProblem.o AdditionProblem.o
 
 EXTRA_OBJECTS = ../dataset.o ../dynamic_bitset.o \
@@ -45,6 +46,7 @@ TEST6_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) tst/test_minihack2.o MinihackRIFL.o
 
 SOURCES = RIFL_abstract.cpp RIFL_abstract3.cpp CartPole.cpp PolicyGradAscent.cpp RIFL_abstract2.cpp \
 	CreateRIFLdataset.cpp CreateRIFL3dataset.cpp CreateRIFL2dataset.cpp CreatePolicyDataset.cpp \
+	RIFL_abstract4.cpp CreateRIFL4dataset.cpp CreatePolicy4Dataset.cpp \
 	RotationProblem.cpp AdditionProblem.cpp MinihackRIFL2.cpp MinihackRIFL.cpp \
 	CartPole2.cpp tst/test.cpp tst/test2.cpp tst/test3.cpp tst/test4a.cpp \
 	tst/test_minihack.cpp tst/test_minihack2.cpp \
