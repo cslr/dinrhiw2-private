@@ -337,15 +337,26 @@ namespace whiteice
 	      assert(0);
 	    
 	    {
-	      whiteice::math::vertex<T> u(rifl.numActions); // new action..
+	      whiteice::math::vertex<T>
+		v(rifl.numActions + rifl.RECURRENT_DIMENSIONS),
+		u(rifl.numActions); // new action..
+	      
 	      u.zero();
+	      v.zero();
+
+	      whiteice::math::vertex<T> input(rifl.numStates + rifl.RECURRENT_DIMENSIONS);
 	      
-	      auto input = datum.newstate;
+	      auto tmpinput = datum.newstate;
 	      
-	      policy_preprocess.preprocess(0, input);
+	      policy_preprocess.preprocess(0, tmpinput);
+
+	      input.write_subvertex(tmpinput, 0);
+	      input.write_subvertex(datum.recurrent_new, rifl.numStates);
 	      
-	      if(lagged_policy.calculate(input, u, 1, 0) == false)
+	      if(lagged_policy.calculate(input, v, 1, 0) == false)
 		assert(0);
+
+	      v.subvertex(u, 0, rifl.numActions);
 	      
 	      policy_preprocess.invpreprocess(1, u); // does nothing..
 
@@ -474,15 +485,27 @@ namespace whiteice
 	    assert(0);
 	  
 	  {
-	    whiteice::math::vertex<T> u(rifl.numActions); // new action..
+	    whiteice::math::vertex<T>
+	      v(rifl.numActions + rifl.RECURRENT_DIMENSIONS),
+	      u(rifl.numActions); // new action..
+
 	    u.zero();
+	    v.zero();
+
+	    	    
+	    whiteice::math::vertex<T> input(rifl.numStates + rifl.RECURRENT_DIMENSIONS);
 	    
-	    auto input = datum.newstate;
+	    auto tmpinput = datum.newstate;
 	    
-	    policy_preprocess.preprocess(0, input);
+	    policy_preprocess.preprocess(0, tmpinput);
 	    
-	    if(lagged_policy.calculate(input, u, 1, 0) == false)
+	    input.write_subvertex(tmpinput, 0);
+	    input.write_subvertex(datum.recurrent_new, rifl.numStates);
+	    
+	    if(lagged_policy.calculate(input, v, 1, 0) == false)
 	      assert(0);
+	    
+	    v.subvertex(u, 0, rifl.numActions);
 	    
 	    policy_preprocess.invpreprocess(1, u); // does nothing..
 

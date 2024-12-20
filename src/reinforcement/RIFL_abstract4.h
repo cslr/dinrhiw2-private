@@ -51,7 +51,7 @@ namespace whiteice
   struct rifl4_datapoint
   {
     whiteice::math::vertex<T> state, newstate;
-    whiteice::math::vertex<T> recurrent_state, recurrent_newstate; // recurrent dimensions
+    whiteice::math::vertex<T> recurrent, recurrent_new; // recurrent dimensions
     whiteice::math::vertex<T> action;
     T reinforcement;
 
@@ -68,13 +68,15 @@ namespace whiteice
     // parameters are dimensions of vectors dimActions and dimStates: R^d
     RIFL_abstract4(unsigned int numActions, unsigned int numStates,
 		   const bool alsoNegativeQValues = false,
-		   const int sequentialRandomMoves = 1);
+		   const int sequentialRandomMoves = 1,
+		   const unsigned int RECURRENT_DIMENSIONS = 5);
     
     RIFL_abstract4(unsigned int numActions, unsigned int numStates,
 		   const bool alsoNegativeQValues, 
 		   std::vector<unsigned int> Q_arch,
 		   std::vector<unsigned int> policy_arch,
-		   const int sequentialRandomMoves = 1);
+		   const int sequentialRandomMoves = 1,
+		   const unsigned int RECURRENT_DIMENSIONS = 5);
 
     ~RIFL_abstract4() ;
 
@@ -153,6 +155,7 @@ namespace whiteice
   protected:
     
     const unsigned int numActions, numStates; // dimensions of R^d vectors
+    const unsigned int RECURRENT_DIMENSIONS;
     
     virtual bool getState(whiteice::math::vertex<T>& state) = 0;
 

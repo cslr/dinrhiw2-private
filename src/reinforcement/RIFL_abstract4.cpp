@@ -4,7 +4,7 @@
 #include "RIFL_abstract4.h"
 
 #include "NNGradDescent.h"
-#include "PolicyGradAscent.h"
+#include "Policy4GradAscent.h"
 
 #include "Log.h"
 #include "linear_ETA.h"
@@ -22,9 +22,11 @@ namespace whiteice
   RIFL_abstract4<T>::RIFL_abstract4(unsigned int numActions_,
 				    unsigned int numStates_,
 				    const bool alsoNegativeQValues,
-				    const int sequentialRandomMoves_) :
+				    const int sequentialRandomMoves_,
+				    const unsigned int RECURRENT_DIMENSIONS_) :
     numActions(numActions_),
-    numStates(numStates_)
+    numStates(numStates_),
+    RECURRENT_DIMENSIONS(RECURRENT_DIMENSIONS_)
   {
     // initializes parameters
     {
@@ -188,8 +190,11 @@ namespace whiteice
 				    const bool alsoNegativeQValues,
 				    std::vector<unsigned int> Q_arch,
 				    std::vector<unsigned int> policy_arch,
-				    const int sequentialRandomMoves_) :
-    numActions(numActions_), numStates(numStates_)
+				    const int sequentialRandomMoves_,
+				    const unsigned int RECURRENT_DIMENSIONS_) :
+    numActions(numActions_),
+    numStates(numStates_),
+    RECURRENT_DIMENSIONS(RECURRENT_DIMENSIONS_)
   {
     // initializes parameters
     {
@@ -1153,7 +1158,7 @@ namespace whiteice
     const bool deep = false;
     whiteice::dataset<T> data2;
     whiteice::CreatePolicy4Dataset<T>* dataset2_thread = nullptr;
-    whiteice::PolicyGradAscent<T> grad2(deep);   // policy(state)=action model optimizer
+    whiteice::Policy4GradAscent<T> grad2(deep);   // policy(state)=action model optimizer
 
     whiteice::linear_ETA<double> eta, eta2; // estimates how long single epoch of optimization takes
     
@@ -1182,6 +1187,11 @@ namespace whiteice
     bool firstTime = true;
     whiteice::math::vertex<T> state;
     whiteice::math::vertex<T> action(numActions);
+    whiteice::math::vertex<T> recurrent(RECURRENT_DIMENSIONS);
+    whiteice::math::vertex<T> recurrent_new(RECURRENT_DIMENSIONS);
+
+    recurrent.zero();
+    recurrent_new.zero();
 
     {
       std::lock_guard<std::mutex> lockr(reinforcements_mutex);
@@ -1214,11 +1224,6 @@ namespace whiteice
     
     while(thread_is_running > 0){
 
-      if(sleepMode == true){
-	std::this_thread::sleep_for(std::chrono::milliseconds(50));
-	continue; // we do not do anything and only sleep
-      }
-
       if(learningMode == false){
 	if(dataset_thread){
 	  delete dataset_thread;
@@ -1237,8 +1242,14 @@ namespace whiteice
 	grad2.reset();
       }
 
-      counter++;
+      
+      if(sleepMode == true){
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	continue; // we do not do anything and only sleep
+      }
 
+      counter++;
+      
       // 1. gets current state
       if(performActionFailed == 0){
 	auto oldstate = state;
@@ -1261,22 +1272,38 @@ namespace whiteice
       if(performActionFailed == 0){
 	std::lock_guard<std::mutex> lock(policy_mutex);
 
-	whiteice::math::vertex<T> u;
+	whiteice::math::vertex<T> tmpout, u;
 
-	auto input = state;
-	policy_preprocess.preprocess(0, input);
+	whiteice::math::vertex<T> tmpstate = state;
+	policy_preprocess.preprocess(0, tmpstate);
 
-	if(lagged_policy.calculate(input, u, 1, 0) == true){
-	  if(u.size() != numActions){
+	whiteice::math::vertex<T> input;
+	input.resize(numStates + RECURRENT_DIMENSIONS);
+	input.write_subvertex(tmpstate, 0);
+	input.write_subvertex(recurrent, numStates);
+	
+
+	if(lagged_policy.calculate(input, tmpout, 1, 0) == true){
+	  if(tmpout.size() != numActions+RECURRENT_DIMENSIONS){
 	    u.resize(numActions);
 	    for(unsigned int i=0;i<numActions;i++){
 	      u[i] = T(0.0);
 	    }
 
+	    recurrent_new.zero();
+
 	    random = true;
 	  }
 	  else{
-	    policy_preprocess.invpreprocess(1, u);
+	    whiteice::math::vertex<T> temp;
+	    temp.resize(numActions);
+	    tmpout.subvertex(temp, 0, numActions);
+	    tmpout.subvertex(recurrent_new, numActions, RECURRENT_DIMENSIONS);
+	    
+	    policy_preprocess.invpreprocess(1, temp);
+	    u = temp;
+	    
+	    
 	    random = false;
 	  }
 	}
@@ -1285,6 +1312,8 @@ namespace whiteice
 	  for(unsigned int i=0;i<numActions;i++){
 	    u[i] = T(0.0);
 	  }
+
+	  recurrent_new.zero();
 
 	  random = true;
 	}
@@ -1309,6 +1338,9 @@ namespace whiteice
 	    for(unsigned int i=0;i<u.size();i++)
 	      u[i] = T(2.0f)*u[i] - T(1.0f); // [-1,+1]
 #endif
+
+	    recurrent_new.zero();
+	    
 	    random = true;
 	  }
 	  else{ // just adds random noise to action [mini-exploration]
@@ -1326,6 +1358,7 @@ namespace whiteice
 	  
 	  if(hasModel[0] == 0 || hasModel[1] == 0){
 	    rng.uniform(u);
+	    recurrent_new.zero();
 	    random = true;
 	  }
 	}
@@ -1447,8 +1480,17 @@ namespace whiteice
 	datum.action = action;
 	datum.newstate = newstate;
 	datum.reinforcement = reinforcement;
+	datum.recurrent = recurrent;
+	datum.recurrent_new = recurrent_new;
+	datum.random = random;
 	datum.lastStep = endFlag;
 
+	// update recurrent components of policy network here..
+	{
+	  recurrent = recurrent_new;
+	  recurrent_new.zero();
+	}
+	
 	{
 	  std::lock_guard<std::mutex> lockr(reinforcements_mutex);
 
@@ -1980,7 +2022,7 @@ namespace whiteice
 
 	  if(dataset2_thread == nullptr){
 	    data2.clear();
-	    data2.createCluster("input-state", numStates);
+	    data2.createCluster("input-state", numStates+RECURRENT_DIMENSIONS);
 
 	    dataset2_thread = new CreatePolicy4Dataset<T>(*this,
 							  database,
@@ -2121,7 +2163,7 @@ namespace whiteice
       }
       
     policy_optimization_done:
-      
+
       (1 == 1); // dummy [work-around bug/feature goto requiring expression]
       
     }

@@ -70,7 +70,7 @@ namespace whiteice
     try{
       NUMDATA = NUMDATAPOINTS;
       data.clear();
-      data.createCluster("input-state", rifl.numStates);
+      data.createCluster("input-state", rifl.numStates+rifl.RECURRENT_DIMENSIONS);
       
       completed = false;
       
@@ -182,7 +182,13 @@ namespace whiteice
       
 #pragma omp critical
       {
-	data.add(0, datum.state);
+	whiteice::math::vertex<T> state_plus_r(rifl.numStates + rifl.RECURRENT_DIMENSIONS);
+
+	state_plus_r.zero();
+	state_plus_r.write_subvertex(datum.state, 0);
+	state_plus_r.write_subvertex(datum.recurrent, rifl.numStates);
+	
+	data.add(0, state_plus_r);
 
 	// std::cout << "policy dataset: state = " << datum.state << std::endl;
       }
