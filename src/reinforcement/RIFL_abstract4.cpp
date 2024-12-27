@@ -1290,6 +1290,7 @@ namespace whiteice
 	      u[i] = T(0.0);
 	    }
 
+	    recurrent.zero();
 	    recurrent_new.zero();
 
 	    random = true;
@@ -1313,6 +1314,7 @@ namespace whiteice
 	    u[i] = T(0.0);
 	  }
 
+	  recurrent.zero();
 	  recurrent_new.zero();
 
 	  random = true;
@@ -1339,6 +1341,7 @@ namespace whiteice
 	      u[i] = T(2.0f)*u[i] - T(1.0f); // [-1,+1]
 #endif
 
+	    recurrent.zero();
 	    recurrent_new.zero();
 	    
 	    random = true;
@@ -1358,6 +1361,7 @@ namespace whiteice
 	  
 	  if(hasModel[0] == 0 || hasModel[1] == 0){
 	    rng.uniform(u);
+	    recurrent.zero();
 	    recurrent_new.zero();
 	    random = true;
 	  }

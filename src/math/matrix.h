@@ -280,6 +280,8 @@ namespace whiteice
       
       // normalizes length of each row
       void normalize() ;
+
+      bool is_zero() const;
       
       bool comparable() ;
 

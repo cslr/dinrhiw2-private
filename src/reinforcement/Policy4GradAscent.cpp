@@ -495,7 +495,7 @@ namespace whiteice
 	dtest.invpreprocess(0, pure_state);
 	//dtest.invpreprocess(1, action);
 
-	if(in.write_subvertex(pure_state, 0) == false) assert(0);
+       	if(in.write_subvertex(pure_state, 0) == false) assert(0);
 	if(in.write_subvertex(pure_action, state.size()) == false) assert(0);
 
 	if(Q_preprocess.preprocess(0, in) == false) assert(0);
@@ -777,6 +777,13 @@ namespace whiteice
 	    output.resize(OUTPUT_DATA_DIM+RDIM);
 	    output_r.resize(RDIM);
 
+	    math::vertex<T> pure_input, pure_r;
+	    pure_input.resize(INPUT_DATA_DIM);
+	    pure_r.resize(RDIM);
+
+	    pure_input.zero();
+	    pure_r.zero();
+
 	    inq.resize(INPUT_DATA_DIM+OUTPUT_DATA_DIM);
 	    inq.zero();
 	    
@@ -813,7 +820,7 @@ namespace whiteice
 #pragma omp for nowait schedule(auto)
 	for(unsigned int episode=0;episode<dtrain.size(1);episode++){
 	  
-	  math::vertex<T> range = dtrain.access(2,episode);
+	  math::vertex<T> range = dtrain.access(1, episode);
 
 	  unsigned int start = 0; 
 	  unsigned int length = 0;
@@ -826,7 +833,16 @@ namespace whiteice
 	  input.zero();
 	  
 	  for(unsigned int i=start;i<length;i++){
-	    input.write_subvertex(dtrain.access(0,i), 0);
+	    const auto& v = dtrain.access(0, i);
+	    bool random = false;
+	    
+	    v.subvertex(pure_input, 0, INPUT_DATA_DIM);
+	    v.subvertex(pure_r, INPUT_DATA_DIM, RDIM);
+
+	    if(pure_r.is_zero())
+	      random = true;
+	    
+	    input.write_subvertex(pure_input, 0);
 	      
 	    if(nnet.jacobian(input, FGRAD) == false) assert(0);
 	    // df/dw (dtrain.dimension(1)+RDIM, nnet.gradient_size())
@@ -852,8 +868,13 @@ namespace whiteice
 	    }
 
 	    // dU(n+1)/dw = df/dw + df/dr * KAPPA_r * dU(n)/dw
-	    UGRAD = FGRAD + FRGRAD*URGRAD;
-
+	    if(random == false){
+	      UGRAD = FGRAD + FRGRAD*URGRAD;
+	    }
+	    else{
+	      UGRAD = FGRAD; // don't recurse gradients of random actions
+	    }
+	      
 	    // selects only Y terms from UGRAD
 	    if(UGRAD.submatrix
 	       (UYGRAD,

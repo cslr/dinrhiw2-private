@@ -1,14 +1,12 @@
 /*
- * Simple rotation test problem: max(x), 
-
- * when a sphere point in x^2 + y^2 + z^2 = 1 
- * is rotated around origo for 100 iterations.
+ * Simple addition test problem with recurrent neural network..
+ * 
  */
 
-#ifndef __whiteice__addition_problem_h
-#define __whiteice__addition_problem_h
+#ifndef __whiteice__addition_problem4_h
+#define __whiteice__addition_problem4_h
 
-#include "RIFL_abstract2.h"
+#include "RIFL_abstract4.h"
 
 #include <condition_variable>
 
@@ -17,11 +15,11 @@ namespace whiteice
 {
 
   template <typename T>
-  class AdditionProblem : public RIFL_abstract2<T>
+  class AdditionProblem4 : public RIFL_abstract4<T>
   {
   public:
-    AdditionProblem();
-    ~AdditionProblem();
+    AdditionProblem4();
+    ~AdditionProblem4();
 
     bool additionIsRunning(){ return this->running; }
       
@@ -48,8 +46,8 @@ namespace whiteice
   };
 
   
-  extern template class AdditionProblem< math::blas_real<float> >;
-  extern template class AdditionProblem< math::blas_real<double> >;
+  extern template class AdditionProblem4< math::blas_real<float> >;
+  extern template class AdditionProblem4< math::blas_real<double> >;
 };
 
 

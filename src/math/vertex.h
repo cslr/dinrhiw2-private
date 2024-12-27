@@ -222,6 +222,8 @@ namespace whiteice
       
       bool subvertex(vertex<T>& v, unsigned int x0, unsigned int len) const ;
       bool write_subvertex(const vertex<T>& v, unsigned int x0) ;
+
+      bool is_zero() const;
       
       bool comparable() ;
       

@@ -2215,6 +2215,17 @@ namespace whiteice
     
     /***************************************************/
 
+    template <typename T>
+    bool vertex<T>::is_zero() const
+    {
+      for(unsigned int i=0;i<dataSize;i++){
+	if(data[i] != T(0.0f))
+	  return false;
+      }
+
+      return true;
+    }
+
     // compares two vertexes for equality
     template <typename T>
     bool vertex<T>::operator==(const vertex<T>& v) const
