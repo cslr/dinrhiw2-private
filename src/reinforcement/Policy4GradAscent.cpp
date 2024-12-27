@@ -163,7 +163,7 @@ namespace whiteice
       return false;
     }
     
-    if(data_->getNumberOfClusters() != 1){ // dataset only contains state variables
+    if(data_->getNumberOfClusters() != 2){ // dataset only contains state variables
       char buf[256];
       snprintf(buf, 256, "Policy4GradAscent:startOptimize(): data_->getNumberOfclusters() = %d",
 	       data_->getNumberOfClusters());
@@ -178,7 +178,7 @@ namespace whiteice
     }
     
     if(data_->dimension(0) != policy_.input_size() ||
-       data_->dimension(0) + policy_.output_size() != Q_.input_size())
+       rifl.numStates + rifl.numActions != Q_.input_size())
     {
       char buf[256];
       snprintf(buf, 256, "Policy4GradAscent:startOptimize(): dimensions error: %d %d %d %d",
@@ -477,35 +477,60 @@ namespace whiteice
       math::vertex<T> in(rifl.numStates + rifl.numActions);
       in.zero();
 
-      whiteice::math::vertex<T> action, state, pure_action, pure_state;
+      whiteice::math::vertex<T> action, state, pure_action, pure_state, pure_r, pure_r2;
       whiteice::math::vertex<T> q(1);
       q.zero();
-      
+
+      pure_r.resize(policy.input_size() - rifl.numStates);
+      pure_r2.resize(policy.input_size() - rifl.numStates);
+
       // calculates mean q-value from the testing dataset
 #pragma omp for nowait schedule(guided)
-      for(unsigned int i=0;i<dtest.size(0);i++){
-	state = dtest.access(0, i);
+      for(unsigned int episode=0;episode<dtest.size(1);episode++){
+	  
+	math::vertex<T> range = dtest.access(1, episode);
+
+	unsigned int start = 0; 
+	unsigned int length = 0;
 	
-	if(policy.calculate(state, action) == false)
-	  assert(0);
+	whiteice::math::convert(start, range[0]);
+	whiteice::math::convert(length, range[1]);
 
-	state.subvertex(pure_state, 0, rifl.numStates);
-	action.subvertex(pure_action, 0, rifl.numActions);
+	pure_r.zero();
+	pure_r2.zero();
+	  
+	for(unsigned int i=start;i<length;i++){
+	  state = dtest.access(0, i);
+	  
+	  state.subvertex(pure_r2, rifl.numStates, state.size()-rifl.numStates);
 
-	dtest.invpreprocess(0, pure_state);
-	//dtest.invpreprocess(1, action);
-
-       	if(in.write_subvertex(pure_state, 0) == false) assert(0);
-	if(in.write_subvertex(pure_action, state.size()) == false) assert(0);
-
-	if(Q_preprocess.preprocess(0, in) == false) assert(0);
-
-	if(Q.calculate(in, q) == false) assert(0);
-	// if(Q.calculate_logged(in, q) == false) assert(0);
-
-	if(Q_preprocess.invpreprocess(1, q) == false) assert(0);
-	
-	vsum += q[0];
+	  if(pure_r2.is_zero() == false){ // not a random action in the previous step
+	    if(state.write_subvertex(pure_r, rifl.numStates) == false)
+	      assert(0);
+	  }
+	  
+	  if(policy.calculate(state, action) == false)
+	    assert(0);
+	  
+	  state.subvertex(pure_state, 0, rifl.numStates);
+	  action.subvertex(pure_action, 0, rifl.numActions);
+	  action.subvertex(pure_r, rifl.numActions, action.size()-rifl.numActions);
+	  
+	  dtest.invpreprocess(0, pure_state);
+	  //dtest.invpreprocess(1, action);
+	  
+	  if(in.write_subvertex(pure_state, 0) == false) assert(0);
+	  if(in.write_subvertex(pure_action, pure_state.size()) == false) assert(0);
+	  
+	  if(Q_preprocess.preprocess(0, in) == false) assert(0);
+	  
+	  if(Q.calculate(in, q) == false) assert(0);
+	  // if(Q.calculate_logged(in, q) == false) assert(0);
+	  
+	  if(Q_preprocess.invpreprocess(1, q) == false) assert(0);
+	  
+	  vsum += q[0];
+	}
       }
 	
       vsum /= T((double)dtest.size(0));

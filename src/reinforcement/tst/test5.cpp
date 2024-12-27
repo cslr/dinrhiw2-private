@@ -10,7 +10,7 @@
 
 int main(void)
 {
-  printf("REINFORCEMENT (CONTINUOS) LEARNING TESTCASE 5. (Addition problem)\n");
+  printf("*RECURRENT* CONTINUOUS REINFORCEMENT LEARNING TESTCASE 5. (Addition problem)\n");
   fflush(stdout);
 
   use_gpu_sync = false; 
@@ -21,6 +21,7 @@ int main(void)
   
   whiteice::AdditionProblem4< whiteice::math::blas_real<double> > system;
 
+  
   system.setEpsilon(0.75); // 25% of control choices are random
   system.setSleepingMode(false);
   system.setLearningMode(true);

@@ -2027,6 +2027,7 @@ namespace whiteice
 	  if(dataset2_thread == nullptr){
 	    data2.clear();
 	    data2.createCluster("input-state", numStates+RECURRENT_DIMENSIONS);
+	    data2.createCluster("ranges", 2);
 	    
 	    dataset2_thread = new CreatePolicy4Dataset<T>(*this,
 							  episodes,
