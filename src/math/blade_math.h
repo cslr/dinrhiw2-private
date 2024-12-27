@@ -2343,7 +2343,7 @@ namespace whiteice
     bool basic_fft(vertex< whiteice::math::blas_complex<T> >& v);
 
     template <typename T>
-    bool basic_ifft(vertex< whiteice::math::blas_complex<T> >& v);
+    bool basic_ifft(vertex< whiteice::math::blas_complex<T> >& v); // scales inverse-FFT by dividing with N = v.size()
     
     
     extern template bool basic_fft<float>(vertex< whiteice::math::blas_complex<float> >& v);

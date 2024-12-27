@@ -84,6 +84,9 @@
 #include "RIFL_abstract2.h"
 #include "CartPole2.h" // test problem
 
+// recurrent continuous reinforcemetn problem (noy fully tested, requires more development maybe)
+#include "RIFL_abstract4.h"
+
 // recurrent networks
 #include "RNN_RBM.h"
 
