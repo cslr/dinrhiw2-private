@@ -74,6 +74,7 @@ namespace whiteice
   bool CreateRIFL4dataset<T>::start(const unsigned int NUMDATAPOINTS, const bool smartEpisodes)
   {
     if(NUMDATAPOINTS == 0) return false;
+    if(episodes.size() == 0) return false; // zero episodes mean we cannot do anything.
 
     std::lock_guard<std::mutex> lock(thread_mutex);
 
