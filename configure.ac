@@ -116,7 +116,7 @@ dnl enables CPU specific optimization flags
 AC_ARG_ENABLE([optimize],
 	AS_HELP_STRING([--disable-optimize],[Disable optimization]))
 
-optimization_flags="-fPIC -O3 -ffast-math -mtune=native -ftree-vectorize"
+optimization_flags="-fPIC -O2 -mtune=native -ftree-vectorize"
 
 AS_IF([test "x$enable_optimize" == "xno"],[
   optimization_flags="-fPIC -g"
@@ -129,7 +129,7 @@ conf_flags=""
 dnl -fPIC is needed on Linux to build shared libraries
 
 if [[ $cpufamily = "x86_64" ]]; then
-    optimization_flags="-fPIC -O3 -g -DAMD64 -ffast-math -mtune=native -ftree-vectorize"
+    optimization_flags="-fPIC -O2 -g -DAMD64 -mtune=native -ftree-vectorize"
 
     AS_IF([test "x$enable_optimize" == "xno"],[
       optimization_flags="-fPIC -g -DAMD64"
@@ -140,7 +140,7 @@ if [[ $cpufamily = "x86_64" ]]; then
     conf_flags="-DAMD64"
 elif [[ "$cpufamily" = "i386" -o "$cpufamily" = "i486" -o "$cpufamily=i586" -o "$cpufamily" = "i686" -o "$cpufamily" = "i786" -o "$cpufamily" = "i886" -o "$cpufamily" = "i986" ]]; then
 
-    optimization_flags="-fPIC -O3 -g -DIA32 -ffast-math -mtune=native -ftree-vectorize"
+    optimization_flags="-fPIC -O2 -g -DIA32 -mtune=native -ftree-vectorize"
 
     AS_IF([test "x$enable_optimize" == "xno"],[
       optimization_flags="-fPIC -g -DIA32"
