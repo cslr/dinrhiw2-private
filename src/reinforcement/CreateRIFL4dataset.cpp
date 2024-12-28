@@ -354,7 +354,7 @@ namespace whiteice
 	    if(lagged_policy.calculate(start_point, v, 1, 0) == false)
 	      assert(0);
 
-	    if(v.subvertex(recurrent, rifl.numStates, rifl.RECURRENT_DIMENSIONS) == false)
+	    if(v.subvertex(recurrent, rifl.numActions, rifl.RECURRENT_DIMENSIONS) == false)
 	      assert(0);
 
 	    whiteice::math::vertex<T> tmp(rifl.numStates + rifl.numActions);
