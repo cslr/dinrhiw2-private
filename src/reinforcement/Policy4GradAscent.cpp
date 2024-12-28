@@ -502,9 +502,11 @@ namespace whiteice
 	for(unsigned int i=start;i<length;i++){
 	  state = dtest.access(0, i);
 	  
-	  state.subvertex(pure_r2, rifl.numStates, state.size()-rifl.numStates);
+	  if(state.subvertex(pure_r2, rifl.numStates, state.size()-rifl.numStates) == false)
+	    assert(0);
 
-	  if(pure_r2.is_zero() == false){ // not a random action in the previous step
+	  if(pure_r2.is_zero() == false)
+	  { // not a random action in the previous step
 	    if(state.write_subvertex(pure_r, rifl.numStates) == false)
 	      assert(0);
 	  }
@@ -512,9 +514,9 @@ namespace whiteice
 	  if(policy.calculate(state, action) == false)
 	    assert(0);
 	  
-	  state.subvertex(pure_state, 0, rifl.numStates);
-	  action.subvertex(pure_action, 0, rifl.numActions);
-	  action.subvertex(pure_r, rifl.numActions, action.size()-rifl.numActions);
+	  if(state.subvertex(pure_state, 0, rifl.numStates) == false) assert(0);
+	  if(action.subvertex(pure_action, 0, rifl.numActions) == false) assert(0);
+	  if(action.subvertex(pure_r, rifl.numActions, action.size()-rifl.numActions) == false) assert(0);
 	  
 	  dtest.invpreprocess(0, pure_state);
 	  //dtest.invpreprocess(1, action);
@@ -864,8 +866,8 @@ namespace whiteice
 	    v.subvertex(pure_input, 0, INPUT_DATA_DIM);
 	    v.subvertex(pure_r, INPUT_DATA_DIM, RDIM);
 
-	    if(pure_r.is_zero())
-	      random = true;
+	    if(pure_r.is_zero()) random = true;
+	      
 	    
 	    input.write_subvertex(pure_input, 0);
 	      
