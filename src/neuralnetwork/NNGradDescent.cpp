@@ -327,24 +327,26 @@ namespace whiteice
 	  
 	  this->nn->calculateBatchNorm(xdata, 2);
 	}
-	
-	best_error = getError(*(this->nn), this->data, (real(regularizer)>real(T(0.0f))), dropout);
-	
-	if(dropout){
-	  auto nn_without_dropout = *(this->nn);
-	  nn_without_dropout.removeDropOut();
-	  best_pure_error = getError(nn_without_dropout, this->data, false, false);
-	}
-	else{
-	  best_pure_error = getError(*(this->nn), this->data, false, false);
-	}
-	
+		
       }
 
       {
 	std::lock_guard<std::mutex> lock(first_time_lock);
 	// first thread uses weights from user supplied NN
 	first_time = initiallyUseNN;
+
+	if(initiallyUseNN){
+	  best_error = getError(*(this->nn), this->data, (real(regularizer)>real(T(0.0f))), dropout);
+	  
+	  if(dropout){
+	    auto nn_without_dropout = *(this->nn);
+	    nn_without_dropout.removeDropOut();
+	    best_pure_error = getError(nn_without_dropout, this->data, false, false);
+	  }
+	  else{
+	    best_pure_error = getError(*(this->nn), this->data, false, false);
+	  }
+	}
       }
 
       
@@ -921,7 +923,10 @@ namespace whiteice
 
 	  if(first_time == false){ // don't use initial weights..
 	    nn->randomize(); // NO pretraining for now
-	    first_time = true;
+	  }
+	  else{
+	    nn->importdata(bestx);
+	    first_time = false;
 	  }
 	}
 	
@@ -942,11 +947,12 @@ namespace whiteice
 
 	  real_besty = pure_real_besty;
 
-	  {
+	  if(best_pure_error > pure_real_besty){
 	    std::lock_guard<std::mutex> lock(solution_lock);
 	    
 	    this->best_error = pure_real_besty;
 	    this->best_pure_error = pure_real_besty;
+	    
 	  }
 	}
 
