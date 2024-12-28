@@ -303,6 +303,10 @@ namespace whiteice
 	  data.add(3, range);
 	}
 
+	whiteice::math::vertex<T> recurrent;
+		
+	recurrent.resize(rifl.RECURRENT_DIMENSIONS);
+	recurrent.zero();
 
 #pragma omp parallel for schedule(guided)
 	for(unsigned i=0;i<episode.size();i++){
@@ -331,6 +335,28 @@ namespace whiteice
 	  T maxvalue = T(-INFINITY);
 	  
 	  {
+	    whiteice::math::vertex<T>
+	      v(rifl.numActions + rifl.RECURRENT_DIMENSIONS),
+	      u(rifl.numActions); // new action..
+	    
+	    u.zero();
+	    v.zero();
+	    
+	    whiteice::math::vertex<T> start_point(rifl.numStates + rifl.RECURRENT_DIMENSIONS), newstate(rifl.numStates);
+
+	    auto tmp_state = episode[i].state;
+
+	    policy_preprocess.preprocess(0, tmp_state);
+
+	    start_point.write_subvertex(tmp_state, 0);
+	    start_point.write_subvertex(recurrent, rifl.numStates);
+
+	    if(lagged_policy.calculate(start_point, v, 1, 0) == false)
+	      assert(0);
+
+	    if(v.subvertex(recurrent, rifl.numStates, rifl.RECURRENT_DIMENSIONS) == false)
+	      assert(0);
+
 	    whiteice::math::vertex<T> tmp(rifl.numStates + rifl.numActions);
 	    tmp.zero();
 	    
@@ -338,13 +364,6 @@ namespace whiteice
 	      assert(0);
 	    
 	    {
-	      whiteice::math::vertex<T>
-		v(rifl.numActions + rifl.RECURRENT_DIMENSIONS),
-		u(rifl.numActions); // new action..
-	      
-	      u.zero();
-	      v.zero();
-
 	      whiteice::math::vertex<T> input(rifl.numStates + rifl.RECURRENT_DIMENSIONS);
 	      
 	      auto tmpinput = datum.newstate;
@@ -352,7 +371,7 @@ namespace whiteice
 	      policy_preprocess.preprocess(0, tmpinput);
 
 	      input.write_subvertex(tmpinput, 0);
-	      input.write_subvertex(datum.recurrent_new, rifl.numStates);
+	      input.write_subvertex(recurrent, rifl.numStates);
 	      
 	      if(lagged_policy.calculate(input, v, 1, 0) == false)
 		assert(0);

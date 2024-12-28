@@ -20,7 +20,7 @@ namespace whiteice
 
   template <typename T>
   AdditionProblem4<T>::AdditionProblem4() :
-    RIFL_abstract4<T>(3, 3, false, {50,50,50}, {50,50,50})
+    RIFL_abstract4<T>(3, 3, true, {50,50,50}, {50,50,50})
   {
     this->setOneHotAction(false);
     this->setSmartEpisodes(true);
