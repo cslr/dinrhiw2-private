@@ -144,6 +144,14 @@ namespace whiteice
     void setSmartEpisodes(bool use_episodes){ useEpisodes = use_episodes; }
     bool getSmartEpisodes() const{ return useEpisodes; }
 
+    void setReinforcementWeighting(bool use_weighting = true){
+      use_smart_weights = use_weighting; // does we use weighted sampling using reinforcement-values in RIFL4?
+    }
+
+    bool getReinforcementWeighting(){
+      return use_smart_weights;
+    }
+
     // clear reinforcement statistics
     bool clearStatistics();
 
@@ -188,7 +196,7 @@ namespace whiteice
     std::vector< std::vector< rifl4_datapoint<T> > > episodes;
     std::vector<T> episodes_weights;
 
-    const bool use_smart_weights = true; // does we use weighted sampling in RIFL4?
+    bool use_smart_weights = false; // does we use weighted sampling in RIFL4?
     
     mutable std::mutex database_mutex;
 
