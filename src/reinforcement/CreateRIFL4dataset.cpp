@@ -274,14 +274,30 @@ namespace whiteice
 	logging.info("CreateRIFL4dataset debug: smart episodes DISABLED");
     }
 
-    T total_weight = T(0.0f);
+
+    std::map<T, unsigned int> weights;
     
     {
+      T total_weight = T(0.0f);
+      
       for(unsigned int i=0;i<episodes_weights.size();i++){
 	total_weight += episodes_weights[i];
       }
       
       assert(total_weight > T(0.0f));
+
+      T sump = T(0.0f);
+
+      for(unsigned int i=0;i<episodes_weights.size();i++){
+	std::pair<T, unsigned int> p;
+
+	sump += episodes_weights[i]/total_weight;
+
+	p.first = sump;
+	p.second = i;
+
+	weights.insert(p);
+      }
     }
       
       
@@ -303,21 +319,17 @@ namespace whiteice
 	database_mutex.lock();
 
 	const T r = rng.uniform();
-	T limit = T(0.0f);
 
-	unsigned int index = 0;
+	std::vector< rifl4_datapoint<T> > episode;
 
-	while(limit <= T(1.0f) && index < episodes.size()){ // O(n) search is slow..
-	  limit += episodes_weights[index]/total_weight;
+	auto iter = weights.upper_bound(r);
 
-	  if(r <= limit) break;
-	  
-	  index++;
+	if(iter == weights.end()){
+	  episode = episodes[episodes.size()-1];
 	}
-
-	if(index >= episodes.size()) index = episodes.size() - 1;
-
-	auto episode = episodes[index];
+	else{
+	  episode = episodes[iter->second];
+	}
 
 	//const unsigned int  index = rng.rand() % episodes.size();
 	//const auto episode = episodes[index];
