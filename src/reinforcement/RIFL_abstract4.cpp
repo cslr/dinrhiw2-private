@@ -909,7 +909,10 @@ namespace whiteice
 
       db.createCluster("episodes-range", 2);
 
-      for(unsigned int e=0;e<episodes.size();e++){
+      db.createCluster("episodes-weights", 1);
+      
+
+      for(unsigned int e=0;e<episodes.size() && e<episodes_weights.size();e++){
 
 	const unsigned int start = db.size(0);
 
@@ -952,6 +955,13 @@ namespace whiteice
 	v[1] = T(end);
 
 	db.add(8, v);
+
+	
+	v.resize(1);
+	
+	v[0] = episodes_weights[e];
+
+	db.add(9, v);
       }
 
 
@@ -990,6 +1000,7 @@ namespace whiteice
     auto reinforcements_load = reinforcements;
     auto reinforcements_random_load = reinforcements_random;
     auto episodes_load = episodes;
+    auto episodes_weights_load = episodes_weights;
 
     reinforcements_mutex.unlock();
     database_mutex.unlock();
@@ -1207,7 +1218,7 @@ namespace whiteice
 	return false;
       }
 
-      if(db.getNumberOfClusters() != 9){
+      if(db.getNumberOfClusters() != 10){
 	logging.error("RIFL_abstract4::load() episodes database wrong number of clusters");
 	return false;
       }
@@ -1249,13 +1260,23 @@ namespace whiteice
 	return false;	
       }
 
+      if(db.dimension(9) != 1){
+	char buf[128];
+	snprintf(buf, 128, "RIFL_abstract4::load() database wrong dimensions %d %d (5)",
+		 db.dimension(9), 1);
+	logging.error(buf);
+
+	return false; 	
+      }
+
       if(db.size(0) != db.size(1) || db.size(1) != db.size(2) || db.size(2) != db.size(3) ||
 	 db.size(3) != db.size(4) || db.size(4) != db.size(5) || db.size(5) != db.size(6) ||
-	 db.size(6) != db.size(7)){
+	 db.size(6) != db.size(7) || db.size(8) != db.size(9)){
 
 	char buf[128];
-	snprintf(buf, 128, "RIFL_abstract4::load() database wrong size %d %d %d %d %d %d %d %d",
-		 db.size(0), db.size(1), db.size(2), db.size(3), db.size(4), db.size(5), db.size(6), db.size(7)); 
+	snprintf(buf, 128, "RIFL_abstract4::load() database wrong size %d %d %d %d %d %d %d %d %d %d",
+		 db.size(0), db.size(1), db.size(2), db.size(3), db.size(4), db.size(5), db.size(6), db.size(7),
+		 db.size(8), db.size(9));
 	logging.error(buf);
 	
 	return false;
@@ -1264,6 +1285,7 @@ namespace whiteice
       
       
       episodes_load.clear();
+      episodes_weights_load.clear();
 
       for(unsigned int e=0;e<db.size(8);e++){
 
@@ -1282,6 +1304,12 @@ namespace whiteice
 
 	assert(START < db.size(0));
 	assert(END <= db.size(0));
+
+	T weight = T(0.0f);
+
+	v = db.access(9, e);
+	
+	weight = v[0];
 
 	for(unsigned int i=START;i<END;i++){
 	  p.state = db.access(0, i);
@@ -1305,6 +1333,7 @@ namespace whiteice
 	}
 
 	episodes_load.push_back(epi);
+	episodes_weights_load.push_back(weight);
       }
       
     }
@@ -1328,6 +1357,7 @@ namespace whiteice
       reinforcements = reinforcements_load;
       reinforcements_random = reinforcements_random_load;
       episodes = episodes_load;
+      episodes_weights = episodes_weights_load;
     }
     
     return true;
@@ -1782,6 +1812,17 @@ namespace whiteice
 	  if(episode.size())
 	    total_reward /= T(episode.size());
 
+	  T episode_weight = T(0.0f);
+
+	  for(const auto& e : episode)
+	    episode_weight += whiteice::math::abs(e.reinforcement);
+	  
+	  if(episode.size())
+	    episode_weight /= T(episode.size());
+
+	  if(use_smart_weights == false) // if we don't use weighting, give each episode an equal weight..
+	    episode_weight = T(1.0f);
+
 	  {
 	    char buffer[80];
 
@@ -1805,9 +1846,11 @@ namespace whiteice
 	    if(episodes.size() >= EPISODES_MAX_SIZE){
 	      const unsigned long index = (episodes_counter % EPISODES_MAX_SIZE);
 	      episodes[index] = episode;
+	      episodes_weights[index] = episode_weight;
 	    }
 	    else{
 	      episodes.push_back(episode);
+	      episodes_weights.push_back(episode_weight);
 	    }
 	    
 	  }
@@ -2041,6 +2084,7 @@ namespace whiteice
 	      dataset_thread = new CreateRIFL4dataset<T>(*this,
 							 database,
 							 episodes,
+							 episodes_weights,
 							 database_mutex,
 							 epoch[0]);
 	    }
@@ -2295,6 +2339,7 @@ namespace whiteice
 	    
 	    dataset2_thread = new CreatePolicy4Dataset<T>(*this,
 							  episodes,
+							  episodes_weights,
 							  database_mutex,
 							  data2);
 	    dataset2_thread->start(SAMPLESIZE);

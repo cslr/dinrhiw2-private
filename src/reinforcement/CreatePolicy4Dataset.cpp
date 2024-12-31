@@ -20,14 +20,19 @@ namespace whiteice
   template <typename T>
   CreatePolicy4Dataset<T>::CreatePolicy4Dataset(RIFL_abstract4<T> const & rifl_, 
 						std::vector< std::vector< rifl4_datapoint<T> > > const & episodes_,
+						std::vector<T> const & episodes_weights_,
 						std::mutex & database_mutex_,
 						whiteice::dataset<T>& data_) : 
 
     rifl(rifl_),
     episodes(episodes_),
+    episodes_weights(episodes_weights_),
     database_mutex(database_mutex_),
     data(data_)
   {
+    assert(episodes.size() > 0);
+    assert(episodes.size() == episodes_weights.size());
+    
     std::lock_guard<std::mutex> lock(thread_mutex);
     
     worker_thread = nullptr;
@@ -161,6 +166,17 @@ namespace whiteice
       snprintf(buf, 256, "CreatePolicy4Dataset:loop() started: NUMDATA = %d\n", (int)NUMDATA);
       logging.info(buf);
     }
+    
+    T total_weight = T(0.0f);
+    
+    {
+      for(unsigned int i=0;i<episodes_weights.size();i++){
+	total_weight += episodes_weights[i];
+      }
+      
+      assert(total_weight > T(0.0f));
+    }
+    
 
     unsigned int numdata = 0;
 
@@ -174,10 +190,27 @@ namespace whiteice
       }
 
       database_mutex.lock();
-
-      const unsigned int index = rng.rand() % episodes.size();
-
+      
+      const T r = rng.uniform();
+      T limit = T(0.0f);
+      
+      unsigned int index = 0;
+      
+      while(limit <= T(1.0f) && index < episodes.size()){ // O(n) search, slow..
+	limit += episodes_weights[index]/total_weight;
+	
+	if(r <= limit) break;
+	
+	index++;
+      }
+      
+      if(index >= episodes.size()) index = episodes.size() - 1;
+      
       auto e = episodes[index];
+      
+      
+      //const unsigned int index = rng.rand() % episodes.size();
+      //auto e = episodes[index];
 
       database_mutex.unlock();
 

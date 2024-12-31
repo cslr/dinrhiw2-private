@@ -26,6 +26,7 @@ namespace whiteice
       // using database_lock
       CreatePolicy4Dataset(RIFL_abstract4<T> const & rifl, 
 			   std::vector< std::vector< rifl4_datapoint<T> > > const & episodes,
+			   std::vector<T> const & episodes_weights,
 			   std::mutex & database_mutex,
 			   whiteice::dataset<T>& data);
       
@@ -51,6 +52,7 @@ namespace whiteice
       RIFL_abstract4<T> const & rifl;
       
       std::vector< std::vector< rifl4_datapoint<T> > > const & episodes;
+      std::vector<T> const episodes_weights;
       std::mutex & database_mutex;
       
       //whiteice::RNG<T> rng;

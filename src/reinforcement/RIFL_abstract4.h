@@ -186,6 +186,9 @@ namespace whiteice
     // database
     std::vector< rifl4_datapoint<T> > database;
     std::vector< std::vector< rifl4_datapoint<T> > > episodes;
+    std::vector<T> episodes_weights;
+
+    const bool use_smart_weights = true; // does we use weighted sampling in RIFL4?
     
     mutable std::mutex database_mutex;
 

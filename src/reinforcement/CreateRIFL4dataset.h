@@ -20,63 +20,65 @@ namespace whiteice
     {
     public:
       
-    // calculates reinforcement learning training dataset from database
-    // using database_lock
-    CreateRIFL4dataset(RIFL_abstract4<T> const & rifl, 
-		       std::vector< rifl4_datapoint<T> > const & database,
-		       std::vector< std::vector< rifl4_datapoint<T> > > const & episodes,
-		       std::mutex & database_mutex,
-		       unsigned int const& epoch);
-
+      // calculates reinforcement learning training dataset from database
+      // using database_lock
+      CreateRIFL4dataset(RIFL_abstract4<T> const & rifl, 
+			 std::vector< rifl4_datapoint<T> > const & database,
+			 std::vector< std::vector< rifl4_datapoint<T> > > const & episodes,
+			 std::vector<T> const & episodes_weights,
+			 std::mutex & database_mutex,
+			 unsigned int const& epoch);
       
-    virtual ~CreateRIFL4dataset();
-
-    // starts thread that creates NUMDATAPOINTS samples to dataset
-    bool start(const unsigned int NUMDATAPOINTS, const bool smartEpisodes = true);
-
-    // returns true when computation is completed
-    bool isCompleted() const;
-
-    // returns true if computation is running
-    bool isRunning() const;
-    
+      
+      virtual ~CreateRIFL4dataset();
+      
+      // starts thread that creates NUMDATAPOINTS samples to dataset
+      bool start(const unsigned int NUMDATAPOINTS, const bool smartEpisodes = true);
+      
+      // returns true when computation is completed
+      bool isCompleted() const;
+      
+      // returns true if computation is running
+      bool isRunning() const;
+      
     bool stop();
-
-    // returns reference to dataset
-    // (warning: if calculations are running then dataset can change during use)
-    const whiteice::dataset<T>& getDataset() const;
+      
+      // returns reference to dataset
+      // (warning: if calculations are running then dataset can change during use)
+      const whiteice::dataset<T>& getDataset() const;
 
     private:
+      
+      whiteice::dataset<T> policy_preprocess;
+      whiteice::bayesian_nnetwork<T> lagged_policy;
+      
+      whiteice::dataset<T> Q_preprocess;
+      whiteice::bayesian_nnetwork<T> lagged_Q;
+      
+      whiteice::RNG<T> rng;
+      
+      RIFL_abstract4<T> const & rifl;
+      
+      const std::vector< rifl4_datapoint<T> >& database;
+      const std::vector< std::vector< rifl4_datapoint<T> > >& episodes;
+      const std::vector<T> episodes_weights; // OWN COPY
+      std::mutex & database_mutex;
+      
+      bool smartEpisodes = true;
 
-    whiteice::dataset<T> policy_preprocess;
-    whiteice::bayesian_nnetwork<T> lagged_policy;
-
-    whiteice::dataset<T> Q_preprocess;
-    whiteice::bayesian_nnetwork<T> lagged_Q;
-
-    whiteice::RNG<T> rng;
-    
-    RIFL_abstract4<T> const & rifl;
-
-    const std::vector< rifl4_datapoint<T> >& database;
-    const std::vector< std::vector< rifl4_datapoint<T> > >& episodes;
-    std::mutex & database_mutex;
-
-    bool smartEpisodes = true;
-
-    unsigned int const& epoch;
-
-    unsigned int NUMDATA; // number of datapoints to create
-    whiteice::dataset<T> data;
-    bool completed = false;;
-
-    std::thread* worker_thread = NULL;
-    mutable std::mutex   thread_mutex;
-    bool running = false;
-
-    // worker thread loop
-    void loop();
-    
+      unsigned int const& epoch;
+      
+      unsigned int NUMDATA; // number of datapoints to create
+      whiteice::dataset<T> data;
+      bool completed = false;;
+      
+      std::thread* worker_thread = NULL;
+      mutable std::mutex   thread_mutex;
+      bool running = false;
+      
+      // worker thread loop
+      void loop();
+      
       
     };
 

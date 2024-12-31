@@ -23,18 +23,23 @@ namespace whiteice
   CreateRIFL4dataset<T>::CreateRIFL4dataset(RIFL_abstract4<T> const & rifl_, 
 					    std::vector< rifl4_datapoint<T> > const & database_,
 					    std::vector< std::vector< rifl4_datapoint<T> > > const & episodes_,
+					    std::vector<T> const & episodes_weights_,
 					    std::mutex & database_mutex_,
 					    unsigned int const& epoch_) : 
   
     rifl(rifl_), 
     database(database_),
     episodes(episodes_),
+    episodes_weights(episodes_weights_),
     database_mutex(database_mutex_),
     epoch(epoch_)
   {
     worker_thread = nullptr;
     running = false;
     completed = false;
+
+    assert(episodes.size() > 0);
+    assert(episodes_weights.size() == episodes.size());
 
     {
       {
@@ -184,7 +189,7 @@ namespace whiteice
       
       logging.info("CreateRIFL4dataset debug, lagged_policy network diagnostics");
       this->lagged_policy.diagnosticsInfo();
-      
+
       
       logging.info("CreateRIFL4dataset debug, database diagnostics");
       database_mutex.lock();
@@ -268,6 +273,19 @@ namespace whiteice
       else
 	logging.info("CreateRIFL4dataset debug: smart episodes DISABLED");
     }
+
+    T total_weight = T(0.0f);
+    
+    {
+      for(unsigned int i=0;i<episodes_weights.size();i++){
+	total_weight += episodes_weights[i];
+      }
+      
+      assert(total_weight > T(0.0f));
+    }
+      
+      
+
     
     // used to calculate avg max abs(Q)-value
     // (internal debugging for checking that Q-values are within sane limits)
@@ -284,8 +302,25 @@ namespace whiteice
 	
 	database_mutex.lock();
 
-	const unsigned int  index = rng.rand() % episodes.size();
-	const auto episode = episodes[index];
+	const T r = rng.uniform();
+	T limit = T(0.0f);
+
+	unsigned int index = 0;
+
+	while(limit <= T(1.0f) && index < episodes.size()){ // O(n) search is slow..
+	  limit += episodes_weights[index]/total_weight;
+
+	  if(r <= limit) break;
+	  
+	  index++;
+	}
+
+	if(index >= episodes.size()) index = episodes.size() - 1;
+
+	auto episode = episodes[index];
+
+	//const unsigned int  index = rng.rand() % episodes.size();
+	//const auto episode = episodes[index];
 
 	database_mutex.unlock();
 
