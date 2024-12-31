@@ -178,13 +178,15 @@ namespace whiteice
       }
       
       assert(total_weight > T(0.0f));
-      
+
+      T mixing_factor = T(0.5f);
       T sump = T(0.0f);
 	    
       for(unsigned int i=0;i<episodes_weights.size();i++){
 	std::pair<T, unsigned int> p;
 
-	sump += episodes_weights[i]/total_weight;
+	// sump += episodes_weights[i]/total_weight;
+	sump += (T(1.0f) - mixing_factor)*(episodes_weights[i]/total_weight) + mixing_factor*(T(1.0f)/T(episodes_weights.size()));
 
 	p.first = sump;
 	p.second = i;
