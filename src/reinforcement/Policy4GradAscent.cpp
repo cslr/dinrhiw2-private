@@ -48,9 +48,10 @@ namespace whiteice
     use_SGD = false; // stochastic gradient descent with fixed learning rate
     sgd_lrate = T(0.01f);
 
-    regularize = false; // REGULARIZER - DISABLED
+    regularize = true; // REGULARIZER - DISABLED
     //regularizer = T(0.001); // was: 1/10.000, was 0.01
-    regularizer = T(0.0); // DISABLED
+    // regularizer = T(0.0); // DISABLED
+    regularizer = T(.10f); // ENABLED
   }
 
   
@@ -550,7 +551,7 @@ namespace whiteice
 
       policy.exportdata(w);
 
-      value -= regularizer * T(0.5) * (w*w)[0];
+      value -= regularizer * T(0.5) * (w*w)[0]/T((float)w.size());
     }
     
     return value;
@@ -899,7 +900,8 @@ namespace whiteice
 	      UGRAD = FGRAD + FRGRAD*URGRAD;
 	    }
 	    else{
-	      UGRAD = FGRAD; // don't recurse gradients of random actions
+	      UGRAD = FGRAD + FRGRAD*URGRAD; // recurse gradients STILL with zero recursive element!
+	      // UGRAD = FGRAD; // don't recurse gradients of random actions
 	    }
 	      
 	    // selects only Y terms from UGRAD
@@ -964,7 +966,7 @@ namespace whiteice
       {
 	// regularizer exp(-0.5*||w||^2) term, w ~ Normal(0,I)
 	
-	sumgrad += alpha*x;
+	sumgrad += alpha*x/(T(x.size()));
       }
 #endif
 	

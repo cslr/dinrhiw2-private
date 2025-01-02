@@ -43,7 +43,7 @@ namespace whiteice
 	epsilon = T(0.80);
       }
 
-      learningMode = true;
+      learningMode = false;
       sleepMode = true;
 
       {
@@ -100,10 +100,10 @@ namespace whiteice
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::sigmoid); // tanh, sigmoid, halfLinear
 	  //nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::pureLinear);
 	  if(alsoNegativeQValues == false){
-	    nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid); // ([-1,+1])
+	    nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid); // ([0,+1])
 	  }
 	  else{
-	    nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // ([0,1])
+	    nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // ([-1,1])
 	  }
 	  
 	  nn.randomize(2, T(0.5)); // was 1.0
@@ -158,7 +158,8 @@ namespace whiteice
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::sigmoid);
 
 	  nn.setNonlinearity(0, whiteice::nnetwork<T>::pureLinear);
-	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid);
+	  // nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid); // [0,+1] values as actions and recurrent
+	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // [-1,+1] values as actions and recurrent
 	  //nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::pureLinear);
 	  
 	  nn.randomize(2, T(0.9)); // was 1.0
@@ -211,7 +212,7 @@ namespace whiteice
 	epsilon = T(0.80);
       }
 
-      learningMode = true;
+      learningMode = false;
       sleepMode = true;
 
       {
@@ -300,7 +301,8 @@ namespace whiteice
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::sigmoid);
 	  // nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh);
 	  nn.setNonlinearity(0, whiteice::nnetwork<T>::pureLinear);
-	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid);
+	  // nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid); // policy action is [0,1]-valued value
+	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // policy action is [-1,1]-valued value
 	  
 	  nn.randomize(2, T(0.9)); // was 1.0
 	  nn.setResidual(true);
@@ -1430,8 +1432,8 @@ namespace whiteice
   void RIFL_abstract4<T>::loop()
   {
     // number of iteratios to use per epoch for optimization
-    const unsigned int Q_OPTIMIZE_ITERATIONS = 200; // 40, was 1 (dont work), 5, 10, WAS: 5000
-    const unsigned int P_OPTIMIZE_ITERATIONS = 200; // 10, was 1 (dont work), 5, 10, WAS: 1000
+    const unsigned int Q_OPTIMIZE_ITERATIONS = 100; // WAS: 200
+    const unsigned int P_OPTIMIZE_ITERATIONS = 100; // WAS: 200
     
     // tau = 1.0 => no lagged neural networks [don't work]
     const T tau = T(1.0); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05]
@@ -1468,8 +1470,8 @@ namespace whiteice
     const unsigned long DATASIZE = 100000; // was: 100.000 / 1M history of samples
     // assumes each episode length is 100 so this is ~ equal to 1.000.000 samples
     const unsigned long EPISODES_MAX_SIZE = 10000;
-    const unsigned long MINIMUM_EPISODE_SIZE = 25;
-    const unsigned long MINIMUM_DATASIZE = 1000; // samples required to start learning, was:10000,2000,1000
+    const unsigned long MINIMUM_EPISODE_SIZE = 15; // was: 25
+    const unsigned long MINIMUM_DATASIZE = 500; // samples required to start learning, was:1000
     const unsigned long SAMPLESIZE = 3500; // number of samples used in learning, was: 2000
     unsigned long database_counter = 0;
     unsigned long episodes_counter = 0;
@@ -1597,7 +1599,11 @@ namespace whiteice
 	    
 	    policy_preprocess.invpreprocess(1, temp);
 	    u = temp;
-	    
+
+	    for(unsigned int i=0;i<u.size();i++){ // action is [0,1]^D valued vector
+	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
+	      else if(u[i] > T(1.0f)) u[i] = T(1.0f);
+	    }
 	    
 	    random = false;
 	  }
@@ -1626,14 +1632,27 @@ namespace whiteice
 	  }
 
 	  if(random_counter > 0){ // 1-epsilon % are chosen randomly
-	    // rng.normal(u); // Normal E[n]=0 StDev[n]=1
 
-	    rng.uniform(u); // [0,1] valued actions!
+	    auto noise = u;
+	    
+	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
+
+	    u += T(0.20f)*noise; // was 0.1
+
+	    for(unsigned int i=0;i<u.size();i++){ // action is [0,1]^D valued vector
+	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
+	      else if(u[i] > T(1.0f)) u[i] = T(1.0f);
+	    }
 
 #if 0
+	    rng.uniform(u); // [0,1] valued actions!
+
 	    for(unsigned int i=0;i<u.size();i++)
 	      u[i] = T(2.0f)*u[i] - T(1.0f); // [-1,+1]
 #endif
+	    //std::cout << "noise = " << noise << std::endl;
+	    //std::cout << "action = " << u << std::endl;	    
+	    //std::cout << "random = " << random_counter << std::endl;
 
 	    recurrent.zero();
 	    recurrent_new.zero();
@@ -1644,23 +1663,42 @@ namespace whiteice
 	    auto noise = u;
 	    rng.normal(noise); // Normal EX[n]=0 StDev[n]=1
 	    u += T(0.025)*noise;
+
+	    for(unsigned int i=0;i<u.size();i++){ // action is [0,1]^D valued vector
+	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
+	      else if(u[i] > T(1.0f)) u[i] = T(1.0f);
+	    }
 	  }
 	  
 	}
 
 	// if there's no model then make random selection (normally distributed)
-#if 1
 	{
 	  std::lock_guard<std::mutex> lockh(has_model_mutex);
 	  
 	  if(hasModel[0] == 0 || hasModel[1] == 0){
+
+#if 0
 	    rng.uniform(u);
+#endif
 	    recurrent.zero();
 	    recurrent_new.zero();
+
+	    
+	    auto noise = u;
+	    
+	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
+
+	    u += T(0.20f)*noise; // was 0.1
+
+	    for(unsigned int i=0;i<u.size();i++){ // action is [0,1]^D valued vector
+	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
+	      else if(u[i] > T(1.0f)) u[i] = T(1.0f);
+	    }
+	    
 	    random = true;
 	  }
 	}
-#endif
 	
 	action = u;
 
@@ -1880,6 +1918,23 @@ namespace whiteice
     optimization_step:
       
       if(learningMode == false){
+
+	if(dataset_thread){
+	  delete dataset_thread;
+	  dataset_thread = nullptr;
+	}
+	
+	if(dataset2_thread){
+	  delete dataset2_thread;
+	  dataset2_thread = nullptr;
+	}
+
+	grad.stopComputation();
+	grad.reset();
+
+	grad2.stopComputation();
+	grad2.reset();
+	
 	continue; // we do not do learning
       }
       
@@ -2272,6 +2327,8 @@ namespace whiteice
 
 		{
 		  std::lock_guard<std::mutex> lockh(has_model_mutex);
+
+		  lagged_weights.resize(1);
 		  
 		  if(hasModel[1] == 0){
 		    // don't lag results with the first update

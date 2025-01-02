@@ -2282,7 +2282,8 @@ namespace whiteice
     }
     else if(nonlinearity[layer] == tanh){
 
-      const T a = T(1.7159f);
+      //const T a = T(1.7159f);
+      const T a = T(1.0f);
       const T b = T(2.0f/3.0f);
       
       T in = input;
@@ -2324,7 +2325,8 @@ namespace whiteice
       // tanh(x) + 0.5x: from a research paper statistically
       // better gradiets for deep neural networks
       {
-	const T a = T(1.7159f); // suggested by Haykin's neural network book (1999)
+	//const T a = T(1.7159f); // suggested by Haykin's neural network book (1999)
+	const T a = T(1.0f); // suggested by Haykin's neural network book (1999)
 	const T b = T(2.0f/3.0f);
 	
 	if(abs(input) > abs(T(+10.0f))){
@@ -2717,7 +2719,8 @@ namespace whiteice
     }
     else if(nonlinearity[layer] == tanh){
 
-      const T a = T(1.7159f);
+      // const T a = T(1.7159f);
+      const T a = T(1.0f);
       const T b = T(2.0f/3.0f);
       
       T in = input;
@@ -2771,7 +2774,8 @@ namespace whiteice
       // tanh(x) + 0.5x: from a research paper statistically
       // better gradiets for deep neural networks
       {
-	const T a = T(1.7159f); // suggested by Haykin's neural network book (1999)
+	// const T a = T(1.7159f); // suggested by Haykin's neural network book (1999)
+	const T a = T(1.0f); // suggested by Haykin's neural network book (1999)
 	const T b = T(2.0f/3.0f);
 	
 	if(abs(input.first()).first() > abs(T(+10.0f)).first()){
@@ -3264,7 +3268,8 @@ namespace whiteice
     }
     else if(nonlinearity[layer] == tanh){
 
-      const T a = T(1.7159f);
+      // const T a = T(1.7159f);
+      const T a = T(1.0f);
       const T b = T(2.0f/3.0f);
       
       T in = input;
@@ -3306,7 +3311,8 @@ namespace whiteice
       // tanh(x) + 0.5x: from a research paper statistically
       // better gradiets for deep neural networks
       {
-	const T a = T(1.7159f); // suggested by Haykin's neural network book (1999)
+	// const T a = T(1.7159f); // suggested by Haykin's neural network book (1999)
+	const T a = T(1.0f); // suggested by Haykin's neural network book (1999)
 	const T b = T(2.0f/3.0f);
 	
 	if(abs(input) > abs(T(+10.0f))){
@@ -3631,7 +3637,8 @@ namespace whiteice
     }
     else if(nonlinearity[layer] == tanh){
 
-      const T a = T(1.7159f);
+      // const T a = T(1.7159f);
+      const T a = T(1.0f);
       const T b = T(2.0f/3.0f);
       
       T in = input;
@@ -3686,7 +3693,8 @@ namespace whiteice
       // tanh(x) + 0.5x: from a research paper statistically
       // better gradiets for deep neural networks
       {
-	const T a = T(1.7159f); // suggested by Haykin's neural network book (1999)
+	// const T a = T(1.7159f); // suggested by Haykin's neural network book (1999)
+	const T a = T(1.0f); // suggested by Haykin's neural network book (1999)
 	const T b = T(2.0f/3.0f);
 	
 	if(abs(input.first()).first() > abs(T(+10.0f)).first()){
