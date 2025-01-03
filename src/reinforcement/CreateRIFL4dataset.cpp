@@ -393,7 +393,10 @@ namespace whiteice
 	    
 	    whiteice::math::vertex<T> start_point(rifl.numStates + rifl.RECURRENT_DIMENSIONS), newstate(rifl.numStates);
 
-	    auto tmp_state = episode[i].state;
+	    auto tmp_state = datum.state;
+
+	    if(datum.recurrent.is_zero())
+	      recurrent.zero();
 
 	    policy_preprocess.preprocess(0, tmp_state);
 

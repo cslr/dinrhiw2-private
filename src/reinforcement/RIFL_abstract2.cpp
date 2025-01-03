@@ -155,7 +155,7 @@ namespace whiteice
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::tanh);
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::sigmoid);
 
-	  nn.setNonlinearity(0, whiteice::nnetwork<T>::pureLinear);
+	  // nn.setNonlinearity(0, whiteice::nnetwork<T>::pureLinear);
 	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid);
 	  //nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::pureLinear);
 	  
@@ -294,7 +294,7 @@ namespace whiteice
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::tanh);
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::sigmoid);
 	  // nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh);
-	  nn.setNonlinearity(0, whiteice::nnetwork<T>::pureLinear);
+	  // nn.setNonlinearity(0, whiteice::nnetwork<T>::pureLinear);
 	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid);
 	  
 	  nn.randomize(2, T(0.9)); // was 1.0
@@ -1130,8 +1130,8 @@ namespace whiteice
   void RIFL_abstract2<T>::loop()
   {
     // number of iteratios to use per epoch for optimization
-    const unsigned int Q_OPTIMIZE_ITERATIONS = 200; // 40, was 1 (dont work), 5, 10, WAS: 5000
-    const unsigned int P_OPTIMIZE_ITERATIONS = 200; // 10, was 1 (dont work), 5, 10, WAS: 1000
+    const unsigned int Q_OPTIMIZE_ITERATIONS = 100; // 40, was 1 (dont work), 5, 10, WAS: 5000
+    const unsigned int P_OPTIMIZE_ITERATIONS = 100; // 10, was 1 (dont work), 5, 10, WAS: 1000
     
     // tau = 1.0 => no lagged neural networks [don't work]
     const T tau = T(1.0); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05]
@@ -1169,8 +1169,8 @@ namespace whiteice
     const unsigned long DATASIZE = 100000; // was: 100.000 / 1M history of samples
     // assumes each episode length is 100 so this is ~ equal to 1.000.000 samples
     const unsigned long EPISODES_MAX_SIZE = 10000;
-    const unsigned long MINIMUM_EPISODE_SIZE = 25;
-    const unsigned long MINIMUM_DATASIZE = 1000; // samples required to start learning, was:10000,2000,1000
+    const unsigned long MINIMUM_EPISODE_SIZE = 12;// was: 25
+    const unsigned long MINIMUM_DATASIZE = 500; // samples required to start learning, was:1000
     const unsigned long SAMPLESIZE = 2000; // number of samples used in learning, was: 5000,2000,1000 
     unsigned long database_counter = 0;
     unsigned long episodes_counter = 0;

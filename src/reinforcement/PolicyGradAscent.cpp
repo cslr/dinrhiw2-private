@@ -46,9 +46,9 @@ namespace whiteice
     use_SGD = false; // stochastic gradient descent with fixed learning rate
     sgd_lrate = T(0.01f);
 
-    regularize = false; // REGULARIZER - DISABLED
+    regularize = true; // REGULARIZER - DISABLED
     //regularizer = T(0.001); // was: 1/10.000, was 0.01
-    regularizer = T(0.0); // DISABLED
+    regularizer = T(0.10f);
   }
 
   
@@ -517,7 +517,7 @@ namespace whiteice
 
       policy.exportdata(w);
 
-      value -= regularizer * T(0.5) * (w*w)[0];
+      value -= regularizer * T(0.5) * (w*w)[0]/T(w.size());
     }
     
     return value;
@@ -907,7 +907,7 @@ namespace whiteice
 	  {
 	    // regularizer = T(1.0)/T(sqrt(this->policy->exportdatasize()));
 	    
-	    sumgrad -= regularizer*w0;
+	    sumgrad -= regularizer*w0/T(w0.size());
 	  }
 
 	  if(debug)

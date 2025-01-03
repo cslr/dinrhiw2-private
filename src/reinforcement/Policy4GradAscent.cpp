@@ -51,7 +51,7 @@ namespace whiteice
     regularize = true; // REGULARIZER - DISABLED
     //regularizer = T(0.001); // was: 1/10.000, was 0.01
     // regularizer = T(0.0); // DISABLED
-    regularizer = T(.10f); // ENABLED
+    regularizer = T(0.10f); // ENABLED, was: 0.01, now: 0.10
   }
 
   

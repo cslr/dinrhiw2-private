@@ -157,7 +157,7 @@ namespace whiteice
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::tanh);
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::sigmoid);
 
-	  nn.setNonlinearity(0, whiteice::nnetwork<T>::pureLinear);
+	  // nn.setNonlinearity(0, whiteice::nnetwork<T>::pureLinear);
 	  // nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid); // [0,+1] values as actions and recurrent
 	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // [-1,+1] values as actions and recurrent
 	  //nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::pureLinear);
@@ -300,7 +300,7 @@ namespace whiteice
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::tanh);
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::sigmoid);
 	  // nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh);
-	  nn.setNonlinearity(0, whiteice::nnetwork<T>::pureLinear);
+	  // nn.setNonlinearity(0, whiteice::nnetwork<T>::pureLinear);
 	  // nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid); // policy action is [0,1]-valued value
 	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // policy action is [-1,1]-valued value
 	  
@@ -1432,8 +1432,11 @@ namespace whiteice
   void RIFL_abstract4<T>::loop()
   {
     // number of iteratios to use per epoch for optimization
-    const unsigned int Q_OPTIMIZE_ITERATIONS = 100; // WAS: 200
-    const unsigned int P_OPTIMIZE_ITERATIONS = 100; // WAS: 200
+    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 200
+    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 200
+
+    const unsigned int Q_OPTIMIZE_ITERATIONS = 3; // WAS: 25
+    const unsigned int P_OPTIMIZE_ITERATIONS = 3; // WAS: 25
     
     // tau = 1.0 => no lagged neural networks [don't work]
     const T tau = T(1.0); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05]
@@ -1637,7 +1640,7 @@ namespace whiteice
 	    
 	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
 
-	    u += T(0.20f)*noise; // was 0.1
+	    u += T(0.10f)*noise; // was 0.1
 
 	    for(unsigned int i=0;i<u.size();i++){ // action is [0,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
@@ -1654,8 +1657,8 @@ namespace whiteice
 	    //std::cout << "action = " << u << std::endl;	    
 	    //std::cout << "random = " << random_counter << std::endl;
 
-	    recurrent.zero();
-	    recurrent_new.zero();
+	    //recurrent.zero();
+	    //recurrent_new.zero();
 	    
 	    random = true;
 	  }
@@ -1677,24 +1680,29 @@ namespace whiteice
 	  std::lock_guard<std::mutex> lockh(has_model_mutex);
 	  
 	  if(hasModel[0] == 0 || hasModel[1] == 0){
-
-#if 0
-	    rng.uniform(u);
-#endif
-	    recurrent.zero();
-	    recurrent_new.zero();
+	    //recurrent.zero();
+	    //recurrent_new.zero();
 
 	    
 	    auto noise = u;
 	    
 	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
-
-	    u += T(0.20f)*noise; // was 0.1
-
+	    
+	    u += T(0.10f)*noise; // was 0.1
+	    
 	    for(unsigned int i=0;i<u.size();i++){ // action is [0,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
 	      else if(u[i] > T(1.0f)) u[i] = T(1.0f);
 	    }
+
+	    
+#if 0
+	    rng.uniform(u); // [0,1] valued actions!
+
+	    for(unsigned int i=0;i<u.size();i++)
+	      u[i] = T(2.0f)*u[i] - T(1.0f); // [-1,+1]
+#endif
+
 	    
 	    random = true;
 	  }
@@ -2198,24 +2206,24 @@ namespace whiteice
 	    std::lock_guard<std::mutex> lockh(has_model_mutex);
 	    
 	    if(hasModel[0] >= 1){
-	      eta.start(0.0, Q_OPTIMIZE_ITERATIONS/4);
+	      eta.start(0.0, Q_OPTIMIZE_ITERATIONS);
 	      
 	      grad.setUseMinibatch(false);
 	      grad.setSGD(T(-1.0f)); // disable stochastic gradient descent
 	      
-	      if(grad.startOptimize(data, qnn, 1, Q_OPTIMIZE_ITERATIONS/4,
+	      if(grad.startOptimize(data, qnn, 1, Q_OPTIMIZE_ITERATIONS,
 				    dropout, useInitialNN) == true)
 		logging.info("========> Q OPTIMIZATION STARTED");
 	      else
 		logging.info("========> Q OPTIMIZATION STARTED FAILED");
 	    }
 	    else{
-	      eta.start(0.0, Q_OPTIMIZE_ITERATIONS);
+	      eta.start(0.0, Q_OPTIMIZE_ITERATIONS_FIRST);
 	      
 	      grad.setUseMinibatch(false);
 	      grad.setSGD(T(-1.0f)); // disable stochastic gradient descent
 	      
-	      if(grad.startOptimize(data, qnn, 1, Q_OPTIMIZE_ITERATIONS, dropout, useInitialNN) == true)
+	      if(grad.startOptimize(data, qnn, 1, Q_OPTIMIZE_ITERATIONS_FIRST, dropout, useInitialNN) == true)
 		logging.info("========> Q OPTIMIZATION STARTED");
 	      else
 		logging.info("========> Q OPTIMIZATION STARTED FAILED");
@@ -2462,13 +2470,13 @@ namespace whiteice
 	      std::lock_guard<std::mutex> lockh(has_model_mutex);
 	      
 	      if(hasModel[1] >= 1){
-		eta2.start(0.0, P_OPTIMIZE_ITERATIONS/4);
+		eta2.start(0.0, P_OPTIMIZE_ITERATIONS);
 		
 		grad2.setUseMinibatch(false);
 		grad2.setSGD(T(-1.0)); // what is correct learning rate???
 		
 		if(grad2.startOptimize(&data2, q_nn, Q_preprocess_copy, nn, 1,
-				       P_OPTIMIZE_ITERATIONS/4,
+				       P_OPTIMIZE_ITERATIONS,
 				       dropout, useInitialNN) == true){
 		  logging.info("========> POLICY OPTIMIZATION STARTED (1)");
 		}
@@ -2477,13 +2485,13 @@ namespace whiteice
 		}
 	      }
 	      else{
-		eta2.start(0.0, P_OPTIMIZE_ITERATIONS);
+		eta2.start(0.0, P_OPTIMIZE_ITERATIONS_FIRST);
 		
 		grad2.setUseMinibatch(false);
 		grad2.setSGD(T(-1.0)); // what is correct learning rate???
 		
 		if(grad2.startOptimize(&data2, q_nn, Q_preprocess_copy, nn, 1,
-				       P_OPTIMIZE_ITERATIONS,
+				       P_OPTIMIZE_ITERATIONS_FIRST,
 				       dropout, useInitialNN) == true){
 		  logging.info("========> POLICY OPTIMIZATION STARTED (2)");
 		}
