@@ -1617,7 +1617,7 @@ namespace whiteice
 	    u[i] = T(0.0);
 	  }
 
-	  recurrent.zero();
+	  // recurrent.zero();
 	  recurrent_new.zero();
 
 	  random = true;
@@ -1640,7 +1640,7 @@ namespace whiteice
 	    
 	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
 
-	    u += T(0.10f)*noise; // was 0.1
+	    u += T(0.30f)*noise; // was 0.1
 
 	    for(unsigned int i=0;i<u.size();i++){ // action is [0,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
@@ -1657,8 +1657,8 @@ namespace whiteice
 	    //std::cout << "action = " << u << std::endl;	    
 	    //std::cout << "random = " << random_counter << std::endl;
 
-	    //recurrent.zero();
-	    //recurrent_new.zero();
+	    recurrent.zero();
+	    recurrent_new.zero();
 	    
 	    random = true;
 	  }
@@ -1680,15 +1680,15 @@ namespace whiteice
 	  std::lock_guard<std::mutex> lockh(has_model_mutex);
 	  
 	  if(hasModel[0] == 0 || hasModel[1] == 0){
-	    //recurrent.zero();
-	    //recurrent_new.zero();
+	    recurrent.zero();
+	    recurrent_new.zero();
 
 	    
 	    auto noise = u;
 	    
 	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
 	    
-	    u += T(0.10f)*noise; // was 0.1
+	    u += T(0.30f)*noise; // was 0.1
 	    
 	    for(unsigned int i=0;i<u.size();i++){ // action is [0,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
