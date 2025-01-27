@@ -502,11 +502,16 @@ namespace whiteice
 	  
 	for(unsigned int i=start;i<length;i++){
 	  state = dtest.access(0, i);
+
+	  bool random = false;
 	  
 	  if(state.subvertex(pure_r2, rifl.numStates, state.size()-rifl.numStates) == false)
 	    assert(0);
 
-	  if(pure_r2.is_zero() == false)
+	  if(pure_r2.is_zero()) random = true;
+	  else random = false;
+
+	  if(random == false)
 	  { // not a random action in the previous step
 	    if(state.write_subvertex(pure_r, rifl.numStates) == false)
 	      assert(0);
@@ -868,9 +873,14 @@ namespace whiteice
 	    v.subvertex(pure_r, INPUT_DATA_DIM, RDIM);
 
 	    if(pure_r.is_zero()) random = true;
+	    else random = false;
 	      
 	    
 	    input.write_subvertex(pure_input, 0);
+
+	    if(random){
+	      if(input.write_subvertex(pure_r, INPUT_DATA_DIM) == false) assert(0);
+	    }
 	      
 	    if(nnet.jacobian(input, FGRAD) == false) assert(0);
 	    // df/dw (dtrain.dimension(1)+RDIM, nnet.gradient_size())
@@ -900,8 +910,8 @@ namespace whiteice
 	      UGRAD = FGRAD + FRGRAD*URGRAD;
 	    }
 	    else{
-	      UGRAD = FGRAD + FRGRAD*URGRAD; // recurse gradients STILL with zero recursive element!
-	      // UGRAD = FGRAD; // don't recurse gradients of random actions
+	      // UGRAD = FGRAD + FRGRAD*URGRAD; // recurse gradients STILL with zero recursive element!
+	      UGRAD = FGRAD; // don't recurse gradients of random actions
 	    }
 	      
 	    // selects only Y terms from UGRAD

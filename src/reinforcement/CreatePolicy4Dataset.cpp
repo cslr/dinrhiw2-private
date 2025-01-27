@@ -228,7 +228,7 @@ namespace whiteice
 
       database_mutex.unlock();
 
-      const unsigned int EPISODE_LENGTH = 15;
+      const unsigned int EPISODE_LENGTH = 50; // episode length was 15, change to 5 (should be 50-100?)
       
       unsigned int C = e.size()/EPISODE_LENGTH;
       
