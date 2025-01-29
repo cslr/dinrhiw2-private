@@ -325,7 +325,7 @@ namespace whiteice
 	  
 	  this->data.getData(0, xdata);
 	  
-	  this->nn->calculateBatchNorm(xdata, 2);
+	  this->nn->calculateBatchNorm(xdata, 0); // was: calculate batch norm for only two first layers (was: 2)
 	}
 		
       }
@@ -982,7 +982,7 @@ namespace whiteice
 	    
 	    dtrain.getData(0, xdata);
 	    
-	    nn->calculateBatchNorm(xdata, 2);
+	    nn->calculateBatchNorm(xdata, 0); // was: calculate batch norm for only two first layers (was: 2)
 	  }
 
 	  

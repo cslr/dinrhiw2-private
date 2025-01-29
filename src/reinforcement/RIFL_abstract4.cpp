@@ -1,5 +1,8 @@
 // *RECURRENT* Reinforcement learning using continuous state and continuous actions
-
+//
+// enabled batch norm for neural networks now, fix problems it cause until it works,
+// sets mean and variance of layer outputs to (mean=0,stdev=1)
+// 
 
 #include "RIFL_abstract4.h"
 
@@ -164,7 +167,7 @@ namespace whiteice
 	  
 	  nn.randomize(2, T(0.9)); // was 1.0
 	  nn.setResidual(true);
-	  nn.setBatchNorm(false);
+	  nn.setBatchNorm(true);
 	  
 	  policy.importNetwork(nn);
 	  lagged_policy.importNetwork(nn);
@@ -306,7 +309,7 @@ namespace whiteice
 	  
 	  nn.randomize(2, T(0.9)); // was 1.0
 	  nn.setResidual(true);
-	  nn.setBatchNorm(false);
+	  nn.setBatchNorm(true);
 	  
 	  policy.importNetwork(nn);
 
@@ -1475,7 +1478,7 @@ namespace whiteice
     const unsigned long EPISODES_MAX_SIZE = 10000;
     const unsigned long MINIMUM_EPISODE_SIZE = 15; // was: 25
     const unsigned long MINIMUM_DATASIZE = 500; // samples required to start learning, was:1000
-    const unsigned long SAMPLESIZE = 3500; // number of samples used in learning, was: 2000
+    const unsigned long SAMPLESIZE = 5000; // number of samples used in learning, was: 2000, 3500, 5000=(10bins^3variables*5samples = 5000)
     unsigned long database_counter = 0;
     unsigned long episodes_counter = 0;
 
@@ -1658,7 +1661,7 @@ namespace whiteice
 	    //std::cout << "random = " << random_counter << std::endl;
 
 	    recurrent.zero();
-	    recurrent_new.zero();
+	    //recurrent_new.zero();
 	    
 	    random = true;
 	  }
@@ -1681,7 +1684,7 @@ namespace whiteice
 	  
 	  if(hasModel[0] == 0 || hasModel[1] == 0){
 	    recurrent.zero();
-	    recurrent_new.zero();
+	    // recurrent_new.zero();
 
 	    
 	    auto noise = u;
@@ -2096,9 +2099,9 @@ namespace whiteice
 		    
 		    logging.info(buffer);
 		  }
-		  
-		  if(nn2.importdata(lagged_weights[0]) == false) assert(0);
-		  if(lagged_Q.importNetwork(nn2) == false) assert(0);
+
+		  if(nn.importdata(lagged_weights[0]) == false) assert(0);
+		  if(lagged_Q.importNetwork(nn) == false) assert(0);
 		}
 		else{
 		  logging.info("lagged_Q updated: NO LAG");
@@ -2351,8 +2354,8 @@ namespace whiteice
 		    logging.info("lagged_policy updated");
 				 
 		    lagged_weights[0] = tau*weights + (T(1.0)-tau)*lagged_weights[0];
-		    nn2.importdata(lagged_weights[0]);
-		    lagged_policy.importNetwork(nn2);
+		    nn.importdata(lagged_weights[0]);
+		    lagged_policy.importNetwork(nn);
 		  }
 		  else{
 		    logging.info("lagged_policy updated: NO LAG");

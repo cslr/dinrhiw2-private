@@ -243,7 +243,7 @@ namespace whiteice
 	
 	this->data.getData(0, xdata);
 	
-	this->policy->calculateBatchNorm(xdata, 2);
+	this->policy->calculateBatchNorm(xdata, 0); // was: 2,1 
       }
       
       
@@ -458,9 +458,9 @@ namespace whiteice
   // calculates mean Q-value of the policy in dtest dataset (states are inputs)
   template <typename T>
   T Policy4GradAscent<T>::getValue(const whiteice::nnetwork<T>& policy,
-				  const whiteice::nnetwork<T>& Q,
-				  const whiteice::dataset<T>& Q_preprocess,
-				  const whiteice::dataset<T>& dtest) const
+				   const whiteice::nnetwork<T>& Q,
+				   const whiteice::dataset<T>& Q_preprocess,
+				   const whiteice::dataset<T>& dtest) const
   {
     T value = T(0.0);
       
@@ -470,6 +470,18 @@ namespace whiteice
       logging.info("getValue() Q:");
       Q.diagnosticsInfo();
     }
+
+#if 0
+    auto policy = policy_;
+    
+    if(policy.getBatchNorm()){
+      std::vector< whiteice::math::vertex<T> > xdata;
+      
+      dtest.getData(0, xdata);
+      
+      policy.calculateBatchNorm(xdata, 0); // was: calculate batch norm for only two first layers (was: 2)
+    }
+#endif
     
 #pragma omp parallel
     {
@@ -769,13 +781,15 @@ namespace whiteice
       {
 	do{
 
+#if 0
 	  if(policy->getBatchNorm()){ // all layers batch normalization..
 	    std::vector< whiteice::math::vertex<T> > xdata;
 	    
 	    dtrain.getData(0, xdata);
 	    
-	    policy->calculateBatchNorm(xdata, 2);
+	    policy->calculateBatchNorm(xdata, 0); // was: calculate batch norm for only two first layers (was: 2)
 	  }
+#endif
 
 	  
 	  // 2. episode by episode calculation of gradient ascent
