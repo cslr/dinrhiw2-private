@@ -168,7 +168,7 @@ namespace whiteice
 	  nn.randomize(2, T(0.9)); // was 1.0
 	  nn.setResidual(true);
 	  nn.setBatchNorm(true);
-	  
+
 	  policy.importNetwork(nn);
 	  lagged_policy.importNetwork(nn);
 
@@ -403,6 +403,8 @@ namespace whiteice
   template <typename T>
   bool RIFL_abstract4<T>::isRunning() const
   {
+    std::lock_guard<std::mutex> lock(thread_mutex);
+    
     return (thread_is_running > 0);
   }
 
@@ -975,6 +977,13 @@ namespace whiteice
     }
 
 
+    {
+      logging.info("RIFL_abstract4::save() successfully saved data.");
+
+      std::lock_guard<std::mutex> lock2(policy_mutex);
+      logging.info("save(): saved lagged_policy");
+      lagged_policy.diagnosticsInfo();
+    }
     
     return true;
   }
@@ -1361,6 +1370,14 @@ namespace whiteice
       reinforcements_random = reinforcements_random_load;
       episodes = episodes_load;
       episodes_weights = episodes_weights_load;
+    }
+
+    {
+      logging.info("RIFL_abstract4::load() successfully loaded data.");
+
+      std::lock_guard<std::mutex> lock2(policy_mutex);
+      logging.info("RIFL_abstract4::load(): loaded lagged_policy: ");
+      lagged_policy.diagnosticsInfo();
     }
     
     return true;
@@ -1802,7 +1819,7 @@ namespace whiteice
 	
 	if(performAction(action, newstate, reinforcement, endFlag) == false){
 	  //std::cout << "ERROR: RIFL_abstract4::performAction() FAILED." << std::endl;
-	  whiteice::logging.error("ERROR: RIFL_abstact::performAction() FAILED.");
+	  // whiteice::logging.error("ERROR: RIFL_abstact::performAction() FAILED.");
 	  performActionFailed++;
 	  goto optimization_step;
 	}
@@ -2424,10 +2441,12 @@ namespace whiteice
 	  }
 
 	  if(dataset2_thread){
-	    whiteice::logging.info("RIFL_abstract4: dataset2_thread finished (policy)");
-	    dataset2_thread->stop();
-	    delete dataset2_thread;
-	    dataset2_thread = nullptr;
+	    if(dataset2_thread->isCompleted() == true){
+	      whiteice::logging.info("RIFL_abstract4: dataset2_thread finished (policy)");
+	      dataset2_thread->stop();
+	      delete dataset2_thread;
+	      dataset2_thread = nullptr;
+	    }
 	  }
 	  
 	  
@@ -2467,6 +2486,10 @@ namespace whiteice
 	      if(nn.importdata(weights[0]) == false){
 		assert(0);
 	      }
+
+	      logging.info("lagged_policy loading diagnostics");
+	      lagged_policy.diagnosticsInfo();
+	      nn.diagnosticsInfo();
 	    }
 	    
 	    const bool dropout = false;

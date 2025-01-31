@@ -299,7 +299,8 @@ namespace whiteice
       }
     
       char buf[256];
-      snprintf(buf, 256, "CreatePolicy4Dataset:loop(): data.size(0) = %d data.dimension(0) = %d dim(state) = %d\n", (int)data.size(0), (int)data.dimension(0), (int)state_dimensions);
+      snprintf(buf, 256, "CreatePolicy4Dataset:loop(): data.size(0) = %d data.dimension(0) = %d dim(state) = %d\n",
+	       (int)data.size(0), (int)data.dimension(0), (int)state_dimensions);
       logging.info(buf);
     }
       

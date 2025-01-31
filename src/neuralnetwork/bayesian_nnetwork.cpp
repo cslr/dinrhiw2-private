@@ -996,13 +996,17 @@ namespace whiteice
 	
 	
 
-	configuration.createCluster(FNN_VERSION_CFGSTR, ints.size());
+	if(configuration.createCluster(FNN_VERSION_CFGSTR, ints.size()) == false)
+	  return false;
+	
 	data.resize(ints.size());
 	for(unsigned int i=0;i<ints.size();i++){
 	  whiteice::math::convert(data[i], (double)ints[i]);
 	  //data[i] = ints[i];
 	}
-	configuration.add(configuration.getCluster(FNN_VERSION_CFGSTR), data);
+	
+	if(configuration.add(configuration.getCluster(FNN_VERSION_CFGSTR), data) == false)
+	  return false;
 	
 	//if(!configuration.set(FNN_VERSION_CFGSTR, ints))
 	//  return false;
@@ -1020,13 +1024,17 @@ namespace whiteice
 	for(unsigned int i=0;i<arch.size();i++)
 	  ints.push_back(arch[i]);
 
-	configuration.createCluster(FNN_ARCH_CFGSTR, ints.size());
+	if(configuration.createCluster(FNN_ARCH_CFGSTR, ints.size()) == false)
+	  return false;
+	
 	data.resize(ints.size());
 	for(unsigned int i=0;i<ints.size();i++){
 	  whiteice::math::convert(data[i], (double)ints[i]);
 	  //data[i] = ints[i];
 	}
-	configuration.add(configuration.getCluster(FNN_ARCH_CFGSTR), data);
+	
+	if(configuration.add(configuration.getCluster(FNN_ARCH_CFGSTR), data) == false)
+	  return false;
 	
 	//if(!configuration.set(FNN_ARCH_CFGSTR, ints))
 	//  return false;
@@ -1038,13 +1046,17 @@ namespace whiteice
       {
 	ints.push_back(nnets.size());
 
-	configuration.createCluster(FNN_NUMWEIGHTS_CFGSTR, ints.size());
+	if(configuration.createCluster(FNN_NUMWEIGHTS_CFGSTR, ints.size()) == false)
+	  return false;
+	
 	data.resize(ints.size());
 	for(unsigned int i=0;i<ints.size();i++){
 	  whiteice::math::convert(data[i], (double)ints[i]);
 	  //data[i] = ints[i];
 	}
-	configuration.add(configuration.getCluster(FNN_NUMWEIGHTS_CFGSTR), data);
+	
+	if(configuration.add(configuration.getCluster(FNN_NUMWEIGHTS_CFGSTR), data) == false)
+	  return false;
 	
 	ints.clear();
       }
@@ -1085,13 +1097,17 @@ namespace whiteice
 	}
 	else return false;
 
-	configuration.createCluster(FNN_NONLINEARITY_CFGSTR, ints.size());
+	if(configuration.createCluster(FNN_NONLINEARITY_CFGSTR, ints.size()) == false)
+	  return false;
+	
 	data.resize(ints.size());
 	for(unsigned int i=0;i<ints.size();i++){
 	  whiteice::math::convert(data[i], (double)ints[i]);
 	  //data[i] = ints[i];
 	}
-	configuration.add(configuration.getCluster(FNN_NONLINEARITY_CFGSTR), data);
+	
+	if(configuration.add(configuration.getCluster(FNN_NONLINEARITY_CFGSTR), data) == false)
+	  return false;
 	
 	ints.clear();
       }
@@ -1112,13 +1128,17 @@ namespace whiteice
 	}
 	else return false;
 
-	configuration.createCluster(FNN_FROZEN_CFGSTR, ints.size());
+	if(configuration.createCluster(FNN_FROZEN_CFGSTR, ints.size()) == false)
+	  return false;
+	
 	data.resize(ints.size());
 	for(unsigned int i=0;i<ints.size();i++){
 	  whiteice::math::convert(data[i], (double)ints[i]);
 	  //data[i] = ints[i];
 	}
-	configuration.add(configuration.getCluster(FNN_FROZEN_CFGSTR), data);
+	
+	if(configuration.add(configuration.getCluster(FNN_FROZEN_CFGSTR), data) == false)
+	  return false;
 	
 	ints.clear();
       }
@@ -1128,7 +1148,8 @@ namespace whiteice
       if(nnets[0]->exportdata(w) == false)
     	  return false;
 
-      configuration.createCluster(FNN_WEIGHTS_CFGSTR, w.size());
+      if(configuration.createCluster(FNN_WEIGHTS_CFGSTR, w.size()) == false)
+	return false;
 
       for(unsigned int index=0;index<nnets.size();index++)
       {
@@ -1138,13 +1159,14 @@ namespace whiteice
 	if(nnets[index]->exportdata(w) == false)
 	  return false;
 	
-	configuration.add(configuration.getCluster(FNN_WEIGHTS_CFGSTR), w);
-
+	if(configuration.add(configuration.getCluster(FNN_WEIGHTS_CFGSTR), w) == false)
+	  return false;
       }      
 
       // residual neural network information
       {
-	configuration.createCluster(FNN_RESIDUAL_CFGSTR, 1);
+	if(configuration.createCluster(FNN_RESIDUAL_CFGSTR, 1) == false)
+	  return false;
 	
 	data.resize(1);
 	if(nnets[0]->getResidual()){
@@ -1154,12 +1176,14 @@ namespace whiteice
 	  data[0] = T(0.0f);
 	}
 
-	configuration.add(configuration.getCluster(FNN_RESIDUAL_CFGSTR), data);
+	if(configuration.add(configuration.getCluster(FNN_RESIDUAL_CFGSTR), data) == false)
+	  return false;
       }
 
       // batch norm neural network information
       {
-	configuration.createCluster(FNN_BATCH_NORM_CFGSTR, 1);
+	if(configuration.createCluster(FNN_BATCH_NORM_CFGSTR, 1) == false)
+	  return false;
 	
 	data.resize(1);
 	if(nnets[0]->getBatchNorm()){
@@ -1169,7 +1193,8 @@ namespace whiteice
 	  data[0] = T(0.0f);
 	}
 
-	configuration.add(configuration.getCluster(FNN_BATCH_NORM_CFGSTR), data);
+	if(configuration.add(configuration.getCluster(FNN_BATCH_NORM_CFGSTR), data) == false)
+	  return false;
       }
       
       
@@ -1179,7 +1204,8 @@ namespace whiteice
 	if(nnets[0]->exportBNdata(w) == false)
     	  return false;
 	
-	configuration.createCluster(FNN_BN_DATA_CFGSTR, w.size());
+	if(configuration.createCluster(FNN_BN_DATA_CFGSTR, w.size()) == false)
+	  return false;
 	
 	for(unsigned int index=0;index<nnets.size();index++)
 	{
@@ -1189,19 +1215,22 @@ namespace whiteice
 	  if(nnets[index]->exportBNdata(w) == false)
 	    return false;
 	  
-	  configuration.add(configuration.getCluster(FNN_BN_DATA_CFGSTR), w);
+	  if(configuration.add(configuration.getCluster(FNN_BN_DATA_CFGSTR), w) == false)
+	    return false;
 	  
 	}
 	
       }
       else{
-	configuration.createCluster(FNN_BN_DATA_CFGSTR, 1);
+	if(configuration.createCluster(FNN_BN_DATA_CFGSTR, 1) == false)
+	  return false;
 
 	math::vertex<T> w;
 	w.resize(1);
 	w[0] = T(0.0f);
 
-	configuration.add(configuration.getCluster(FNN_BN_DATA_CFGSTR), w);
+	if(configuration.add(configuration.getCluster(FNN_BN_DATA_CFGSTR), w) == false)
+	  return false;
       }
       
       return configuration.save(filename);

@@ -224,7 +224,7 @@ namespace whiteice
     
     volatile int thread_is_running;
     std::thread* rifl_thread;
-    std::mutex thread_mutex;
+    mutable std::mutex thread_mutex;
     
     void loop();
     

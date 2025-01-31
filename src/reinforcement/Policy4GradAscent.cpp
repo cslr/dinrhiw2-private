@@ -243,7 +243,9 @@ namespace whiteice
 	
 	this->data.getData(0, xdata);
 	
-	this->policy->calculateBatchNorm(xdata, 0); // was: 2,1 
+	this->policy->calculateBatchNorm(xdata, 0); // was: 2,1
+
+	logging.info("Policy4GradAscent::startOptimize() - batch normalization applied.");
       }
       
       
