@@ -289,6 +289,56 @@ namespace whiteice
       whiteice::logging.info(buffer);
       
     }
+
+    snprintf(buffer, 128, "nnetwork: BATCHNORM %d):",
+	     (int)this->batchnorm);
+
+    for(unsigned int l=0;l<bn_mu.size();l++){
+      
+      auto maxvalueM = -abs(T(INFINITY));
+      auto maxvalueS = -abs(T(INFINITY));
+      auto minvalueM = abs(T(+INFINITY));
+      auto minvalueS = abs(T(+INFINITY));
+
+      const math::vertex<T>& m = this->bn_mu[l];
+      const math::vertex<T>& s = this->bn_sigma[l];
+      
+      for(unsigned int i=0;i<m.size();i++){
+	if(maxvalueM < abs(m[i]))
+	  maxvalueM = abs(m[i]);
+	if(minvalueM > abs(m[i]))
+	  minvalueM = abs(m[i]);
+      }
+
+      for(unsigned int i=0;i<s.size();i++){
+	if(maxvalueS < abs(s[i]))
+	  maxvalueS = abs(s[i]);
+	if(minvalueS > abs(s[i]))
+	  minvalueS = abs(s[i]);
+      }
+
+
+      double temp = 0.0;
+      whiteice::math::convert(temp, minvalueM);
+
+      double temp2 = 0.0;
+      whiteice::math::convert(temp2, maxvalueM);
+
+      double temp3 = 0.0;
+      whiteice::math::convert(temp3, minvalueS);
+
+      double temp4 = 0.0;
+      whiteice::math::convert(temp4, maxvalueS);
+
+      snprintf(buffer, 128, "nnetwork: LAYER %d/%d %d-%d MIN/MAX ABS-VALUE MU=%f/%f SIGMA=%f/%f",
+	       l+1, getLayers(), getInputs(l), getNeurons(l),
+	       temp, temp2, temp3, temp4);
+      
+      whiteice::logging.info(buffer);
+    }
+    
+    whiteice::logging.info(buffer);
+    
   }
 
   
