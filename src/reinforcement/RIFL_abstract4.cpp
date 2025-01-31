@@ -1478,7 +1478,7 @@ namespace whiteice
     const unsigned long EPISODES_MAX_SIZE = 10000;
     const unsigned long MINIMUM_EPISODE_SIZE = 15; // was: 25
     const unsigned long MINIMUM_DATASIZE = 500; // samples required to start learning, was:1000
-    const unsigned long SAMPLESIZE = 5000; // number of samples used in learning, was: 2000, 3500, 5000=(10bins^3variables*5samples = 5000)
+    const unsigned long SAMPLESIZE = 3500; // number of samples used in learning, was: 2000, *3500*, 5000=(10bins^3variables*5samples = 5000)
     unsigned long database_counter = 0;
     unsigned long episodes_counter = 0;
 
