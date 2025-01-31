@@ -276,7 +276,6 @@ namespace whiteice
 	  nn.setBatchNorm(false);
 	  
 	  Q.importNetwork(nn);
-
 	  lagged_Q.importNetwork(nn);
 
 	  whiteice::logging.info("RIFL_abstract4: ctor Q diagnostics");
@@ -312,7 +311,6 @@ namespace whiteice
 	  nn.setBatchNorm(true);
 	  
 	  policy.importNetwork(nn);
-
 	  lagged_policy.importNetwork(nn);
 
 	  whiteice::logging.info("RIFL_abstract4: ctor policy diagnostics");
@@ -1478,7 +1476,7 @@ namespace whiteice
     const unsigned long EPISODES_MAX_SIZE = 10000;
     const unsigned long MINIMUM_EPISODE_SIZE = 15; // was: 25
     const unsigned long MINIMUM_DATASIZE = 500; // samples required to start learning, was:1000
-    const unsigned long SAMPLESIZE = 3500; // number of samples used in learning, was: 2000, *3500*, 5000=(10bins^3variables*5samples = 5000)
+    const unsigned long SAMPLESIZE = 4000; // number of samples used in learning, was: 2000, 3500, 5000=(10bins^3variables*5samples = 5000)
     unsigned long database_counter = 0;
     unsigned long episodes_counter = 0;
 
@@ -1507,7 +1505,7 @@ namespace whiteice
     // [don't getState() or use policy network again] until performAction() is successful
     unsigned int performActionFailed = 0; 
 
-    whiteice::nnetwork<T> nn;
+    // whiteice::nnetwork<T> nn;
 
     unsigned long counter = 0; // N:th iteration
     
@@ -1982,6 +1980,8 @@ namespace whiteice
 		       "RIFL_abstract4: new optimized Q-model (%f error, %d iters, epoch %d)",
 		       tmp, iters, epoch[0]);
 	      whiteice::logging.info(buffer);
+
+	      whiteice::nnetwork<T> nn;
 	      
 	      {
 		logging.info("========> Q RESULT LOADING");
@@ -1999,6 +1999,7 @@ namespace whiteice
 #if 1
 		whiteice::nnetwork<T> nn2;
 		std::vector< math::vertex<T> > lagged_weights;
+		
 		lagged_Q.exportSamples(nn2, lagged_weights, 1);
 
 		if(lagged_weights.size() > 0){
@@ -2300,6 +2301,7 @@ namespace whiteice
 
 
 	  if(grad2.getSolutionStatistics(meanq, iters) == false){
+	    
 	  }
 	  else{
 	    // gradient has stopped running
@@ -2424,10 +2426,12 @@ namespace whiteice
 	  if(dataset2_thread){
 	    whiteice::logging.info("RIFL_abstract4: dataset2_thread finished (policy)");
 	    dataset2_thread->stop();
+	    delete dataset2_thread;
+	    dataset2_thread = nullptr;
 	  }
 	  
 	  
-	  // fetch NN parameters from model
+	  // fetch NN parameters from model and start optimization
 	  {
 	    whiteice::nnetwork<T> q_nn, nn;
 	    whiteice::dataset<T> Q_preprocess_copy;
@@ -2464,7 +2468,7 @@ namespace whiteice
 		assert(0);
 	      }
 	    }
-
+	    
 	    const bool dropout = false;
 	    const bool useInitialNN = true; // WAS: start from scratch everytime
 	    

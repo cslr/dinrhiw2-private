@@ -69,7 +69,7 @@ namespace whiteice
 
     randomize();
 
-    this->setBatchNorm(false); // ENABLES/DISABLES batch normalization!
+    this->setBatchNorm(false); // DISABLES batch normalization!
   }
   
   

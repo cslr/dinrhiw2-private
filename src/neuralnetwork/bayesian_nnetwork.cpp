@@ -247,13 +247,13 @@ namespace whiteice
     bndatas.resize(latestN);
 
     for(unsigned int i=(nnets.size() - latestN);i<nnets.size();i++){
-      if(nnets[i]->exportdata(weights[i]) == false){
+      if(nnets[i]->exportdata(weights[i-(nnets.size()-latestN)]) == false){
 	weights.clear();
 	bndatas.clear();
 	return false;
       }
 
-      if(nnets[i]->exportBNdata(bndatas[i]) == false){
+      if(nnets[i]->exportBNdata(bndatas[i-(nnets.size()-latestN)]) == false){
 	weights.clear();
 	bndatas.clear();
 	return false;
