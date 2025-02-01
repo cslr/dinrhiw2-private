@@ -1470,7 +1470,7 @@ namespace whiteice
     const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 200
 
     const unsigned int Q_OPTIMIZE_ITERATIONS = 25; // 3; // WAS: 25
-    const unsigned int P_OPTIMIZE_ITERATIONS = 25; // 3; // WAS: 25
+    const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 25
     
     // tau = 1.0 => no lagged neural networks [don't work]
     const T tau = T(1.0); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05]
@@ -2347,7 +2347,7 @@ namespace whiteice
 		std::lock_guard<std::mutex> lock(policy_mutex);
 		
 		if(grad2.getSolution(nn) == false) assert(0);
-		//if(grad2.getDataset(this->policy_preprocess) == false) assert(0);
+		if(grad2.getDataset(this->policy_preprocess) == false) assert(0);
 		
 		char buffer[128];
 		double tmp = 0.0;
@@ -2360,8 +2360,8 @@ namespace whiteice
 		
 		policy.importNetwork(nn);
 
-		//policy_preprocess.clearData(0);
-		//policy_preprocess.clearData(1);
+		policy_preprocess.clearData(0);
+		policy_preprocess.clearData(1);
 		
 #if 1
 		whiteice::nnetwork<T> nn2;

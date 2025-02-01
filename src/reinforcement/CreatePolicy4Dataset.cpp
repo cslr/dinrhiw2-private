@@ -275,7 +275,7 @@ namespace whiteice
 	return; // exit point
     }
 
-#if 0
+#if 1
     // add preprocessing to dataset
     {
       data.preprocess

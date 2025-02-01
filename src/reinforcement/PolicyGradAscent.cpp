@@ -46,8 +46,8 @@ namespace whiteice
     use_SGD = false; // stochastic gradient descent with fixed learning rate
     sgd_lrate = T(0.01f);
 
-    regularize = true; // REGULARIZER - DISABLED
-    //regularizer = T(0.001); // was: 1/10.000, was 0.01
+    regularize = true; // REGULARIZER - DISABLED/ENABLED
+    //regularizer = T(0.0); // was: 1/10.000, was 0.01
     regularizer = T(0.10f);
   }
 
