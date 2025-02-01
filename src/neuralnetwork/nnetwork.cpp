@@ -290,8 +290,10 @@ namespace whiteice
       
     }
 
-    snprintf(buffer, 128, "nnetwork: BATCHNORM %d):",
+    snprintf(buffer, 128, "nnetwork: BATCHNORM %d:",
 	     (int)this->batchnorm);
+    whiteice::logging.info(buffer);
+
 
     for(unsigned int l=0;l<bn_mu.size();l++){
       
@@ -337,7 +339,6 @@ namespace whiteice
       whiteice::logging.info(buffer);
     }
     
-    whiteice::logging.info(buffer);
     
   }
 

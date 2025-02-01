@@ -980,9 +980,17 @@ namespace whiteice
     {
       logging.info("RIFL_abstract4::save() successfully saved data.");
 
-      std::lock_guard<std::mutex> lock2(policy_mutex);
-      logging.info("save(): saved lagged_policy");
-      lagged_policy.diagnosticsInfo();
+      {
+	std::lock_guard<std::mutex> lock2(policy_mutex);
+	logging.info("RIFL_abstract4::save(): saved lagged_policy");
+	lagged_policy.diagnosticsInfo();
+      }
+
+      {
+	std::lock_guard<std::mutex> lock2(Q_mutex);
+	logging.info("RIFL_abstract4::save(): saved lagged_Q");
+	lagged_Q.diagnosticsInfo();
+      }
     }
     
     return true;
@@ -1375,9 +1383,17 @@ namespace whiteice
     {
       logging.info("RIFL_abstract4::load() successfully loaded data.");
 
-      std::lock_guard<std::mutex> lock2(policy_mutex);
-      logging.info("RIFL_abstract4::load(): loaded lagged_policy: ");
-      lagged_policy.diagnosticsInfo();
+      {
+	std::lock_guard<std::mutex> lock2(policy_mutex);
+	logging.info("RIFL_abstract4::load(): loaded lagged_policy: ");
+	lagged_policy.diagnosticsInfo();
+      }
+
+      {
+	std::lock_guard<std::mutex> lock2(Q_mutex);
+	logging.info("RIFL_abstract4::load(): loaded lagged_Q");
+	lagged_Q.diagnosticsInfo();
+      }
     }
     
     return true;

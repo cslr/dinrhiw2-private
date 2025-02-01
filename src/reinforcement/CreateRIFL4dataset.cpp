@@ -432,6 +432,7 @@ namespace whiteice
 	      
 	      policy_preprocess.invpreprocess(1, u); // does nothing..
 
+#if 0
 	      {
 		std::string line;
 		char buf[256];
@@ -446,6 +447,7 @@ namespace whiteice
 
 		logging.info(line.c_str());
 	      }
+#endif
 
 #if 0
 	      // add exploration noise..
@@ -461,6 +463,7 @@ namespace whiteice
 	    
 	    this->Q_preprocess.preprocess(0, tmp);
 
+#if 0
 	    {
 	      std::string line;
 	      char buf[256];
@@ -475,6 +478,7 @@ namespace whiteice
 	      
 	      logging.info(line.c_str());
 	    }
+#endif
 	    
 	    if(this->lagged_Q.calculate(tmp, y, 1, 0) == false)
 	      assert(0);
@@ -491,11 +495,13 @@ namespace whiteice
 	      out[0] = datum.reinforcement;
 	    }
 
+#if 0
 	    {
 	      char buf[80];
 	      snprintf(buf, 80, "CreateRIFL4dataset: output=%f", out[0].real());
 	      logging.info(buf);
 	    }
+#endif
 	    
 	  }
 	  
@@ -581,6 +587,8 @@ namespace whiteice
 	    
 	    policy_preprocess.invpreprocess(1, u); // does nothing..
 
+
+#if 0
 	    {
 	      std::string line;
 	      char buf[256];
@@ -595,7 +603,8 @@ namespace whiteice
 	      
 	      logging.info(line.c_str());
 	    }
-	    
+#endif
+	  
 	    // add exploration noise..
 #if 0
 	    auto noise = u;
@@ -610,6 +619,7 @@ namespace whiteice
 	  
 	  this->Q_preprocess.preprocess(0, tmp);
 
+#if 0
 	  {
 	    std::string line;
 	    char buf[256];
@@ -630,15 +640,18 @@ namespace whiteice
 	    snprintf(buf, 80, "CreateRIFL4dataset: y.before=%f", y[0].real());
 	    logging.info(buf);
 	  }
+#endif
 	  
 	  if(this->lagged_Q.calculate(tmp, y, 1, 0) == false)
 	    assert(0);
 
+#if 0
 	  {
 	    char buf[80];
 	    snprintf(buf, 80, "CreateRIFL4dataset: y.after=%f", y[0].real());
 	    logging.info(buf);
 	  }
+#endif
 	  
 	  this->Q_preprocess.invpreprocess(1, y);
 	  
@@ -652,11 +665,13 @@ namespace whiteice
 	    out[0] = datum.reinforcement;
 	  }
 
+#if 0
 	  {
 	    char buf[80];
 	    snprintf(buf, 80, "CreateRIFL4dataset: output=%f", out[0].real());
 	    logging.info(buf);
 	  }
+#endif
 	  
 	}
 	
