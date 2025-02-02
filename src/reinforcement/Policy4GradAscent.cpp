@@ -501,7 +501,7 @@ namespace whiteice
       pure_r2.resize(policy.input_size() - rifl.numStates);
 
       // calculates mean q-value from the testing dataset
-#pragma omp for nowait schedule(guided)
+#pragma omp for nowait schedule(dynamic, 5)
       for(unsigned int episode=0;episode<dtest.size(1);episode++){
 	  
 	math::vertex<T> range = dtest.access(1, episode);
@@ -867,7 +867,7 @@ namespace whiteice
 	    whiteice::math::matrix<T> Qpreprocess_grad;
 	    
 	    
-#pragma omp for nowait schedule(auto)
+#pragma omp for nowait schedule(dynamic, 5)
 	for(unsigned int episode=0;episode<dtrain.size(1);episode++){
 	  
 	  math::vertex<T> range = dtrain.access(1, episode);
@@ -1055,7 +1055,7 @@ namespace whiteice
 	    
 	    if(use_minibatch){
 	      
-#pragma omp for nowait schedule(guided)
+#pragma omp for nowait schedule(dynamic, 25)
 	      for(unsigned int i=0;i<MINIBATCHSIZE;i++){
 
 		const unsigned int index = rng.rand() % dtrain.size(0);
@@ -1111,7 +1111,7 @@ namespace whiteice
 	    }
 	    else{
 	      
-#pragma omp for nowait schedule(guided)
+#pragma omp for nowait schedule(dynamic, 25)
 	      for(unsigned int i=0;i<dtrain.size(0);i++){
 		
 		if(dropout) pnet.setDropOut();
@@ -1221,7 +1221,7 @@ namespace whiteice
 	      
 	    weights = w0;
 	    
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(dynamic, 25)
 	    for(unsigned int i=0;i<sumgrad.size();i++){
 	      // should ASCEND the error.. (-sumgrad goes to larger values)
 	      
