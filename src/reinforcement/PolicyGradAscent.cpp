@@ -46,9 +46,9 @@ namespace whiteice
     use_SGD = false; // stochastic gradient descent with fixed learning rate
     sgd_lrate = T(0.01f);
 
-    regularize = true; // REGULARIZER - DISABLED/ENABLED
-    //regularizer = T(0.0); // was: 1/10.000, was 0.01
-    regularizer = T(0.10f);
+    regularize = false; // REGULARIZER - DISABLED/ENABLED
+    regularizer = T(0.0); // was: 1/10.000, was 0.01
+    //regularizer = T(0.10f);
   }
 
   
@@ -239,7 +239,9 @@ namespace whiteice
 	
 	this->data.getData(0, xdata);
 	
-	this->policy->calculateBatchNorm(xdata, 2);
+	this->policy->calculateBatchNorm(xdata, 0); // was: 2
+
+	logging.info("PolicyGradAscent::startOptimize() - batch normalization applied.");
       }
       
       
@@ -466,6 +468,19 @@ namespace whiteice
       logging.info("getValue() Q:");
       Q.diagnosticsInfo();
     }
+
+#if 0
+    auto policy = policy_;
+    
+    if(policy.getBatchNorm()){
+      std::vector< whiteice::math::vertex<T> > xdata;
+      
+      dtest.getData(0, xdata);
+      
+      policy.calculateBatchNorm(xdata, 0); // was: calculate batch norm for only two first layers (was: 2)
+    }
+#endif
+    
     
 #pragma omp parallel
     {
@@ -694,16 +709,16 @@ namespace whiteice
       }
       
 
-      
+#if 0
       if(policy->getBatchNorm()){ // all layers batch normalization..
 	std::vector< whiteice::math::vertex<T> > xdata;
 	
 	dtrain.getData(0, xdata);
 	
-	policy->calculateBatchNorm(xdata, 2);
+	policy->calculateBatchNorm(xdata, 0);
       }
-	    
-
+#endif	    
+      
       
       // 2. normal gradient ascent
       ///////////////////////////////////////

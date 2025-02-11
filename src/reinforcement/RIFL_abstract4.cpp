@@ -1145,8 +1145,8 @@ namespace whiteice
       whiteice::dataset<T> db;
 
       if(db.load(buffer) == false){
-	char buf[128];
-	snprintf(buf, 128, "RIFL_abstract4::load(\"%s\") loading dataset FAILED", buffer);
+	char buf[1024];
+	snprintf(buf, 1024, "RIFL_abstract4::load(\"%s\") loading dataset FAILED", buffer);
 	logging.error(buf);
 	return false;
       }
@@ -1232,8 +1232,8 @@ namespace whiteice
       whiteice::dataset<T> db;
 
       if(db.load(buffer) == false){
-	char buf[128];
-	snprintf(buf, 128, "RIFL_abstract4::load(\"%s\") loading episodes dataset FAILED", buffer);
+	char buf[1024];
+	snprintf(buf, 1024, "RIFL_abstract4::load(\"%s\") loading episodes dataset FAILED", buffer);
 	logging.error(buf);
 	return false;
       }
@@ -1674,7 +1674,7 @@ namespace whiteice
 	    
 	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
 
-	    u += T(0.30f)*noise; // was 0.1
+	    u += T(0.60f)*noise; // was 0.1, 0.3*
 
 	    for(unsigned int i=0;i<u.size();i++){ // action is [0,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
@@ -1722,7 +1722,7 @@ namespace whiteice
 	    
 	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
 	    
-	    u += T(0.30f)*noise; // was 0.1
+	    u += T(0.60f)*noise; // was 0.1, 0.3*
 	    
 	    for(unsigned int i=0;i<u.size();i++){ // action is [0,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
