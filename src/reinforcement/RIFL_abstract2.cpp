@@ -1220,12 +1220,7 @@ namespace whiteice
 
     
     while(thread_is_running > 0){
-
-      if(sleepMode == true){
-	std::this_thread::sleep_for(std::chrono::milliseconds(50));
-	continue; // we do not do anything and only sleep
-      }
-
+      
       if(learningMode == false){
 	if(dataset_thread){
 	  delete dataset_thread;
@@ -1242,6 +1237,11 @@ namespace whiteice
 
 	grad2.stopComputation();
 	grad2.reset();
+      }
+      
+      if(sleepMode == true){
+	std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	continue; // we do not do anything and only sleep
       }
 
       counter++;
