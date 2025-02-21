@@ -41,7 +41,7 @@ namespace whiteice
 	epsilon = T(0.80);
       }
 
-      learningMode = true;
+      learningMode = false;
       sleepMode = true;
 
       {
@@ -206,7 +206,7 @@ namespace whiteice
 	epsilon = T(0.80);
       }
 
-      learningMode = true;
+      learningMode = false;
       sleepMode = true;
 
       {
@@ -1320,7 +1320,7 @@ namespace whiteice
 	    
 	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
 
-	    u += T(0.60f)*noise; // was 0.1, 0.3*
+	    u += T(1.00f)*noise; // was 0.1, 0.3*, 0.6
 
 	    for(unsigned int i=0;i<u.size();i++){ // action is [-1,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
@@ -1353,7 +1353,7 @@ namespace whiteice
 		    
 	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
 
-	    u += T(0.60f)*noise; // was 0.1, 0.3*
+	    u += T(1.00f)*noise; // was 0.1, 0.3*, 0.6
 
 	    for(unsigned int i=0;i<u.size();i++){ // action is [-1,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
