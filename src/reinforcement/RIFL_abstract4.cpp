@@ -1469,7 +1469,7 @@ namespace whiteice
     const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 200
     const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 200
 
-    const unsigned int Q_OPTIMIZE_ITERATIONS = 25; // 3; // WAS: 25
+    const unsigned int Q_OPTIMIZE_ITERATIONS = 100; // 3; // WAS: 25
     const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 25
     
     // tau = 1.0 => no lagged neural networks [don't work]
