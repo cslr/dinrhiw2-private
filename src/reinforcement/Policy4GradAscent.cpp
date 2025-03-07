@@ -260,8 +260,11 @@ namespace whiteice
     this->policy->exportdata(bestx);
     this->dropout = dropout;
     
-    this->best_value = getValue(*(this->policy), *(this->Q), *(this->Q_preprocess), data);
-    this->best_q_value = this->best_value;
+    //this->best_value = getValue(*(this->policy), *(this->Q), *(this->Q_preprocess), data);
+    //this->best_q_value = this->best_value;
+
+    this->best_value = T(-INFINITY);
+    this->best_q_value = T(-INFINITY);
 
     // std::cout << "INITIAL Q-value for policy: " << best_q_value << std::endl;
     
