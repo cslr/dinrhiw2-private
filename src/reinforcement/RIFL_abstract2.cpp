@@ -1134,10 +1134,10 @@ namespace whiteice
     // const unsigned int P_OPTIMIZE_ITERATIONS = 100; // 10, was 1 (dont work), 5, 10, WAS: 1000
 
     // number of iteratios to use per epoch for optimization
-    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 200
+    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 200; // WAS: 200
     const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 200
 
-    const unsigned int Q_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 25
+    const unsigned int Q_OPTIMIZE_ITERATIONS = 200; // 3; // WAS: 25
     const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 25
     
     // tau = 1.0 => no lagged neural networks [don't work]
@@ -1607,10 +1607,10 @@ namespace whiteice
 		std::lock_guard<std::mutex> lock(Q_mutex);
 		Q.importNetwork(nn);
 
-		//data.clearData(0);
-		//data.clearData(1);
+		data.clearData(0);
+		data.clearData(1);
 
-		//Q_preprocess = data;
+		Q_preprocess = data;
 
 #if 1
 		whiteice::nnetwork<T> nn2;
