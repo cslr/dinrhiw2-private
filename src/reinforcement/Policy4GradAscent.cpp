@@ -260,8 +260,8 @@ namespace whiteice
     this->policy->exportdata(bestx);
     this->dropout = dropout;
     
-    best_value = getValue(*(this->policy), *(this->Q), *(this->Q_preprocess), data);
-    best_q_value = best_value;
+    this->best_value = getValue(*(this->policy), *(this->Q), *(this->Q_preprocess), data);
+    this->best_q_value = this->best_value;
 
     // std::cout << "INITIAL Q-value for policy: " << best_q_value << std::endl;
     
@@ -327,7 +327,7 @@ namespace whiteice
     policy = *(this->policy);
     policy.importdata(bestx);
     
-    value = best_q_value;
+    value = this->best_q_value;
     iterations = this->iterations;
     
     return true;
@@ -342,7 +342,7 @@ namespace whiteice
 
     if(this->policy == NULL) return false;
 
-    value = best_q_value;
+    value = this->best_q_value;
     iterations = this->iterations;
 
     return true;
@@ -1277,11 +1277,11 @@ namespace whiteice
 	  {
 	    solution_lock.lock();
 	    
-	    if(value > best_value){
+	    if(value > this->best_value){
 	      // improvement (larger mean q-value of the policy)
  
-	      best_value = value;
-	      best_q_value = value; // getValue(*policy, *Q, *Q_preprocess, dtest);
+	      this->best_value = value;
+	      this->best_q_value = value; // getValue(*policy, *Q, *Q_preprocess, dtest);
 	      policy->exportdata(bestx);
 	      auto ptr = this->policy;
 	      this->policy = new whiteice::nnetwork<T>(*policy);
