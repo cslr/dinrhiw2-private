@@ -695,13 +695,11 @@ namespace whiteice
     }
 
     // add preprocessing to dataset
-#if 0
+#if 1
     {
-      data.preprocess
-	(0, whiteice::dataset<T>::dnMeanVarianceNormalization);
+      data.preprocess(0, whiteice::dataset<T>::dnMeanVarianceNormalization);
     
-      data.preprocess
-	(1, whiteice::dataset<T>::dnMeanVarianceNormalization);
+      // data.preprocess(1, whiteice::dataset<T>::dnMeanVarianceNormalization);
     }
 #endif
 

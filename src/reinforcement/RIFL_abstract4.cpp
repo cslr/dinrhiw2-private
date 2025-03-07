@@ -2024,10 +2024,10 @@ namespace whiteice
 		std::lock_guard<std::mutex> lock(Q_mutex);
 		Q.importNetwork(nn);
 
-		//data.clearData(0);
-		//data.clearData(1);
+		data.clearData(0);
+		data.clearData(1);
 
-		//Q_preprocess = data;
+		Q_preprocess = data;
 
 #if 1
 		whiteice::nnetwork<T> nn2;
