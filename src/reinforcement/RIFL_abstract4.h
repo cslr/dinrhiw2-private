@@ -222,7 +222,7 @@ namespace whiteice
     
     class whiteice::RNG<T> rng;
     
-    volatile int thread_is_running;
+    std::atomic<int> thread_is_running;
     std::thread* rifl_thread;
     mutable std::mutex thread_mutex;
     
