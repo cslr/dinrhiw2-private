@@ -143,6 +143,17 @@ namespace whiteice
     // FIXME: don't happen properly now
     void setSmartEpisodes(bool use_episodes){ useEpisodes = use_episodes; }
     bool getSmartEpisodes() const{ return useEpisodes; }
+    
+    void setLoopUpdateFrequency(const float update_hz = 0.0f){
+      LOOP_UPDATE_HZ = update_hz;
+
+      if(LOOP_UPDATE_HZ < 0.0f) LOOP_UPDATE_HZ = 0.0f;
+    }
+
+    float getLoopUpdateFrequency() const{
+      return LOOP_UPDATE_HZ;
+    }
+
 
     void setReinforcementWeighting(bool use_weighting = true){
       use_smart_weights = use_weighting; // does we use weighted sampling using reinforcement-values in RIFL4?
@@ -225,6 +236,8 @@ namespace whiteice
     std::atomic<int> thread_is_running;
     std::thread* rifl_thread;
     mutable std::mutex thread_mutex;
+
+    std::atomic<float> LOOP_UPDATE_HZ = 0.0f;
     
     void loop();
     

@@ -132,6 +132,16 @@ namespace whiteice
     void setSmartEpisodes(bool use_episodes){ useEpisodes = use_episodes; }
     bool getSmartEpisodes() const{ return useEpisodes; }
 
+    void setLoopUpdateFrequency(const float update_hz = 0.0f){
+      LOOP_UPDATE_HZ = update_hz;
+
+      if(LOOP_UPDATE_HZ < 0.0f) LOOP_UPDATE_HZ = 0.0f;
+    }
+
+    float getLoopUpdateFrequency() const{
+      return LOOP_UPDATE_HZ;
+    }
+
     // clear reinforcement statistics
     bool clearStatistics();
 
@@ -199,6 +209,8 @@ namespace whiteice
     std::atomic<int> thread_is_running;
     std::thread* rifl_thread;
     std::mutex thread_mutex;
+
+    std::atomic<float> LOOP_UPDATE_HZ = 0.0f;
     
     void loop();
     

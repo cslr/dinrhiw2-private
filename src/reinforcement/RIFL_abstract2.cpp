@@ -1218,8 +1218,12 @@ namespace whiteice
       lagged_policy.diagnosticsInfo();
     }
 
+    // timing
+    auto start = std::chrono::high_resolution_clock::now();
+
     
     while(thread_is_running > 0){
+
       
       if(learningMode == false){
 	if(dataset_thread){
@@ -1237,6 +1241,30 @@ namespace whiteice
 
 	grad2.stopComputation();
 	grad2.reset();
+      }
+
+      if(LOOP_UPDATE_HZ > 0){
+	// const float LOOP_UPDATE_HZ = 50.0f; // 50 Hz update frequency (1000/50 = 20ms update speed)
+	
+	auto elapsed = std::chrono::high_resolution_clock::now() - start;
+	
+	const long long microseconds_elapsed =
+	  std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+	
+	const long long microseconds_sleep_time = 1000000/LOOP_UPDATE_HZ;
+	
+	if(microseconds_elapsed > microseconds_sleep_time){
+	  whiteice::logging.warn("RIFL_abstract2::loop(): Warning sampling out of sync!");
+	}
+	else{
+	  std::this_thread::sleep_for
+	    (std::chrono::microseconds(microseconds_sleep_time - microseconds_elapsed));
+	  
+	  // sleep 1000000us/100 Hz = 10ms between updates => 100 Hz polling/sampling interval
+	  // std::this_thread::sleep_for(std::chrono::milliseconds(1000/SAMPLING_HZ));
+	}
+	
+	start = std::chrono::high_resolution_clock::now();
       }
       
       if(sleepMode == true){
