@@ -1135,13 +1135,13 @@ namespace whiteice
 
     // number of iteratios to use per epoch for optimization
     const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 500; // WAS: 200
-    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 200; // WAS: 100
+    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 100
 
     const unsigned int Q_OPTIMIZE_ITERATIONS = 500; // 3; // WAS: 25
-    const unsigned int P_OPTIMIZE_ITERATIONS = 200; // 3; // WAS: 50
+    const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 50
     
     // tau = 1.0 => no lagged neural networks [don't work]
-    const T tau = T(1.0); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05]
+    const T tau = T(1.0); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
     
     std::vector< std::vector< rifl2_datapoint<T> > > episodes;
     std::vector< rifl2_datapoint<T> > episode;

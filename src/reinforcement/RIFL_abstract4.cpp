@@ -1473,7 +1473,7 @@ namespace whiteice
     const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 50
     
     // tau = 1.0 => no lagged neural networks [don't work]
-    const T tau = T(1.0); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05]
+    const T tau = T(1.0); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
     
     std::vector< rifl4_datapoint<T> > episode;
 
