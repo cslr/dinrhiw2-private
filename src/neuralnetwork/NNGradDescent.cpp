@@ -977,6 +977,7 @@ namespace whiteice
 	    iterations++;
 	  }
 
+#if 0
 	  if(nn->getBatchNorm()){
 	    std::vector< whiteice::math::vertex<T> > xdata;
 	    
@@ -984,7 +985,7 @@ namespace whiteice
 	    
 	    nn->calculateBatchNorm(xdata, 0); // was: calculate batch norm for only two first layers (was: 2)
 	  }
-
+#endif
 	  
 	  
 	  // calculates gradient 
