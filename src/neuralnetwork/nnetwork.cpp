@@ -5439,8 +5439,8 @@ namespace whiteice
 
 	if(conf_data.size() != 1) return false;
 
-	if(conf_data[0] == T(0.0f)) conf_batchnorm = false;
-	else if(conf_data[0] == T(1.0f)) conf_batchnorm = true;
+	if(conf_data[0] < T(0.50f)) conf_batchnorm = false;
+	else if(conf_data[0] >= T(0.50f)) conf_batchnorm = true;
 	else return false;
       }
 

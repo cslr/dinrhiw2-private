@@ -871,8 +871,8 @@ namespace whiteice
 	data = configuration.accessName(FNN_BATCH_NORM_CFGSTR, 0);
 
 	if(data.size() != 1) return false;
-	if(data[0] == T(0.0f)) batchnorm = false;
-	else if(data[0] == T(1.0f)) batchnorm = true;
+	if(data[0] < T(0.50f)) batchnorm = false;
+	else if(data[0] >= T(0.50f)) batchnorm = true;
 	else return false;
       }
 
@@ -1187,10 +1187,10 @@ namespace whiteice
 	
 	data.resize(1);
 	if(nnets[0]->getBatchNorm()){
-	  data[0] = T(1.0f);
+	  data[0] = T(1.00f);
 	}
 	else{
-	  data[0] = T(0.0f);
+	  data[0] = T(0.00f);
 	}
 
 	if(configuration.add(configuration.getCluster(FNN_BATCH_NORM_CFGSTR), data) == false)
