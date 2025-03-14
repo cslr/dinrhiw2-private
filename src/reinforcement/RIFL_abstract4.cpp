@@ -1466,10 +1466,10 @@ namespace whiteice
   void RIFL_abstract4<T>::loop()
   {
     // number of iteratios to use per epoch for optimization
-    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 200; // WAS: 200
+    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 500; // WAS: 200
     const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 200
 
-    const unsigned int Q_OPTIMIZE_ITERATIONS = 200; // 3; // WAS: 25
+    const unsigned int Q_OPTIMIZE_ITERATIONS = 500; // 3; // WAS: 25
     const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 25
     
     // tau = 1.0 => no lagged neural networks [don't work]
