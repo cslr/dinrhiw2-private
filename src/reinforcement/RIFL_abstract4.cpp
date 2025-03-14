@@ -111,7 +111,7 @@ namespace whiteice
 	  
 	  nn.randomize(2, T(0.5)); // was 1.0
 	  nn.setResidual(true);
-	  nn.setBatchNorm(false);
+	  nn.setBatchNorm(true); // NOW: Q-also has batch norm enabled
 	  
 	  Q.importNetwork(nn);
 	  lagged_Q.importNetwork(nn);
@@ -273,7 +273,7 @@ namespace whiteice
 	  
 	  nn.randomize(2, T(0.5)); // was 1.0
 	  nn.setResidual(true);
-	  nn.setBatchNorm(false);
+	  nn.setBatchNorm(true); // NOW: Q-also have batch norm enabled! (=> needs many iterations to stabilize)
 	  
 	  Q.importNetwork(nn);
 	  lagged_Q.importNetwork(nn);
@@ -1467,10 +1467,10 @@ namespace whiteice
   {
     // number of iteratios to use per epoch for optimization
     const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 500; // WAS: 200
-    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 200
+    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 100
 
     const unsigned int Q_OPTIMIZE_ITERATIONS = 500; // 3; // WAS: 25
-    const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 25
+    const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 50
     
     // tau = 1.0 => no lagged neural networks [don't work]
     const T tau = T(1.0); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05]
@@ -1703,7 +1703,7 @@ namespace whiteice
 	    
 	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
 
-	    u += T(0.60f)*noise; // was 0.1, 0.3*
+	    u += T(1.00f)*noise; // was 0.1, 0.3*, 0.6
 
 	    for(unsigned int i=0;i<u.size();i++){ // action is [0,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
@@ -1751,13 +1751,12 @@ namespace whiteice
 	    
 	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
 	    
-	    u += T(0.60f)*noise; // was 0.1, 0.3*
+	    u += T(1.00f)*noise; // was 0.1, 0.3*, 0.6
 	    
 	    for(unsigned int i=0;i<u.size();i++){ // action is [0,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
 	      else if(u[i] > T(1.0f)) u[i] = T(1.0f);
 	    }
-
 	    
 #if 0
 	    rng.uniform(u); // [0,1] valued actions!
@@ -1765,7 +1764,6 @@ namespace whiteice
 	    for(unsigned int i=0;i<u.size();i++)
 	      u[i] = T(2.0f)*u[i] - T(1.0f); // [-1,+1]
 #endif
-
 	    
 	    random = true;
 	  }
@@ -2204,18 +2202,18 @@ namespace whiteice
 
 	    {
 	      std::lock_guard<std::mutex> lock(database_mutex);
+	      std::lock_guard<std::mutex> lockh(has_model_mutex);
 	      
 	      data.clear();
 	      //data.createCluster("input-state", numStates + numActions);
 	      //data.createCluster("output-qvalue", 1);
-	      
 	      
 	      dataset_thread = new CreateRIFL4dataset<T>(*this,
 							 database,
 							 episodes,
 							 episodes_weights,
 							 database_mutex,
-							 epoch[0]);
+							 hasModel[0]);
 	    }
 	    
 	    dataset_thread->start(SAMPLESIZE, useEpisodes);

@@ -106,7 +106,7 @@ namespace whiteice
 	  
 	  nn.randomize(2, T(0.5)); // was 1.0
 	  nn.setResidual(true);
-	  nn.setBatchNorm(false);
+	  nn.setBatchNorm(true); // WAS: Q didn't have batch norm (NNGradDescent iteratively support batchnorm)
 	  
 	  Q.importNetwork(nn);
 	  lagged_Q.importNetwork(nn);
@@ -264,7 +264,7 @@ namespace whiteice
 	  
 	  nn.randomize(2, T(0.5)); // was 1.0
 	  nn.setResidual(true);
-	  nn.setBatchNorm(false);
+	  nn.setBatchNorm(true); // BatchNorm wasn't enabled for Q network
 	  
 	  Q.importNetwork(nn);
 
@@ -1135,10 +1135,10 @@ namespace whiteice
 
     // number of iteratios to use per epoch for optimization
     const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 500; // WAS: 200
-    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 200
+    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 200; // WAS: 100
 
     const unsigned int Q_OPTIMIZE_ITERATIONS = 500; // 3; // WAS: 25
-    const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 25
+    const unsigned int P_OPTIMIZE_ITERATIONS = 200; // 3; // WAS: 50
     
     // tau = 1.0 => no lagged neural networks [don't work]
     const T tau = T(1.0); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05]
@@ -1785,6 +1785,7 @@ namespace whiteice
 
 	    {
 	      std::lock_guard<std::mutex> lock(database_mutex);
+	      std::lock_guard<std::mutex> lockh(has_model_mutex);
 	      
 	      data.clear();
 	      //data.createCluster("input-state", numStates + numActions);
@@ -1795,7 +1796,7 @@ namespace whiteice
 							 database,
 							 episodes,
 							 database_mutex,
-							 epoch[0]);
+							 hasModel[0]);
 	    }
 	    
 	    dataset_thread->start(SAMPLESIZE, useEpisodes);
