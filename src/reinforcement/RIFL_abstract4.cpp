@@ -182,7 +182,7 @@ namespace whiteice
       
     }
     
-    
+   
     thread_is_running = 0;
     rifl_thread = nullptr;
   }
