@@ -515,6 +515,9 @@ namespace whiteice
     reinforcements.clear();
     reinforcements_random.clear();
 
+    distances.clear();
+    distances_random.clear();
+
     return true; 
   }
   
@@ -522,6 +525,7 @@ namespace whiteice
   // how many percent smaller is reinforcement value with random actions vs policy actions
   template <typename T>
   bool RIFL_abstract4<T>::executionStatistics(T& percent_change,
+					      T& distances_percent_change,
 					      const bool rescale_to_min_value,
 					      const bool use_only_most_recent) const
   {
@@ -532,128 +536,255 @@ namespace whiteice
     if(reinforcements.size() <= 10 || reinforcements_random.size() <= 10)
       return false;
 
+    if(distances.size() <= 10 || distances_random.size() <= 10)
+      return false;
+
     {
       std::lock_guard<std::mutex> locke(epsilon_mutex);
       if(epsilon == T(0.0f) || epsilon == T(1.0f)) return false;
     }
 
-    T mean = T(0.0), stdev = T(0.0);
-    T mean_random = T(0.0), stdev_random = T(0.0);
-
-    if(use_only_most_recent == false){
-      for(const auto& r : reinforcements){
-	mean += r;
-	stdev += r*r;
-      }
-
-      mean /= reinforcements.size();
-      stdev /= reinforcements.size();
-
-      stdev -= mean*mean;
-      if(stdev < T(0.0))
-	stdev = T(0.0);
-
-      stdev = sqrt(stdev/reinforcements.size()); // mean's stdev
-    }
-    else{
-      int SAMPLES = 1;
-      {
-	std::lock_guard<std::mutex> locke(epsilon_mutex);
-	SAMPLES = (int)round(1000*epsilon.c[0]);
-      }
+    // reinforcement
+    {
+      T mean = T(0.0), stdev = T(0.0);
+      T mean_random = T(0.0), stdev_random = T(0.0);
       
-      if(SAMPLES <= 0) SAMPLES = 1;
-      
-      int start = reinforcements.size() - SAMPLES;
-      int end = reinforcements.size();
-
-      if(start <= 0) start = 0;
-
-      for(int i=start;i<end;i++){
-	const auto& r = reinforcements[i];
+      if(use_only_most_recent == false){
+	for(const auto& r : reinforcements){
+	  mean += r;
+	  stdev += r*r;
+	}
 	
-	mean += r;
-	stdev += r*r;
+	mean /= reinforcements.size();
+	stdev /= reinforcements.size();
+	
+	stdev -= mean*mean;
+	if(stdev < T(0.0))
+	  stdev = T(0.0);
+	
+	stdev = sqrt(stdev/reinforcements.size()); // mean's stdev
       }
+      else{
+	int SAMPLES = 1;
+	{
+	  std::lock_guard<std::mutex> locke(epsilon_mutex);
+	  SAMPLES = (int)round(1000*epsilon.c[0]);
+	}
+	
+	if(SAMPLES <= 0) SAMPLES = 1;
+	
+	int start = reinforcements.size() - SAMPLES;
+	int end = reinforcements.size();
+	
+	if(start <= 0) start = 0;
+	
+	for(int i=start;i<end;i++){
+	  const auto& r = reinforcements[i];
+	  
+	  mean += r;
+	  stdev += r*r;
+	}
+	
+	mean /= (end-start);
+	stdev /= (end-start);
+	
+	stdev -= mean*mean;
+	if(stdev < T(0.0))
+	  stdev = T(0.0);
+	
+	stdev = sqrt(stdev/(end-start)); // mean's stdev
+      }
+      
+      
+      T min_random = T(0.0);
+      
+      if(use_only_most_recent == false){
+	min_random = reinforcements_random[0];
+	
+	for(const auto& r : reinforcements_random){
+	  mean_random += r;
+	  stdev_random += r*r;
+	  if(r < min_random) min_random = r;
+	}
+	
+	mean_random /= reinforcements_random.size();
+	stdev_random /= reinforcements_random.size();
+	
+	stdev_random -= mean_random*mean_random;
+	if(stdev_random < T(0.0))
+	  stdev_random = T(0.0);
+	
+	stdev_random = sqrt(stdev_random/reinforcements_random.size()); // mean's stdev
+      }
+      else{
+	int SAMPLES = 1;
+	
+	{
+	  std::lock_guard<std::mutex> locke(epsilon_mutex);
+	  SAMPLES = (int)round(1000*(1.0 - epsilon.c[0]));
+	}
+	
+	if(SAMPLES <= 0) SAMPLES = 1;
+	
+	int start = reinforcements_random.size()-SAMPLES;
+	int end = reinforcements_random.size();
+	
+	if(start <= 0) start = 0;
+	
+	min_random = reinforcements_random[start];
+	
+	for(int i=start;i<end;i++){
+	  const auto& r = reinforcements_random[i];
+	  mean_random += r;
+	  stdev_random += r*r;
+	  if(r < min_random) min_random = r;
+	}
+	
+	mean_random /= (end-start);
+	stdev_random /= (end-start);
+	
+	stdev_random -= mean_random*mean_random;
+	if(stdev_random < T(0.0))
+	  stdev_random = T(0.0);
+	
+	stdev_random = sqrt(stdev_random/(end-start)); // mean's stdev
+      }
+      
+      if(rescale_to_min_value == false)
+	min_random = 0.0;
+      
+      // p% = (mean - mean_random)/mean
+      // min(p%) = (mean-stdev -(mean_random+stdev_random))/(mean+stdev)
+      
+      // if(mean+stdev <= T(0.0)) return false;
+      
+      if((mean_random-min_random) <= T(0.0)) return false;
+      
+      // percent_change = (mean-stdev - (mean_random+stdev_random))/(mean+stdev);
 
-      mean /= (end-start);
-      stdev /= (end-start);
-
-      stdev -= mean*mean;
-      if(stdev < T(0.0))
-	stdev = T(0.0);
-
-      stdev = sqrt(stdev/(end-start)); // mean's stdev
+      percent_change = T(100.0)*(mean - mean_random)/(mean_random - min_random); // percentages
     }
-    
 
-    T min_random = T(0.0);
-
-    if(use_only_most_recent == false){
-      min_random = reinforcements_random[0];
+    // distances
+    {
+      T mean = T(0.0), stdev = T(0.0);
+      T mean_random = T(0.0), stdev_random = T(0.0);
       
-      for(const auto& r : reinforcements_random){
-	mean_random += r;
-	stdev_random += r*r;
-	if(r < min_random) min_random = r;
+      if(use_only_most_recent == false){
+	for(const auto& r : distances){
+	  mean += r;
+	  stdev += r*r;
+	}
+	
+	mean /= distances.size();
+	stdev /= distances.size();
+	
+	stdev -= mean*mean;
+	if(stdev < T(0.0))
+	  stdev = T(0.0);
+	
+	stdev = sqrt(stdev/distances.size()); // mean's stdev
+      }
+      else{
+	int SAMPLES = 1;
+	{
+	  std::lock_guard<std::mutex> locke(epsilon_mutex);
+	  SAMPLES = (int)round(1000*epsilon.c[0]);
+	}
+	
+	if(SAMPLES <= 0) SAMPLES = 1;
+	
+	int start = distances.size() - SAMPLES;
+	int end = distances.size();
+	
+	if(start <= 0) start = 0;
+	
+	for(int i=start;i<end;i++){
+	  const auto& r = distances[i];
+	  
+	  mean += r;
+	  stdev += r*r;
+	}
+	
+	mean /= (end-start);
+	stdev /= (end-start);
+	
+	stdev -= mean*mean;
+	if(stdev < T(0.0))
+	  stdev = T(0.0);
+	
+	stdev = sqrt(stdev/(end-start)); // mean's stdev
       }
       
-      mean_random /= reinforcements_random.size();
-      stdev_random /= reinforcements_random.size();
-
-      stdev_random -= mean_random*mean_random;
-      if(stdev_random < T(0.0))
-	stdev_random = T(0.0);
       
-      stdev_random = sqrt(stdev_random/reinforcements_random.size()); // mean's stdev
+      T min_random = T(0.0);
+      
+      if(use_only_most_recent == false){
+	min_random = distances_random[0];
+	
+	for(const auto& r : distances_random){
+	  mean_random += r;
+	  stdev_random += r*r;
+	  if(r < min_random) min_random = r;
+	}
+	
+	mean_random /= distances_random.size();
+	stdev_random /= distances_random.size();
+	
+	stdev_random -= mean_random*mean_random;
+	if(stdev_random < T(0.0))
+	  stdev_random = T(0.0);
+	
+	stdev_random = sqrt(stdev_random/reinforcements_random.size()); // mean's stdev
+      }
+      else{
+	int SAMPLES = 1;
+	
+	{
+	  std::lock_guard<std::mutex> locke(epsilon_mutex);
+	  SAMPLES = (int)round(1000*(1.0 - epsilon.c[0]));
+	}
+	
+	if(SAMPLES <= 0) SAMPLES = 1;
+	
+	int start = distances_random.size()-SAMPLES;
+	int end = distances_random.size();
+	
+	if(start <= 0) start = 0;
+	
+	min_random = distances_random[start];
+	
+	for(int i=start;i<end;i++){
+	  const auto& r = distances_random[i];
+	  mean_random += r;
+	  stdev_random += r*r;
+	  if(r < min_random) min_random = r;
+	}
+	
+	mean_random /= (end-start);
+	stdev_random /= (end-start);
+	
+	stdev_random -= mean_random*mean_random;
+	if(stdev_random < T(0.0))
+	  stdev_random = T(0.0);
+	
+	stdev_random = sqrt(stdev_random/(end-start)); // mean's stdev
+      }
+      
+      if(rescale_to_min_value == false)
+	min_random = 0.0;
+      
+      // p% = (mean - mean_random)/mean
+      // min(p%) = (mean-stdev -(mean_random+stdev_random))/(mean+stdev)
+      
+      // if(mean+stdev <= T(0.0)) return false;
+      
+      if((mean_random-min_random) <= T(0.0)) return false;
+      
+      // percent_change = (mean-stdev - (mean_random+stdev_random))/(mean+stdev);
+
+      distances_percent_change = T(100.0)*(mean_random - mean)/(mean_random - min_random); // percentages
     }
-    else{
-      int SAMPLES = 1;
-      
-      {
-	std::lock_guard<std::mutex> locke(epsilon_mutex);
-	SAMPLES = (int)round(1000*(1.0 - epsilon.c[0]));
-      }
-      
-      if(SAMPLES <= 0) SAMPLES = 1;
-      
-      int start = reinforcements_random.size()-SAMPLES;
-      int end = reinforcements_random.size();
-
-      if(start <= 0) start = 0;
-      
-      min_random = reinforcements_random[start];
-      
-      for(int i=start;i<end;i++){
-	const auto& r = reinforcements_random[i];
-	mean_random += r;
-	stdev_random += r*r;
-	if(r < min_random) min_random = r;
-      }
-      
-      mean_random /= (end-start);
-      stdev_random /= (end-start);
-
-      stdev_random -= mean_random*mean_random;
-      if(stdev_random < T(0.0))
-	stdev_random = T(0.0);
-      
-      stdev_random = sqrt(stdev_random/(end-start)); // mean's stdev
-    }
-    
-    if(rescale_to_min_value == false)
-      min_random = 0.0;
-
-    // p% = (mean - mean_random)/mean
-    // min(p%) = (mean-stdev -(mean_random+stdev_random))/(mean+stdev)
-
-    // if(mean+stdev <= T(0.0)) return false;
-
-    if((mean_random-min_random) <= T(0.0)) return false;
-
-    // percent_change = (mean-stdev - (mean_random+stdev_random))/(mean+stdev);
-
-    percent_change = T(100.0)*(mean - mean_random)/(mean_random - min_random); // percentages
 
     return true;
   }
@@ -752,6 +883,8 @@ namespace whiteice
 
       db.createCluster("measurements", reinforcements.size());
       db.createCluster("measurements_random", reinforcements_random.size());
+      db.createCluster("distances", distances.size());
+      db.createCluster("distances_random", distances_random.size());
 
       whiteice::math::vertex<T> v;
       v.resize(reinforcements.size());
@@ -773,6 +906,28 @@ namespace whiteice
 
       if(db.add(1, v) == false){
 	logging.error("RIFL_abstract4::save(): saving measurements data failed (2).");
+	return false;
+      }
+
+      v.resize(distances.size());
+      v.zero();
+
+      for(unsigned int i=0;i<distances.size();i++)
+	v[i] = distances[i];
+
+      if(db.add(2, v) == false){
+	logging.error("RIFL_abstract4::save(): saving measurements data failed (3).");
+	return false;
+      }
+
+      v.resize(distances_random.size());
+      v.zero();
+
+      for(unsigned int i=0;i<distances_random.size();i++)
+	v[i] = distances_random[i];
+
+      if(db.add(3, v) == false){
+	logging.error("RIFL_abstract4::save(): saving measurements data failed (4).");
 	return false;
       }
 
@@ -1019,6 +1174,8 @@ namespace whiteice
     auto database_load = database;
     auto reinforcements_load = reinforcements;
     auto reinforcements_random_load = reinforcements_random;
+    auto distances_load = distances;
+    auto distances_random_load = distances_random;
     auto episodes_load = episodes;
     auto episodes_weights_load = episodes_weights;
 
@@ -1136,7 +1293,21 @@ namespace whiteice
 
       for(unsigned int i=0;i<reinforcements_random_load.size();i++)
 	reinforcements_random_load[i] = v[i];
-      
+
+      v.resize(db.dimension(2));
+      v = db.access(1,0); 
+      distances_load.resize(v.size());
+
+      for(unsigned int i=0;i<distances_load.size();i++)
+	distances_load[i] = v[i];
+
+      v.resize(db.dimension(3));
+      v = db.access(1,0); 
+      distances_random_load.resize(v.size());
+
+      for(unsigned int i=0;i<distances_random_load.size();i++)
+	distances_random_load[i] = v[i];
+
     }
 
     {
@@ -1376,6 +1547,8 @@ namespace whiteice
       database = database_load;
       reinforcements = reinforcements_load;
       reinforcements_random = reinforcements_random_load;
+      distances = distances_load;
+      distances_random = distances_random_load;
       episodes = episodes_load;
       episodes_weights = episodes_weights_load;
     }
@@ -1530,6 +1703,8 @@ namespace whiteice
       std::lock_guard<std::mutex> lockr(reinforcements_mutex);
       reinforcements.clear();
       reinforcements_random.clear();
+      distances.clear();
+      distances_random.clear();
     }
 
     bool random = false;
@@ -1856,11 +2031,12 @@ namespace whiteice
       
       whiteice::math::vertex<T> newstate;
       T reinforcement = T(0.0);
+      T distance = T(0.0);
 
       // 3. perform action and get newstate and reinforcement
       {
 	
-	if(performAction(action, newstate, reinforcement, endFlag) == false){
+	if(performAction(action, newstate, reinforcement, distance, endFlag) == false){
 	  //std::cout << "ERROR: RIFL_abstract4::performAction() FAILED." << std::endl;
 	  // whiteice::logging.error("ERROR: RIFL_abstact::performAction() FAILED.");
 	  performActionFailed++;
@@ -1899,8 +2075,14 @@ namespace whiteice
 	{
 	  std::lock_guard<std::mutex> lockr(reinforcements_mutex);
 
-	  if(random) reinforcements_random.push_back(reinforcement);
-	  else reinforcements.push_back(reinforcement);
+	  if(random){
+	    reinforcements_random.push_back(reinforcement);
+	    distances_random.push_back(distance);
+	  }
+	  else{
+	    reinforcements.push_back(reinforcement);
+	    distances.push_back(distance);
+	  }
 	}
 
 	// for synchronizing access to database datastructure

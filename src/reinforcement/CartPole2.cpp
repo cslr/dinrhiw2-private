@@ -285,7 +285,9 @@ namespace whiteice
   template <typename T>
   bool CartPole2<T>::performAction(const whiteice::math::vertex<T>& action,
 				   whiteice::math::vertex<T>& newstate,
-				   T& reinforcement, bool& endFlag)
+				   T& reinforcement,
+				   T& distance,
+				   bool& endFlag)
   {
     // whiteice::logging.info("CartPole2: entering performAction()");
     
@@ -437,6 +439,8 @@ namespace whiteice
       }
 	
     }
+
+    distance = reinforcement;
 
     return true;
   }

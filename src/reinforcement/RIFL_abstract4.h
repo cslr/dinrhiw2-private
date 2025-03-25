@@ -167,7 +167,8 @@ namespace whiteice
     bool clearStatistics();
 
     // how many percent smaller is reinforcement value with random actions vs policy actions
-    bool executionStatistics(T& percent_change, const bool rescale_to_min_value = false, const bool use_only_most_recent = false) const;
+    bool executionStatistics(T& percent_change, T& distances_percent_change,
+			     const bool rescale_to_min_value = false, const bool use_only_most_recent = false) const;
     
     // saves learnt Reinforcement Learning Model to file
     bool save(const std::string& filename) const;
@@ -186,6 +187,7 @@ namespace whiteice
     virtual bool performAction(const whiteice::math::vertex<T>& action,
 			       whiteice::math::vertex<T>& newstate,
 			       T& reinforcement,
+			       T& distance,
 			       bool& endFlag) = 0;
 
     void onehot_prob_select(const whiteice::math::vertex<T>& action,
@@ -214,6 +216,9 @@ namespace whiteice
     mutable std::mutex reinforcements_mutex;
     std::vector<T> reinforcements;
     std::vector<T> reinforcements_random;
+
+    std::vector<T> distances;
+    std::vector<T> distances_random;
 
     
     std::vector<unsigned int> hasModel;

@@ -43,7 +43,8 @@ namespace whiteice
       
       virtual bool performAction(const whiteice::math::vertex<T>& action,
 				 whiteice::math::vertex<T>& newstate,
-				 T& reinforcement, bool& endFlag);
+				 T& reinforcement, T& distance,
+				 bool& endFlag);
 
       // helper function: normalizes theta values back into [-pi, pi] range
       T normalizeTheta(const T t) const ;
