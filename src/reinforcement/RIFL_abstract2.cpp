@@ -1087,17 +1087,17 @@ namespace whiteice
       whiteice::dataset<T> db;
 
       if(db.load(buffer) == false){
-	logging.error("RIFL_abstract2::save(): loading measurements data failed.");
+	logging.error("RIFL_abstract2::load(): loading measurements data failed.");
 	return false;
       }
 
-      if(db.getNumberOfClusters() != 2){
-	logging.error("RIFL_abstract2::save(): loading measurements data failed (2).");
+      if(db.getNumberOfClusters() != 4){
+	logging.error("RIFL_abstract2::load(): loading measurements data failed (2).");
 	return false;
       }
 
-      if(db.size(0) != 1 || db.size(1) != 1){
-	logging.error("RIFL_abstract2::save(): loading measurements data failed (3).");
+      if(db.size(0) != 1 || db.size(1) != 1  || db.size(2) != 1 || db.size(3) != 1){
+	logging.error("RIFL_abstract2::sload(): loading measurements data failed (3).");
 	return false;
       }
 
