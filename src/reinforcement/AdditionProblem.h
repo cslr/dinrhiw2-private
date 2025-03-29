@@ -32,6 +32,7 @@ namespace whiteice
     virtual bool performAction(const whiteice::math::vertex<T>& action,
 			       whiteice::math::vertex<T>& newstate,
 			       T& reinforcement,
+			       T& distance,
 			       bool& endFlag);
     
   protected:

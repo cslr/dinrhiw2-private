@@ -7,7 +7,8 @@ CXX= @CXX@
 OBJECTS = RIFL_abstract.o RIFL_abstract3.o CartPole.o PolicyGradAscent.o RIFL_abstract2.o CartPole2.o \
 	CreateRIFLdataset.o CreateRIFL3dataset.o CreateRIFL2dataset.o CreatePolicyDataset.o \
 	RIFL_abstract4.o CreateRIFL4dataset.o CreatePolicy4Dataset.o Policy4GradAscent.o \
-	RotationProblem.o AdditionProblem.o AdditionProblem4.o
+	RotationProblem.o AdditionProblem.o AdditionProblem4.o EvolutionStrategies.o \
+	IPD_ES.o
 
 EXTRA_OBJECTS = ../dataset.o ../dynamic_bitset.o \
 	../math/vertex.o ../math/matrix.o ../math/ownexception.o \
@@ -45,12 +46,15 @@ TEST6_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) tst/test_minihack2.o MinihackRIFL.o
 
 TEST7_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) tst/test5.o
 
+TEST8_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) tst/test_ipd.o
+
 
 
 SOURCES = RIFL_abstract.cpp RIFL_abstract3.cpp CartPole.cpp PolicyGradAscent.cpp RIFL_abstract2.cpp \
 	CreateRIFLdataset.cpp CreateRIFL3dataset.cpp CreateRIFL2dataset.cpp CreatePolicyDataset.cpp \
 	RIFL_abstract4.cpp CreateRIFL4dataset.cpp CreatePolicy4Dataset.cpp Policy4GradAscent.cpp \
 	RotationProblem.cpp AdditionProblem.cpp MinihackRIFL2.cpp MinihackRIFL.cpp AdditionProblem4.cpp \
+	EvolutionStrategies.cpp IPD_ES.cpp \
 	CartPole2.cpp tst/test.cpp tst/test2.cpp tst/test3.cpp tst/test4a.cpp \
 	tst/test_minihack.cpp tst/test_minihack2.cpp \
 	../dataset.cpp \
@@ -86,6 +90,7 @@ TARGET4A=testsuite4a
 TARGET5=minihack_test
 TARGET6=minihack2_test
 TARGET7=testsuite5
+TARGET8=testsuite_ipd
 
 CXXFLAGS=-Wall $(CFLAGS) -g -I. -I.. -I../.. -Iexceptions -I../math -I../neuralnetwork -I../hmm -I../rnn -I../crypto -I../datamining $(OPTIMIZE)
 # -I/usr/include/python3.9 -I/mingw64/include/python3.9
@@ -103,13 +108,14 @@ CD = cd
 ##################################################
 
 # $(TEST5_OBJECTS) $(TEST6_OBJECTS)
-all: $(TEST1_OBJECTS) $(TEST2_OBJECTS) $(TEST3_OBJECTS) $(TEST4_OBJECTS) $(TEST4A_OBJECTS) $(TEST7_OBJECTS)
+all: $(TEST1_OBJECTS) $(TEST2_OBJECTS) $(TEST3_OBJECTS) $(TEST4_OBJECTS) $(TEST4A_OBJECTS) $(TEST7_OBJECTS) $(TEST8_OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET1) $(TEST1_OBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET2) $(TEST2_OBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET3) $(TEST3_OBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET4) $(TEST4_OBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET4A) $(TEST4A_OBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET7) $(TEST7_OBJECTS) $(LIBS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET8) $(TEST8_OBJECTS) $(LIBS)
 
 # $(CXX) $(CXXFLAGS) -o $(TARGET5) $(TEST5_OBJECTS) $(LIBS) $(LIBS_PYTHON)
 # $(CXX) $(CXXFLAGS) -o $(TARGET6) $(TEST6_OBJECTS) $(LIBS) $(LIBS_PYTHON)
@@ -131,6 +137,8 @@ clean:
 	$(RM) $(TARGET6)
 	$(RM) $(TEST7_OBJECTS)
 	$(RM) $(TARGET7)
+	$(RM) $(TEST8_OBJECTS)
+	$(RM) $(TARGET8)
 	$(RM) *~
 
 realclean: clean

@@ -115,7 +115,9 @@ namespace whiteice
   template <typename T>
   bool RotationProblem<T>::performAction(const whiteice::math::vertex<T>& action,
 					 whiteice::math::vertex<T>& newstate,
-					 T& reinforcement, bool& endFlag)
+					 T& reinforcement,
+					 T& distance,
+					 bool& endFlag)
   {
     // whiteice::logging.info("RotationProblem: entering performAction()");
     
@@ -158,6 +160,8 @@ namespace whiteice
 	}
       }
     }
+
+    distance = reinforcement;
     
     return true;
   }

@@ -6,7 +6,9 @@ CXX= g++
 
 OBJECTS = RIFL_abstract.o RIFL_abstract3.o CartPole.o PolicyGradAscent.o RIFL_abstract2.o CartPole2.o \
 	CreateRIFLdataset.o CreateRIFL3dataset.o CreateRIFL2dataset.o CreatePolicyDataset.o \
-	RotationProblem.o AdditionProblem.o
+	RIFL_abstract4.o CreateRIFL4dataset.o CreatePolicy4Dataset.o Policy4GradAscent.o \
+	RotationProblem.o AdditionProblem.o AdditionProblem4.o EvolutionStrategies.o \
+	IPD_ES.o
 
 EXTRA_OBJECTS = ../dataset.o ../dynamic_bitset.o \
 	../math/vertex.o ../math/matrix.o ../math/ownexception.o \
@@ -16,12 +18,14 @@ EXTRA_OBJECTS = ../dataset.o ../dynamic_bitset.o \
 	../neuralnetwork/nnetwork.o ../neuralnetwork/bayesian_nnetwork.o \
 	../conffile.o ../neuralnetwork/NNGradDescent.o \
 	../math/SGD.o ../neuralnetwork/SGD_recurrent_nnetwork.o \
+	../neuralnetwork/pretrain.o \
 	../math/superresolution.o ../math/modular.o \
 	../neuralnetwork/deep_ica_network_priming.o ../math/linear_equations.o \
 	../Log.o ../math/norms.o ../neuralnetwork/stackedRBM_pretraining.o \
 	../neuralnetwork/DBN.o ../neuralnetwork/GBRBM.o ../neuralnetwork/BBRBM.o \
 	../math/outerproduct.o \
 	../math/LBFGS.o ../neuralnetwork/rLBFGS_recurrent_nnetwork.o \
+	../math/pocketfft/pocketfft.o \
 	../neuralnetwork/rLBFGS_recurrent_nnetwork_softmax_actions.o \
 	../neuralnetwork/LBFGS_GBRBM.o \
 	../neuralnetwork/LBFGS_BBRBM.o ../math/RNG.o
@@ -40,10 +44,17 @@ TEST5_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) tst/test_minihack.o MinihackRIFL2.o
 
 TEST6_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) tst/test_minihack2.o MinihackRIFL.o
 
+TEST7_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) tst/test5.o
+
+TEST8_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) tst/test_ipd.o
+
+
 
 SOURCES = RIFL_abstract.cpp RIFL_abstract3.cpp CartPole.cpp PolicyGradAscent.cpp RIFL_abstract2.cpp \
 	CreateRIFLdataset.cpp CreateRIFL3dataset.cpp CreateRIFL2dataset.cpp CreatePolicyDataset.cpp \
-	RotationProblem.cpp AdditionProblem.cpp MinihackRIFL2.cpp MinihackRIFL.cpp \
+	RIFL_abstract4.cpp CreateRIFL4dataset.cpp CreatePolicy4Dataset.cpp Policy4GradAscent.cpp \
+	RotationProblem.cpp AdditionProblem.cpp MinihackRIFL2.cpp MinihackRIFL.cpp AdditionProblem4.cpp \
+	EvolutionStrategies.cpp IPD_ES.cpp \
 	CartPole2.cpp tst/test.cpp tst/test2.cpp tst/test3.cpp tst/test4a.cpp \
 	tst/test_minihack.cpp tst/test_minihack2.cpp \
 	../dataset.cpp \
@@ -63,10 +74,11 @@ SOURCES = RIFL_abstract.cpp RIFL_abstract3.cpp CartPole.cpp PolicyGradAscent.cpp
 	../math/LBFGS.cpp ../neuralnetwork/rLBFGS_recurrent_nnetwork.cpp \
 	../neuralnetwork/rLBFGS_recurrent_nnetwork_softmax_actions.cpp \
 	../neuralnetwork/LBFGS_GBRBM.cpp ../neuralnetwork/LBFGS_BBRBM.cpp \
-	../math/RNG.cpp
+	../math/RNG.cpp ../math/pocketfft/pocketfft.c
 
-OPTIMIZE=-fPIC -O3 -g -DAMD64 -ffast-math -mtune=native -ftree-vectorize -fopenmp -mtune=native
-CFLAGS=-g -O2 -Wno-deprecated -Wno-strict-aliasing -Wno-attributes -Wno-class-memaccess -I/usr/include/ -I/usr/local/include -I/ucrt64/include/ -I/ucrt64/include/openblas/ -DOPENBLAS -I/ucrt64/include/openblas/ -DWINOS `pkg-config python3 --cflags`
+OPTIMIZE=-fPIC -O2 -g -DAMD64 -mtune=native -ftree-vectorize -fopenmp -mtune=native
+CFLAGS=-g -O2 -Wno-deprecated -Wno-strict-aliasing -Wno-attributes -Wno-class-memaccess -I/usr/include/ -I/usr/local/include/ -DAMDBLIS -I/opt/amd-blis/include/LP64/ 
+# `python3-config --cflags`
 
 # -DUSE_SDL `pkg-config sdl2 --cflags`
 
@@ -77,13 +89,16 @@ TARGET4=testsuite4
 TARGET4A=testsuite4a
 TARGET5=minihack_test
 TARGET6=minihack2_test
+TARGET7=testsuite5
+TARGET8=testsuite_ipd
 
-CXXFLAGS=-Wall $(CFLAGS) -g -I. -I.. -I../.. -Iexceptions -I../math -I../neuralnetwork -I../hmm -I../rnn -I../crypto $(OPTIMIZE) -I/usr/include/python3.9 -I/mingw64/include/python3.9
+CXXFLAGS=-Wall $(CFLAGS) -g -I. -I.. -I../.. -Iexceptions -I../math -I../neuralnetwork -I../hmm -I../rnn -I../crypto -I../datamining $(OPTIMIZE)
+# -I/usr/include/python3.9 -I/mingw64/include/python3.9
 
-LIBS=-L/usr/local/lib -L/ucrt64/lib/ -lgmp -lpthread -L/usr/lib/  -L/ucrt64/lib/ -lopenblas -lstdc++
+LIBS=-L/usr/local/lib -lgmp -lpthread -L/usr/lib/  -lblis-mt -L/opt/amd-blis/lib/LP64/ -lstdc++
 
-LIBS_PYTHON=-lcrypt -lpthread -ldl -lutil -lm -L/usr/lib/python3.9/config-3.9-x86_64-linux-gnu -L/mingw64/lib/ -lpython3.9
-LIBS_PYTHON=`pkg-config python3 --libs`
+# LIBS_PYTHON=-lcrypt -lpthread -ldl -lutil -lm -L/usr/lib/python3.9/config-3.9-x86_64-linux-gnu -L/mingw64/lib/ -lpython3.9 `pkg-config python3 --libs`
+LIBS_PYTHON=`python3-config --embed --ldflags`
 
 # `pkg-config sdl2 --libs`
 
@@ -92,14 +107,18 @@ CD = cd
 
 ##################################################
 
-all: $(TEST1_OBJECTS) $(TEST2_OBJECTS) $(TEST3_OBJECTS) $(TEST4_OBJECTS) $(TEST4A_OBJECTS) $(TEST5_OBJECTS) $(TEST6_OBJECTS)
+# $(TEST5_OBJECTS) $(TEST6_OBJECTS)
+all: $(TEST1_OBJECTS) $(TEST2_OBJECTS) $(TEST3_OBJECTS) $(TEST4_OBJECTS) $(TEST4A_OBJECTS) $(TEST7_OBJECTS) $(TEST8_OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET1) $(TEST1_OBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET2) $(TEST2_OBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET3) $(TEST3_OBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET4) $(TEST4_OBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET4A) $(TEST4A_OBJECTS) $(LIBS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET5) $(TEST5_OBJECTS) $(LIBS) $(LIBS_PYTHON)
-	$(CXX) $(CXXFLAGS) -o $(TARGET6) $(TEST6_OBJECTS) $(LIBS) $(LIBS_PYTHON)
+	$(CXX) $(CXXFLAGS) -o $(TARGET7) $(TEST7_OBJECTS) $(LIBS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET8) $(TEST8_OBJECTS) $(LIBS)
+
+# $(CXX) $(CXXFLAGS) -o $(TARGET5) $(TEST5_OBJECTS) $(LIBS) $(LIBS_PYTHON)
+# $(CXX) $(CXXFLAGS) -o $(TARGET6) $(TEST6_OBJECTS) $(LIBS) $(LIBS_PYTHON)
 
 clean:
 	$(RM) $(TEST1_OBJECTS)
@@ -116,6 +135,10 @@ clean:
 	$(RM) $(TARGET5)
 	$(RM) $(TEST6_OBJECTS)
 	$(RM) $(TARGET6)
+	$(RM) $(TEST7_OBJECTS)
+	$(RM) $(TARGET7)
+	$(RM) $(TEST8_OBJECTS)
+	$(RM) $(TARGET8)
 	$(RM) *~
 
 realclean: clean

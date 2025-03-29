@@ -77,7 +77,9 @@ namespace whiteice
   template <typename T>
   bool AdditionProblem<T>::performAction(const whiteice::math::vertex<T>& action,
 					 whiteice::math::vertex<T>& newstate,
-					 T& reinforcement, bool& endFlag)
+					 T& reinforcement,
+					 T& distance,
+					 bool& endFlag)
   {
     // whiteice::logging.info("AdditionProblem: entering performAction()");
     
@@ -106,6 +108,8 @@ namespace whiteice
 	endFlag = true;
 
 	state = newstate;
+
+	distance = reinforcement;
 	
 	return true;
       }
@@ -121,6 +125,8 @@ namespace whiteice
 	endFlag = false;
 
 	state = newstate;
+
+	distance = reinforcement;
 
 	return true;
       }

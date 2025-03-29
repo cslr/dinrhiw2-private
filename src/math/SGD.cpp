@@ -329,7 +329,7 @@ namespace whiteice
 	  
 	  grad = Ugrad(x);
 
-#pragma omp parallel for schedule(static)
+	  // #pragma omp parallel for schedule(static)
 	  for(unsigned int i=0;i<grad.size();i++){
 	    m[i] = beta1 * m[i] + (T(1.0) - beta1)*grad[i];
 	    v[i] = beta2 * v[i] + (T(1.0) - beta2)*grad[i]*grad[i];
@@ -337,7 +337,19 @@ namespace whiteice
 	    m_hat[i] = m[i] / (T(1.0) - whiteice::math::pow(beta1[0], T(iterations)[0]));
 	    v_hat[i] = v[i] / (T(1.0) - whiteice::math::pow(beta2[0], T(iterations)[0]));
 
-	    x[i] -= (alpha / (whiteice::math::sqrt(v_hat[i]) + epsilon)) * m_hat[i];
+	    if(0){
+	      T inv = T(0.0);
+	      const T sqrt_v = whiteice::math::sqrt(v_hat[i]);
+	      
+	      for(unsigned int k=0;k<inv.size();k++){
+		inv[k] = T(1.0)[0] / (sqrt_v[i][k] + epsilon[0]);
+	      }
+
+	      x[i] -= (alpha * inv) * m_hat[i];
+	    }
+	    else{
+	      x[i] -= (alpha / (whiteice::math::sqrt(v_hat[i]) + epsilon)) * m_hat[i];
+	    }
 	  }
 
 	  heuristics(x);
