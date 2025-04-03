@@ -20,7 +20,7 @@ namespace whiteice
   {
   public:
     
-    IPD_ES(const unsigned int TURNS = 200, const unsigned int HISTORY_LENGTH=6);
+    IPD_ES(const unsigned int TURNS = 200, const unsigned int HISTORY_LENGTH=10);
     ~IPD_ES();
 
   protected:

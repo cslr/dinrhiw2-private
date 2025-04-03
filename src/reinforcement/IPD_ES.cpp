@@ -180,11 +180,13 @@ namespace whiteice
 	if(ymodel.calculate(hy, yaction) == false) return T(-1.0f);
       }
 
+      
       if(xaction[0] < (2.0f*rng.uniformf() - 1.0f)) xaction[0] = -1.0f;
       else xaction[0] = +1.0f;
-
+      
       if(yaction[0] < (2.0f*rng.uniformf() - 1.0f)) yaction[0] = -1.0f;
       else yaction[0] = +1.0f;
+      
 
       // assigns rewards based on co-operation/defect choices (x is the player) [prison's dilemma rewards!]
       {
@@ -216,7 +218,7 @@ namespace whiteice
       }
     }
     
-    return reward;
+    return reward/TURNS;
   }
 
 
@@ -288,9 +290,11 @@ namespace whiteice
 	}
       }
 
+      
       if(xaction[0] < (2.0f*rng.uniformf() - 1.0f)) xaction[0] = -1.0f;
       else xaction[0] = +1.0f;
-
+      
+	
       // assigns rewards based on co-operation/defect choices (x is the player) [prison's dilemma rewards!]
       {
 	if(xaction[0] >= T(0.0f) && yaction[0] >= T(0.0f)){ // both x and y co-operate
@@ -321,7 +325,7 @@ namespace whiteice
       }
     }
     
-    return reward;
+    return reward/TURNS;
   }
 
   

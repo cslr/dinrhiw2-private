@@ -32,7 +32,7 @@ namespace whiteice
     
     bool stopOptimize();
 
-    T getPopulationMeanReward(unsigned int& iterations, T& best_reward, T& mean_solution_against_reference) const;
+    T getPopulationMeanReward(unsigned int& iterations, unsigned int& best_index, T& best_reward, T& mean_solution_against_reference) const;
 
   protected:
 
@@ -61,8 +61,8 @@ namespace whiteice
     std::vector< T > rewards;
     unsigned int iterations = 0;
 
-    T sigma = T(0.01); // noise search term..
-    const T lrate = T(0.001);
+    T sigma = T(0.1); // noise search term..
+    const T lrate = T(0.01);
   };
 
 

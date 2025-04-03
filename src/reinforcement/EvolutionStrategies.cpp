@@ -123,6 +123,7 @@ namespace whiteice
 
   template <typename T>
   T EvolutionStrategies<T>::getPopulationMeanReward(unsigned int& iterations_,
+						    unsigned int& best_index_,
 						    T& best_reward,
 						    T& mean_solution_against_reference) const
   {
@@ -151,6 +152,8 @@ namespace whiteice
     if(estimateMeanRewardReference(population[best_index], mean_solution_against_reference) == false)
       mean_solution_against_reference = T(-1.0f);
 
+    best_index_ = best_index;
+
     return sum;
   }
 
@@ -158,7 +161,7 @@ namespace whiteice
   template <typename T>
   void EvolutionStrategies<T>::es_loop()
   {
-    const unsigned int K = 100; // 100 searched samples around current solution
+    const unsigned int K = 33; // was: 100 searched samples around current solution
 
     {
       std::lock_guard<std::mutex> lock(population_mutex);
@@ -225,7 +228,7 @@ namespace whiteice
 	  grad.zero();
 
 	  for(auto& p : reward_noise){
-	    grad += (p.first/T((float)reward_noise.size()))*p.second;
+	    grad += (p.first/T((float)reward_noise.size()))*p.second/sigma;
 	  }
 
 	  const auto new_x = pop[n] + lrate*grad; // increase reward/fitness
