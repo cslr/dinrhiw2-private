@@ -27,17 +27,22 @@ int main(int argc, char** argv)
   fflush(stdout);
 
   whiteice::IPD_ES es(TURNS, HISTORY_LENGTH);
+  
   es.startOptimize(NUM_PLAYERS); // 100 players
 
   int old_iterations = -1;
   
   while(true){
+    sleep(1);
+    
     unsigned int iterations = 0;
     unsigned int best_index = 0;
     auto best_reward = whiteice::math::blas_real<float>(0.0f);
     auto reference_reward = whiteice::math::blas_real<float>(0.0f);
     
     auto mean_r = es.getPopulationMeanReward(iterations, best_index, best_reward, reference_reward);
+
+    if(mean_r < 0.0) continue;
 
     if(((int)iterations) > old_iterations){
       std::cout << "Iterations: " << iterations << " = " << mean_r
@@ -48,8 +53,6 @@ int main(int argc, char** argv)
 
       old_iterations = (int)iterations;
     }
-
-    sleep(1);
   }
 
   es.stopOptimize();

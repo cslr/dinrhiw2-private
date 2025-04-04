@@ -36,7 +36,7 @@ namespace whiteice
   template <typename T>
   bool EvolutionStrategies<T>::startOptimize(const unsigned int N)
   {
-    if(N < 10) return false;
+    if(N <= 0) return false;
         
     std::lock_guard<std::mutex> lock(thread_mutex);
 
@@ -131,7 +131,18 @@ namespace whiteice
 
     T sum = T(0.0f);
 
-    best_reward = rewards[0];
+    if(rewards.size() > 0){
+      best_reward = rewards[0];
+    }
+    else{
+      best_reward = T(-1.0f);
+      mean_solution_against_reference = T(-1.0f);
+      best_index_ = 0;
+      iterations_ = 0;
+
+      return T(-1.0f);
+    }
+    
     unsigned int index = 0, best_index = 0;
 
     for(auto& r : rewards){
