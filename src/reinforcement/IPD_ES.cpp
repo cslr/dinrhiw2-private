@@ -60,7 +60,8 @@ namespace whiteice
     }
     
     for(unsigned int n=0;n<population.size();n++){
-      const unsigned int index = rng.rand() % population.size();
+      // const unsigned int index = rng.rand() % population.size();
+      const unsigned int index = n;
       
       if(population[index].size() != XSIZE){
 	reward = T(-1.0f);
@@ -69,10 +70,10 @@ namespace whiteice
 
       T r;
       
-      if(rng.uniformf() > 0.50f)
-	r = game_ipd(x, population[index]);
-      else
-	r = game_ipd(population[index], x);
+      //if(rng.uniformf() > 0.50f)
+      r = game_ipd(x, population[index]);
+	//else
+	//r = game_ipd(population[index], x);
 
       if(r < T(0.0)){
 	reward = T(-1.0f);
@@ -167,7 +168,7 @@ namespace whiteice
 	  hx[HISTORY_LENGTH+i] = yhistory[i];
 	
 	for(unsigned int i=0;i<HISTORY_LENGTH;i++)
-	  hy[i] = yhistory[i];
+	  hx[i] = yhistory[i];
 	
 	for(unsigned int i=0;i<HISTORY_LENGTH;i++)
 	  hy[HISTORY_LENGTH+i] = xhistory[i];
@@ -188,18 +189,23 @@ namespace whiteice
       else yaction[0] = +1.0f;
       
 
+      if(xaction[0] < 0.0f) xaction[0] = -1.0f;
+      else if(xaction[0] >= 0.0f) xaction[0] = +1.0f;
+      if(yaction[0] < 0.0f) yaction[0] = -1.0f;
+      else if(yaction[0] >= 0.0f) yaction[0] = +1.0f;
+
       // assigns rewards based on co-operation/defect choices (x is the player) [prison's dilemma rewards!]
-      {
+      {	
 	if(xaction[0] >= T(0.0f) && yaction[0] >= T(0.0f)){ // both x and y co-operate
-	  reward += T(3.0f);
+	  reward += T(3.0f); // was: 3
 	}
 	else if(xaction[0] >= T(0.0f) && yaction[0] < T(0.0f)){ // x co-operates, y defects
-	  reward += T(0.0f);	
+	  reward += T(0.0f);
 	}
 	else if(xaction[0] < T(0.0f) && yaction[0] >= T(0.0f)){ // x defects, y co-operates
 	  reward += T(5.0f);
 	}
-	else if(xaction[0] < T(0.0f) && yaction[0] < T(0.0f)){ // x defects, y defects
+ 	else if(xaction[0] < T(0.0f) && yaction[0] < T(0.0f)){ // x defects, y defects
 	  reward += T(1.0f);
 	}
       }
@@ -283,7 +289,7 @@ namespace whiteice
 	      if(rng.uniformf() < 0.10f) yaction[0] = T(+1.0f); // generous co-operation 10% of the time
 	      
 	    }
-	    else if(xhistory[HISTORY_LENGTH-1] >= 0.0f){
+	    else if(xhistory[HISTORY_LENGTH-1] >= 0.0f){ // co-operate if last round opponent co-operated
 	      yaction[0] = T(+1.0f);
 	    }
 	  }
@@ -294,11 +300,16 @@ namespace whiteice
       if(xaction[0] < (2.0f*rng.uniformf() - 1.0f)) xaction[0] = -1.0f;
       else xaction[0] = +1.0f;
       
+      
+      if(xaction[0] < 0.0f) xaction[0] = -1.0f;
+      else if(xaction[0] >= 0.0f) xaction[0] = +1.0f;
+      if(yaction[0] < 0.0f) yaction[0] = -1.0f;
+      else if(yaction[0] >= 0.0f) yaction[0] = +1.0f;
 	
       // assigns rewards based on co-operation/defect choices (x is the player) [prison's dilemma rewards!]
       {
 	if(xaction[0] >= T(0.0f) && yaction[0] >= T(0.0f)){ // both x and y co-operate
-	  reward += T(3.0f);
+	  reward += T(3.0f); // was: 3
 	}
 	else if(xaction[0] >= T(0.0f) && yaction[0] < T(0.0f)){ // x co-operates, y defects
 	  reward += T(0.0f);	

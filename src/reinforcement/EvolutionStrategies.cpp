@@ -227,6 +227,7 @@ namespace whiteice
 
 	  if(estimateReward(y, pop, reward)){
 	    if(reward >= T(0.0f)){
+	      // reward_noise.insert(std::pair<T, math::vertex<T> >(reward, noise));
 	      reward_noise.insert(std::pair<T, math::vertex<T> >((reward-r_mean)/(r_std+r_epsilon), noise));
 	    }
 	  }
@@ -242,7 +243,7 @@ namespace whiteice
 	    grad += (p.first/T((float)reward_noise.size()))*p.second/sigma;
 	  }
 
-	  const auto new_x = pop[n] + lrate*grad; // increase reward/fitness
+	  const auto new_x = x + lrate*grad; // increase reward/fitness
 
 	  T reward = T(0.0f);
 

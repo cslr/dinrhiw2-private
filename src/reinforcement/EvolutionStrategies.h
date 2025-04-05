@@ -62,7 +62,7 @@ namespace whiteice
     unsigned int iterations = 0;
 
     T sigma = T(0.1); // noise search term..
-    const T lrate = T(0.01);
+    const T lrate = T(0.1);
   };
 
 
