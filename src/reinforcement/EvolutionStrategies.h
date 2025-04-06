@@ -68,6 +68,7 @@ namespace whiteice
     unsigned int iterations = 0;
 
     T sigma = T(0.1); // noise search term..
+    const T c_lrate = T(0.10); // sigma is c_lrate% increase if rewards increase and c_lrate% decrease if rewards decrease
     const T lrate = T(0.1);
 
     const T evo_rate = T(0.10); // replace worst 10% population with top 10% population

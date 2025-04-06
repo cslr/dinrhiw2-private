@@ -13,13 +13,24 @@
 
 int main(int argc, char** argv)
 {
-  const unsigned int TURNS = 100;
-  const unsigned int HISTORY_LENGTH = 10;
+  const unsigned int TURNS = 200; // was: 200
+  const unsigned int HISTORY_LENGTH = 25;
   
   unsigned int NUM_PLAYERS = 25; // 100 players
 
   if(argc > 1) NUM_PLAYERS = atoi(argv[1]);
   if(NUM_PLAYERS <= 0) NUM_PLAYERS = 25;
+
+  bool pop_evolution = true;
+
+  if(argc > 2){
+    if(strcmp(argv[2], "-noevo") == 0)
+      pop_evolution = false;
+    else{
+      printf("Bad parameters\n");
+      return -1;
+    }
+  }
   
   printf("Iterated Prisoner's Dilemma stategy optimization using evolution strategies using neural networks\n");
   printf("Number of players: %d\n", NUM_PLAYERS);
@@ -27,6 +38,8 @@ int main(int argc, char** argv)
   fflush(stdout);
 
   whiteice::IPD_ES es(TURNS, HISTORY_LENGTH);
+
+  es.setEvolution(pop_evolution);
   
   es.startOptimize(NUM_PLAYERS); // 100 players
 
