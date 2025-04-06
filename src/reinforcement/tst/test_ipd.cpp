@@ -1,5 +1,5 @@
 /*
- * Tests solution of iterated prisoner's dilemma optimization using neural networks
+ * Tests solution of iterated prisoner's dilemma optimization using neural networks and evolution.
  *
  */
 
