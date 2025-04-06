@@ -87,6 +87,9 @@
 // recurrent continuous reinforcemetn problem (noy fully tested, requires more development maybe)
 #include "RIFL_abstract4.h"
 
+// Evolution Strategies
+#include "EvolutionStrategies.h"
+
 // recurrent networks
 #include "RNN_RBM.h"
 
