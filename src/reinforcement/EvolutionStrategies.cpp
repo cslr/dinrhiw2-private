@@ -269,25 +269,30 @@ namespace whiteice
 
 	if(REPLACE <= 0) REPLACE = 1;
 
-	auto worst_iter = evopop.begin();	
+	auto worst_iter = evopop.begin();
+	std::vector< typename std::multimap<T, math::vertex<T> >::iterator > removed;
 
 	for(unsigned int r=0;r<REPLACE;r++){
-
-	  // std::cout << "remove: " << worst_iter->first << std::endl;
-	  
-	  auto delete_this = worst_iter;	  
+	  removed.push_back(worst_iter);
 	  worst_iter++;
-	  evopop.erase(delete_this); // removes worst one and adds best solution
+	}
+
+	for(auto& it : removed){
+	  // std::cout << "remove: " << it->first << std::endl;
+	  evopop.erase(it); // removes worst one and adds best solution
 	}
 
 	auto best_iter  = evopop.rbegin();
+	std::vector< typename std::multimap<T, math::vertex<T> >::reverse_iterator > added;
 
 	for(unsigned int r=0;r<REPLACE;r++){
-
-	  // std::cout << "add: " << best_iter->first << std::endl;
-	  
-	  evopop.insert(*best_iter);
+	  added.push_back(best_iter);
 	  best_iter++;
+	}
+
+	for(auto& it : added){
+	  // std::cout << "add: " << it->first << std::endl;
+	  evopop.insert(*it);
 	}
 
 	unsigned int counter = 0;
