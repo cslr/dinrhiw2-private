@@ -257,6 +257,48 @@ namespace whiteice
 	
       }
 
+      // keep (1-p)% of the top reward population and drop p% worst results which are replaced by top p% solutions
+      if(pop2.size() >= 2 && populationEvolve){
+	std::multimap<T, math::vertex<T> > evopop;
+
+	for(unsigned int i=0;i<pop2.size();i++){
+	  evopop.insert(std::pair<T, math::vertex<T> >(rew2[i], pop2[i]));
+	}
+
+	unsigned int REPLACE = (pop2.size()*evo_rate.c[0]);
+
+	if(REPLACE <= 0) REPLACE = 1;
+
+	auto worst_iter = evopop.begin();	
+
+	for(unsigned int r=0;r<REPLACE;r++){
+
+	  // std::cout << "remove: " << worst_iter->first << std::endl;
+	  
+	  auto delete_this = worst_iter;	  
+	  worst_iter++;
+	  evopop.erase(delete_this); // removes worst one and adds best solution
+	}
+
+	auto best_iter  = evopop.rbegin();
+
+	for(unsigned int r=0;r<REPLACE;r++){
+
+	  // std::cout << "add: " << best_iter->first << std::endl;
+	  
+	  evopop.insert(*best_iter);
+	  best_iter++;
+	}
+
+	unsigned int counter = 0;
+	
+	for(auto& p : evopop){
+	  pop2[counter] = p.second;
+	  rew2[counter] = p.first;
+	  
+	  counter++;
+	}
+      }
 
       {
 	std::lock_guard<std::mutex> lock(population_mutex);
