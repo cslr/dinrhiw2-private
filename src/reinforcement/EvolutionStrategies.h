@@ -28,7 +28,7 @@ namespace whiteice
     EvolutionStrategies();
     ~EvolutionStrategies();
 
-    bool startOptimize(const unsigned int N_POPULATION = 100);
+    bool startOptimize(const unsigned int N_POPULATION = 1); // population size of 1 is a good choice because there is no GA crossover
     
     bool stopOptimize();
 

@@ -1,7 +1,7 @@
 
 #include "EvolutionStrategies.h" // ES
 #include <functional>
-
+#include <omp.h>
 
 namespace whiteice
 {
@@ -10,7 +10,7 @@ namespace whiteice
   EvolutionStrategies<T>::EvolutionStrategies()
   {
     sigma = T(0.1);
-    POPULATION_DIMENSIONS = 0;
+    POPULATION_DIMENSIONS = 0;    
   }
 
   
@@ -178,6 +178,8 @@ namespace whiteice
       iterations = 0;
     }
 
+    omp_set_max_active_levels(2);
+
     //std::cout << "es_loop() started" << std::endl;
     //fflush(stdout);
 
@@ -231,13 +233,14 @@ namespace whiteice
       //fflush(stdout);
 
 
-#pragma omp parallel for      
+#pragma omp parallel for
       for(unsigned int n=0;n<pop.size();n++){
 	
 	const auto& x = pop[n];
 
 	std::multimap<T, math::vertex<T> > reward_noise;
 
+#pragma omp parallel for
 	for(unsigned int k=0;k<(K/2);k++){
 	  math::vertex<T> noise;
 	  noise.resize(POPULATION_DIMENSIONS);
