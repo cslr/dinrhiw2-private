@@ -40,8 +40,8 @@ namespace whiteice
 
     T getPopulationMeanReward(unsigned int& iterations, unsigned int& best_index, T& best_reward, T& mean_solution_against_reference) const;
 
-  protected:
 
+    
     virtual bool estimateReward(const math::vertex<T>& x,
 				const std::vector< math::vertex<T> >& population,
 				T& reward) const = 0; // reward must be positive number >= 0

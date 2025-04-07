@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "IPD_ES.h"
+#include "dinrhiw.h"
 
 
 int main(int argc, char** argv)
@@ -31,19 +32,25 @@ int main(int argc, char** argv)
       return -1;
     }
   }
-  
-  printf("Iterated Prisoner's Dilemma stategy optimization using evolution strategies using neural networks\n");
-  printf("Number of players: %d\n", NUM_PLAYERS);
-
-  fflush(stdout);
 
   whiteice::IPD_ES es(TURNS, HISTORY_LENGTH);
 
+  printf("Iterated Prisoner's Dilemma stategy optimization using evolution strategies using neural networks\n");
+  printf("Number of players: %d\n", NUM_PLAYERS);
+  printf("Number of parameters per player: %d\n", es.PARAMETER_DIMENSIONS());
+
+  fflush(stdout);
+
+  
   es.setEvolution(pop_evolution);
   
   es.startOptimize(NUM_PLAYERS); // 100 players
 
   int old_iterations = -1;
+
+  whiteice::linear_ETA<> eta;
+
+  eta.start(0, 1000);
   
   while(true){
     sleep(1);
@@ -57,11 +64,16 @@ int main(int argc, char** argv)
 
     if(mean_r < 0.0) continue;
 
+    if(iterations < 1000)
+    eta.update(iterations);
+
     if(((int)iterations) > old_iterations){
       std::cout << "Iterations: " << iterations << " = " << mean_r
 		<< " (best: " << best_reward
 		<< " index: " << best_index
-		<< ", against generous tit-for-tat reference: " << reference_reward << ")" << std::endl;
+		<< ", against generous tit-for-tat reference: " << reference_reward << ")"
+		<< " ETA to 1000: " << eta.estimate()/60.0f << " minutes."
+		<< std::endl;
       fflush(stdout);
 
       old_iterations = (int)iterations;

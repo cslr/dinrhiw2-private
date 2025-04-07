@@ -172,8 +172,6 @@ namespace whiteice
   template <typename T>
   void EvolutionStrategies<T>::es_loop()
   {
-    const unsigned int K = 100; // was: 33, 100 searched samples around current solution
-
     {
       std::lock_guard<std::mutex> lock(population_mutex);
       
@@ -194,6 +192,8 @@ namespace whiteice
       auto rew2 = rewards;
 
       population_mutex.unlock();
+
+      const unsigned int K = pop2[0].size(); // was: 33, 100 searched samples around current solution
 
       T cur_sigma = T(0.0f);
 
@@ -238,7 +238,7 @@ namespace whiteice
 
 	std::multimap<T, math::vertex<T> > reward_noise;
 
-	for(unsigned int k=0;k<K;k++){	  
+	for(unsigned int k=0;k<(K/2);k++){
 	  math::vertex<T> noise;
 	  noise.resize(POPULATION_DIMENSIONS);
 	  rng.normal(noise);
@@ -252,6 +252,18 @@ namespace whiteice
 	  if(estimateReward(y, pop, reward)){
 	    if(reward >= T(0.0f)){
 	      reward_noise.insert(std::pair<T, math::vertex<T> >(reward, noise));
+	      // reward_noise.insert(std::pair<T, math::vertex<T> >((reward-r_mean)/(r_std+r_epsilon), noise));
+	      //noise2[n] = noise;
+	      //rew2[n] = reward;
+	    }
+	  }
+
+
+	  const auto y2 = x - noise;
+
+	  if(estimateReward(y2, pop, reward)){
+	    if(reward >= T(0.0f)){
+	      reward_noise.insert(std::pair<T, math::vertex<T> >(reward, -noise));
 	      // reward_noise.insert(std::pair<T, math::vertex<T> >((reward-r_mean)/(r_std+r_epsilon), noise));
 	      //noise2[n] = noise;
 	      //rew2[n] = reward;
