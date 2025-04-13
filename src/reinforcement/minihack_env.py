@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import gym
+import gymnasium as gym
 import minihack
 import random
 
@@ -48,8 +48,8 @@ def convert_chars(ls):
 random.seed()
 
 env_name = "MiniHack-River-v0"
-env_name = "MiniHack-MazeWalk-45x19-v0"
-env_name = "MiniHack-MazeWalk-Mapped-15x15-v0"
+# env_name = "MiniHack-MazeWalk-45x19-v0"
+# env_name = "MiniHack-MazeWalk-Mapped-15x15-v0"
 
 env = gym.make(env_name, observation_keys=("chars_crop", "blstats"), obs_crop_w=5, obs_crop_h=5)
 
@@ -60,8 +60,10 @@ render = False # False
 obs = env.reset()
 moves = 0
 
-surroundings = convert_chars(flatten(obs["chars_crop"]))
-stats = obs["blstats"].tolist()
+print(obs)
+
+surroundings = convert_chars(flatten(obs[0]["chars_crop"]))
+stats = obs[0]["blstats"].tolist()
 state = combine([surroundings, stats])
 
 done = False
@@ -74,9 +76,9 @@ def minihack_getState():
     
     if(done == True):
         obs = env.reset()
-        
-        surroundings = convert_chars(flatten(obs["chars_crop"]))
-        stats = obs["blstats"].tolist()
+
+        surroundings = convert_chars(flatten(obs[0]["chars_crop"]))
+        stats = obs[0]["blstats"].tolist()
         state = combine([surroundings, stats])
         
         done = False
@@ -113,5 +115,7 @@ def minihack_performAction(action):
 
 
 test_state = minihack_getState()
+
+# print(test_state)
 
 # print("State vector is " + str(len(test_state)) + " dimensions long.\n")

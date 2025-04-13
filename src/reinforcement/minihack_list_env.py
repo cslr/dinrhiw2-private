@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import gym
+import gymnasium as gym
 import minihack
 
 def flatten(x):
@@ -48,7 +48,7 @@ obs = env.reset()
 
 env.render()
 
-surroundings = convert_chars(flatten(obs["chars_crop"]))
+surroundings = convert_chars(flatten(obs[0]["chars_crop"]))
 
 print(surroundings)
 
