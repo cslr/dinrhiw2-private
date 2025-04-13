@@ -37,7 +37,7 @@ namespace whiteice
       
       virtual bool performAction(const whiteice::math::vertex<T>& action,
 				 whiteice::math::vertex<T>& newstate,
-				 T& reinforcement, bool& endFlag);
+				 T& reinforcement, T& distance, bool& endFlag);
       
     private:
 
@@ -47,7 +47,7 @@ namespace whiteice
       PyObject *main_module = NULL, *global_dict = NULL;
       PyObject *getStateFunc = NULL, *performActionFunc = NULL;
       
-      //PyThreadState* pystate = NULL;
+      PyThreadState* pystate = NULL;
 
       // number of errors seen.. (>0 isRunning() == false)
       unsigned int errors = 0;

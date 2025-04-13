@@ -31,7 +31,7 @@ namespace whiteice
   template <typename T>
   MinihackRIFL2<T>::MinihackRIFL2(const std::string& pythonScript) 
     : // RIFL_abstract2<T>(8, 51, false, {50,50,50,50}, {50,50,50,50})
-    RIFL_abstract2<T>(8, 51, false, {100,100,100,100}, {100,100,100,100})
+    RIFL_abstract2<T>(8, 52, false, {100,100,100,100}, {100,100,100,100})
     //RIFL_abstract2<T>(8, 51, false, {200,200,200,200}, {200,200,200,200})
   {
     // we inteprete action values as one hot encoded probabilistic values from which one-hot-encoded
@@ -57,6 +57,10 @@ namespace whiteice
 
     // PyEval_RestoreThread(pystate);
 
+    // PyGILState_STATE gstate = PyGILState_Ensure();
+    
+
+#if 0
     {
       int argc = 1;
       wchar_t* argv[1];
@@ -71,7 +75,8 @@ namespace whiteice
 
       free(ptr);
     }
-
+#endif
+    
     // PyRun_SimpleString("x = 0"); // dummy (needed?)
 
     pythonFile = fopen(pythonScript.c_str(), "r");
@@ -101,7 +106,9 @@ namespace whiteice
       assert(0); // FIXME proper error handling
     }
 
-    //pystate = PyEval_SaveThread();
+    // PyGILState_Release(gstate);
+
+    pystate = PyEval_SaveThread();
     //PyEval_RestoreThread(prestate);
   }
   
@@ -110,7 +117,8 @@ namespace whiteice
   MinihackRIFL2<T>::~MinihackRIFL2()
   {
     //PyThreadState* prestate = PyThreadState_Get();
-    //PyEval_RestoreThread(pystate);
+    
+    PyEval_RestoreThread(pystate);
     
     Py_DECREF(getStateFunc);
     Py_DECREF(performActionFunc);
@@ -143,27 +151,46 @@ namespace whiteice
   template <typename T>
   bool MinihackRIFL2<T>::getState(whiteice::math::vertex<T>& state)
   {
+    //printf("MinihackRIFL2::getState()\n");
+    //fflush(stdout);
+    
     if(errors > 0) return false;
 
     //PyThreadState* prestate = PyThreadState_Get();
     //PyEval_RestoreThread(pystate);
+
+    //printf("MinihackRIFL2::getState() 0\n");
+    //fflush(stdout);
+
+    PyGILState_STATE gstate = PyGILState_Ensure();
+
+    //printf("MinihackRIFL2::getState() GIL\n");
+    //fflush(stdout);
     
     PyObject *result = NULL;
     
     result = PyObject_CallFunction(getStateFunc, NULL);
 
+    //printf("MinihackRIFL2::getState() 0.1: %llx\n", (unsigned long long)result);
+    //fflush(stdout);
+
     if(result == NULL){
       printf("ERROR: getState(): PyObject_CallFunction() returned NULL.\n");
       errors++;
+      PyGILState_Release(gstate);
       //pystate = PyEval_SaveThread();
       //PyEval_RestoreThread(prestate);
       return false;
     }
 
+    //printf("MinihackRIFL2::getState() 1\n");
+    //fflush(stdout);
+
     if(PyList_CheckExact(result) == 0){
       printf("ERROR: getState(): PyObject_CallFunction() returned non-list.\n");
       errors++;
       Py_DECREF(result);
+      PyGILState_Release(gstate);
       //pystate = PyEval_SaveThread();
       //PyEval_RestoreThread(prestate);
       return false;
@@ -171,14 +198,21 @@ namespace whiteice
 
     const unsigned long SIZE = (unsigned long)PyList_Size(result);
 
+    //printf("MinihackRIFL2::getState() 1: %d = %d\n", (int)SIZE, (int)this->getNumStates());
+    //fflush(stdout);
+
     if(SIZE != this->getNumStates()){
       printf("ERROR: getState(): returned state has wrong length.\n");
       errors++;
       Py_DECREF(result);
+      PyGILState_Release(gstate);
       //pystate = PyEval_SaveThread();
       //PyEval_RestoreThread(prestate);
       return false;
     }
+
+    //printf("MinihackRIFL2::getState() 2: %d\n", (int)SIZE);
+    //fflush(stdout);
 
     if(SIZE > 0){
 
@@ -186,6 +220,7 @@ namespace whiteice
 	printf("ERROR: getState(): state.resize() FAILED.\n");
 	errors++;
 	Py_DECREF(result);
+	PyGILState_Release(gstate);
 	//pystate = PyEval_SaveThread();
 	//PyEval_RestoreThread(prestate);
 	return false;
@@ -198,6 +233,7 @@ namespace whiteice
 	  printf("ERROR: getState(): returned list contains NULL.\n");
 	  errors++;
 	  Py_DECREF(result);
+	  PyGILState_Release(gstate);
 	  
 	  //pystate = PyEval_SaveThread();
 	  //PyEval_RestoreThread(prestate);
@@ -210,6 +246,7 @@ namespace whiteice
 	  errors++;
 	  //Py_DECREF(item);
 	  Py_DECREF(result);
+	  PyGILState_Release(gstate);
 	  
 	  //pystate = PyEval_SaveThread();
 	  //PyEval_RestoreThread(prestate);
@@ -223,7 +260,15 @@ namespace whiteice
       }
     }
 
+    //printf("MinihackRIFL2::getState() 3\n");
+    //fflush(stdout);
+
     Py_DECREF(result);
+
+    PyGILState_Release(gstate);
+
+    //printf("MinihackRIFL2::getState() EXIT\n");
+    //fflush(stdout);
 
     //pystate = PyEval_SaveThread();
     //PyEval_RestoreThread(prestate);
@@ -235,8 +280,11 @@ namespace whiteice
   template <typename T>
   bool MinihackRIFL2<T>::performAction(const whiteice::math::vertex<T>& action,
 				       whiteice::math::vertex<T>& newstate,
-				       T& reinforcement, bool& endFlag)
+				       T& reinforcement, T& distance, bool& endFlag)
   {
+    //printf("MinihackRIFL2::performAction()\n");
+    //fflush(stdout);
+    
     if(errors > 0){
       printf("ERROR: performAction(), errors>0\n");
       return false;
@@ -294,7 +342,9 @@ namespace whiteice
       ACTION = index;
     }
 
-    //printf("ACTION %d selected.\n", (int)ACTION); fflush(stdout);
+    // printf("ACTION %d selected.\n", (int)ACTION); fflush(stdout);
+
+    PyGILState_STATE gstate = PyGILState_Ensure();
 
     //PyThreadState* prestate = PyThreadState_Get();
     //PyEval_RestoreThread(pystate);
@@ -310,6 +360,7 @@ namespace whiteice
     if(result == NULL){
       printf("ERROR: performAction(): PyObject_CallFunction() returned NULL.\n");
       errors++;
+      PyGILState_Release(gstate);
       //pystate = PyEval_SaveThread();
       //PyEval_RestoreThread(prestate);
       return false;
@@ -327,6 +378,7 @@ namespace whiteice
       printf("ERROR: performAction(): PyObject_CallFunction() don't return list.\n");
       errors++;
       Py_DECREF(result);
+      PyGILState_Release(gstate);
       //pystate = PyEval_SaveThread();
       //PyEval_RestoreThread(prestate);
       return false;
@@ -336,6 +388,7 @@ namespace whiteice
       printf("ERROR: performAction(): PyObject_CallFunction() return value length is not 3.\n");
       errors++;
       Py_DECREF(result);
+      PyGILState_Release(gstate);
       //pystate = PyEval_SaveThread();
       //PyEval_RestoreThread(prestate);
       return false;
@@ -350,12 +403,14 @@ namespace whiteice
     if(stateObj == NULL || rewardObj == NULL || doneObj == NULL){
       printf("ERROR: performAction(): PyObject_CallFunction() return objects are NULL.\n");
       errors++;
+      
 
       //if(stateObj) Py_DECREF(stateObj);
       //if(rewardObj) Py_DECREF(rewardObj);
       //if(doneObj) Py_DECREF(doneObj);
       
       Py_DECREF(result);
+      PyGILState_Release(gstate);
       
       //pystate = PyEval_SaveThread();
       //PyEval_RestoreThread(prestate);
@@ -375,6 +430,7 @@ namespace whiteice
       //Py_DECREF(doneObj);
       
       Py_DECREF(result);
+      PyGILState_Release(gstate);
 
       //pystate = PyEval_SaveThread();
       //PyEval_RestoreThread(prestate);
@@ -389,6 +445,7 @@ namespace whiteice
       errors++;
       
       Py_DECREF(result);
+      PyGILState_Release(gstate);
       
       //pystate = PyEval_SaveThread();
       //PyEval_RestoreThread(prestate);
@@ -409,6 +466,7 @@ namespace whiteice
 	//Py_DECREF(doneObj);
 	
 	Py_DECREF(result);
+	PyGILState_Release(gstate);
 
 	//pystate = PyEval_SaveThread();
 	//PyEval_RestoreThread(prestate);
@@ -428,6 +486,7 @@ namespace whiteice
 	  //Py_DECREF(doneObj);
 	  
 	  Py_DECREF(result);
+	  PyGILState_Release(gstate);
 
 	  //pystate = PyEval_SaveThread();
 	  //PyEval_RestoreThread(prestate);
@@ -446,6 +505,7 @@ namespace whiteice
 	  //Py_DECREF(doneObj);
 	  
 	  Py_DECREF(result);
+	  PyGILState_Release(gstate);
 
 	  //pystate = PyEval_SaveThread();
 	  //PyEval_RestoreThread(prestate);
@@ -474,6 +534,7 @@ namespace whiteice
       //Py_DECREF(doneObj);
     
       Py_DECREF(result);
+      PyGILState_Release(gstate);
 
       //pystate = PyEval_SaveThread();
       //PyEval_RestoreThread(prestate);
@@ -496,6 +557,7 @@ namespace whiteice
       //Py_DECREF(doneObj);
     
       Py_DECREF(result);
+      PyGILState_Release(gstate);
 
       //pystate = PyEval_SaveThread();
       //PyEval_RestoreThread(prestate);
@@ -515,6 +577,7 @@ namespace whiteice
     //Py_DECREF(doneObj);
     
     Py_DECREF(result);
+    PyGILState_Release(gstate);
 
     //pystate = PyEval_SaveThread();
     //PyEval_RestoreThread(prestate);

@@ -60,7 +60,7 @@ render = False # False
 obs = env.reset()
 moves = 0
 
-print(obs)
+# print(obs)
 
 surroundings = convert_chars(flatten(obs[0]["chars_crop"]))
 stats = obs[0]["blstats"].tolist()
@@ -73,6 +73,8 @@ done = False
 
 def minihack_getState():
     global env, done, state
+
+#    print("minihack_getState()")
     
     if(done == True):
         obs = env.reset()
@@ -82,6 +84,8 @@ def minihack_getState():
         state = combine([surroundings, stats])
         
         done = False
+
+#    print(state)
     
     return state
 
@@ -94,11 +98,12 @@ def minihack_getState():
 def minihack_performAction(action):
     global env, done, state,moves
 
-    obs, reward, done, info = env.step(action)
+#    print("minihack_performAction()")
+
+    obs, reward, done, truncated, info = env.step(action)
 
     if(reward < 0):
         reward = 10*reward
-    
 
     surroundings = convert_chars(flatten(obs["chars_crop"]))
     stats = obs["blstats"].tolist()
@@ -115,7 +120,8 @@ def minihack_performAction(action):
 
 
 test_state = minihack_getState()
+value = minihack_performAction(1)
 
-# print(test_state)
+#print(test_state)
 
 # print("State vector is " + str(len(test_state)) + " dimensions long.\n")
