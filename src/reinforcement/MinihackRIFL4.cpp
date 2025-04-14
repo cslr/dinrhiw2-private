@@ -6,7 +6,7 @@
  *
  */
 
-#include "MinihackRIFL2.h"
+#include "MinihackRIFL4.h"
 
 
 namespace whiteice
@@ -29,16 +29,17 @@ namespace whiteice
   
   // observation space size is 51 (5x5 char environment + player stats) [and action is one-hot-encoded value: NOT]
   template <typename T>
-  MinihackRIFL2<T>::MinihackRIFL2(const std::string& pythonScript) 
-    : RIFL_abstract2<T>(8, 52, false, {50,50,50,50}, {50,50,50,50})
+  MinihackRIFL4<T>::MinihackRIFL4(const std::string& pythonScript) 
+    : RIFL_abstract4<T>(8, 52, true, {50,50,50,50}, {50,50,50,50})
     // RIFL_abstract2<T>(8, 52, false, {100,100,100,100}, {100,100,100,100})
     //RIFL_abstract2<T>(8, 51, false, {200,200,200,200}, {200,200,200,200})
   {
     // we inteprete action values as one hot encoded probabilistic values from which one-hot-encoded
     // vector is chosen: [0 0 1 0] means 3rd action is chosen.
     this->setOneHotAction(false);
-    this->setSmartEpisodes(false); // gives more weight to reinforcement values when calculating Q
+    // this->setSmartEpisodes(true); // gives more weight to reinforcement values when calculating Q
     this->setGamma(0.80);
+    this->setReinforcementWeighting(false);
     
     
     if(!Py_IsInitialized()){
@@ -115,7 +116,7 @@ namespace whiteice
   
 
   template <typename T>
-  MinihackRIFL2<T>::~MinihackRIFL2()
+  MinihackRIFL4<T>::~MinihackRIFL4()
   {
     //PyThreadState* prestate = PyThreadState_Get();
     
@@ -143,16 +144,16 @@ namespace whiteice
 
   
   template <typename T>
-  bool MinihackRIFL2<T>::isRunning() const
+  bool MinihackRIFL4<T>::isRunning() const
   {
     return (errors == 0);
   }
   
   
   template <typename T>
-  bool MinihackRIFL2<T>::getState(whiteice::math::vertex<T>& state)
+  bool MinihackRIFL4<T>::getState(whiteice::math::vertex<T>& state)
   {
-    //printf("MinihackRIFL2::getState()\n");
+    //printf("MinihackRIFL4::getState()\n");
     //fflush(stdout);
     
     if(errors > 0) return false;
@@ -160,19 +161,19 @@ namespace whiteice
     //PyThreadState* prestate = PyThreadState_Get();
     //PyEval_RestoreThread(pystate);
 
-    //printf("MinihackRIFL2::getState() 0\n");
+    //printf("MinihackRIFL4::getState() 0\n");
     //fflush(stdout);
 
     PyGILState_STATE gstate = PyGILState_Ensure();
 
-    //printf("MinihackRIFL2::getState() GIL\n");
+    //printf("MinihackRIFL4::getState() GIL\n");
     //fflush(stdout);
     
     PyObject *result = NULL;
     
     result = PyObject_CallFunction(getStateFunc, NULL);
 
-    //printf("MinihackRIFL2::getState() 0.1: %llx\n", (unsigned long long)result);
+    //printf("MinihackRIFL4::getState() 0.1: %llx\n", (unsigned long long)result);
     //fflush(stdout);
 
     if(result == NULL){
@@ -184,7 +185,7 @@ namespace whiteice
       return false;
     }
 
-    //printf("MinihackRIFL2::getState() 1\n");
+    //printf("MinihackRIFL4::getState() 1\n");
     //fflush(stdout);
 
     if(PyList_CheckExact(result) == 0){
@@ -199,7 +200,7 @@ namespace whiteice
 
     const unsigned long SIZE = (unsigned long)PyList_Size(result);
 
-    //printf("MinihackRIFL2::getState() 1: %d = %d\n", (int)SIZE, (int)this->getNumStates());
+    //printf("MinihackRIFL4::getState() 1: %d = %d\n", (int)SIZE, (int)this->getNumStates());
     //fflush(stdout);
 
     if(SIZE != this->getNumStates()){
@@ -212,7 +213,7 @@ namespace whiteice
       return false;
     }
 
-    //printf("MinihackRIFL2::getState() 2: %d\n", (int)SIZE);
+    //printf("MinihackRIFL4::getState() 2: %d\n", (int)SIZE);
     //fflush(stdout);
 
     if(SIZE > 0){
@@ -261,14 +262,14 @@ namespace whiteice
       }
     }
 
-    //printf("MinihackRIFL2::getState() 3\n");
+    //printf("MinihackRIFL4::getState() 3\n");
     //fflush(stdout);
 
     Py_DECREF(result);
 
     PyGILState_Release(gstate);
 
-    //printf("MinihackRIFL2::getState() EXIT\n");
+    //printf("MinihackRIFL4::getState() EXIT\n");
     //fflush(stdout);
 
     //pystate = PyEval_SaveThread();
@@ -279,11 +280,11 @@ namespace whiteice
 
   
   template <typename T>
-  bool MinihackRIFL2<T>::performAction(const whiteice::math::vertex<T>& action,
+  bool MinihackRIFL4<T>::performAction(const whiteice::math::vertex<T>& action,
 				       whiteice::math::vertex<T>& newstate,
 				       T& reinforcement, T& distance, bool& endFlag)
   {
-    //printf("MinihackRIFL2::performAction()\n");
+    //printf("MinihackRIFL4::performAction()\n");
     //fflush(stdout);
     
     if(errors > 0){
@@ -588,7 +589,7 @@ namespace whiteice
   
   
 
-  template class MinihackRIFL2< math::blas_real<float> >;
-  template class MinihackRIFL2< math::blas_real<double> >;  
+  template class MinihackRIFL4< math::blas_real<float> >;
+  template class MinihackRIFL4< math::blas_real<double> >;  
   
 };

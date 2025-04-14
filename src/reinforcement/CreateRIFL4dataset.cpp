@@ -495,7 +495,7 @@ namespace whiteice
 	      out[0] = datum.reinforcement;
 	    }
 
-#if 0
+#if 1
 	    {
 	      char buf[80];
 	      snprintf(buf, 80, "CreateRIFL4dataset: output=%f", out[0].real());
@@ -695,7 +695,7 @@ namespace whiteice
     }
 
     // add preprocessing to dataset
-#if 1
+#if 0
     {
       data.preprocess(0, whiteice::dataset<T>::dnMeanVarianceNormalization);
     

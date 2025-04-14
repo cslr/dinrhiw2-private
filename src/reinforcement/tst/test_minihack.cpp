@@ -10,6 +10,7 @@
 #endif
 
 #include "MinihackRIFL2.h"
+#include "MinihackRIFL4.h"
 #include "RIFL_abstract2.h"
 #include "Log.h"
 
@@ -53,7 +54,7 @@ int main(int argc, char** argv)
   
   
   if(useFlag == false){
-    whiteice::MinihackRIFL2< whiteice::math::blas_real<float> > system(scriptFile);
+    whiteice::MinihackRIFL4< whiteice::math::blas_real<float> > system(scriptFile);
 
     system.setEpsilon(0.80); // 20% of control choices are random
     system.setLearningMode(true);
@@ -99,10 +100,11 @@ int main(int argc, char** argv)
   }
   else{
 
-    whiteice::MinihackRIFL2< whiteice::math::blas_real<float> > system(scriptFile);
+    whiteice::MinihackRIFL4< whiteice::math::blas_real<float> > system(scriptFile);
 
     system.setEpsilon(1.00); // 100% of examples are selected accoring to model
-    system.setLearningMode(false);    
+    system.setLearningMode(false);
+    system.setSleepingMode(false);
     
     if(system.load("minihack-rifl2.dat") == false){
       printf("ERROR: loading model file failed.\n");

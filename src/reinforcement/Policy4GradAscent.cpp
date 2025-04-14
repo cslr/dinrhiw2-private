@@ -567,7 +567,7 @@ namespace whiteice
       }
     }
 
-    
+
     if(regularize){
       // adds regularizer term (-0.5*||w||^2)
       whiteice::math::vertex<T> w;
@@ -576,6 +576,18 @@ namespace whiteice
 
       value -= regularizer * T(0.5) * (w*w)[0]/T((float)w.size());
     }
+
+    
+    {
+      char buf[80];
+
+      snprintf(buf, 80, "Policy4GradAscent::getValue() = %g", value.c[0]);
+      
+      logging.info(buf);
+    }
+
+    
+
     
     return value;
   }

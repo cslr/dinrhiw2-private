@@ -1639,10 +1639,10 @@ namespace whiteice
   void RIFL_abstract4<T>::loop()
   {
     // number of iteratios to use per epoch for optimization
-    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 500; // WAS: 200
+    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 500; // WAS: 500
     const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 100
 
-    const unsigned int Q_OPTIMIZE_ITERATIONS = 500; // 3; // WAS: 25
+    const unsigned int Q_OPTIMIZE_ITERATIONS = 500; // 3; // WAS: 500
     const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 50
     
     // tau = 1.0 => no lagged neural networks [don't work]
@@ -2192,7 +2192,7 @@ namespace whiteice
       // 5. update/optimize Q(state, action) network
       // activates batch learning if it is not running
       if(database.size() >= MINIMUM_DATASIZE &&
-	 (episodes.size() > MINIMUM_EPISODE_SIZE || useEpisodes == true))
+	 episodes.size() > MINIMUM_EPISODE_SIZE)
       {
 	
 	// skip if other optimization step (policy network)
@@ -2523,8 +2523,8 @@ namespace whiteice
       // activates batch learning if it is not running
       
       if(database.size() >= MINIMUM_DATASIZE &&
-	 (episodes.size() > MINIMUM_EPISODE_SIZE || useEpisodes == true))
-      {
+	 episodes.size() > MINIMUM_EPISODE_SIZE)
+	{
 	
 	// skip if other optimization step is behind us
 	// we only start calculating policy after Q() has been optimized..
