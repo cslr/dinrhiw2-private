@@ -2277,7 +2277,7 @@ namespace whiteice
       T output = whiteice::math::log(T(1.0f) + whiteice::math::exp(k*in))/k;
 
       if(batchnorm && layer != getLayers()-1){
-	return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -2293,7 +2293,7 @@ namespace whiteice
       T output = T(1.0f) / (T(1.0f) + math::exp(-in));
 
       if(batchnorm && layer != getLayers()-1){
-	return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -2325,7 +2325,7 @@ namespace whiteice
       whiteice::math::convert(output_value, T(value));
 
       if(batchnorm && layer != getLayers()-1){
-	return (output_value - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	return (output_value - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
       else{
 	return output_value;
@@ -2346,7 +2346,7 @@ namespace whiteice
       const T output = a*tanhbx;
 
       if(batchnorm && layer != getLayers()-1){
-	return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -2366,7 +2366,7 @@ namespace whiteice
       const T output = a*tanhbx;
 
       if(batchnorm && layer != getLayers()-1){
-	return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -2384,7 +2384,7 @@ namespace whiteice
 	  T output = a*input/abs(input) + T(0.5f)*a*b*input;
 
 	  if(batchnorm && layer != getLayers()-1){
-	    return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	    return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -2401,7 +2401,7 @@ namespace whiteice
 	output = (output + T(0.5f)*a*b*input);
 
 	if(batchnorm && layer != getLayers()-1){
-	  return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	  return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -2444,7 +2444,7 @@ namespace whiteice
 
 
       if(batchnorm && layer != getLayers()-1){
-	return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -2464,7 +2464,7 @@ namespace whiteice
 	    T output = T(RELUcoef*input.first().real());
 	    
 	    if(batchnorm && layer != getLayers()-1){
-	      return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	      return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	    }
 	    else{
 	      return output;
@@ -2474,7 +2474,7 @@ namespace whiteice
 	    T output = T(input.first().real());
 	    
 	    if(batchnorm && layer != getLayers()-1){
-	      return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	      return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	    }
 	    else{
 	      return output;
@@ -2499,7 +2499,7 @@ namespace whiteice
 	  T output = T(out);
 	  
 	  if(batchnorm && layer != getLayers()-1){
-	    return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	    return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -2512,7 +2512,7 @@ namespace whiteice
 	T output = sin(input);
 
 	if(batchnorm && layer != getLayers()-1){
-	  return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	  return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -2522,7 +2522,7 @@ namespace whiteice
 	T output = cos(input);
 
 	if(batchnorm && layer != getLayers()-1){
-	  return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	  return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -2534,7 +2534,7 @@ namespace whiteice
       T output = input; // all layers/neurons are linear..
 
       if(batchnorm && layer != getLayers()-1){
-	return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -2549,7 +2549,7 @@ namespace whiteice
 	  T output = T(RELUcoef*input.first().real());
 	  
 	  if(batchnorm && layer != getLayers()-1){
-	    return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	    return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -2559,7 +2559,7 @@ namespace whiteice
 	  T output = T(input.first().real());
 
 	  if(batchnorm && layer != getLayers()-1){
-	    return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	    return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -2584,7 +2584,7 @@ namespace whiteice
 	T output = T(out);
 
 	if(batchnorm && layer != getLayers()-1){
-	  return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	  return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -2607,7 +2607,7 @@ namespace whiteice
 	}
 
 	if(batchnorm && layer != getLayers()-1){
-	  return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	  return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -2633,7 +2633,7 @@ namespace whiteice
 
 	
 	if(batchnorm && layer != getLayers()-1){
-	  return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	  return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -2647,7 +2647,7 @@ namespace whiteice
 	  T output = T(RELUcoef*input.first().real());
 	  
 	  if(batchnorm && layer != getLayers()-1){
-	    return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	    return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -2657,7 +2657,7 @@ namespace whiteice
 	  T output = T(input.first().real());
 
 	  if(batchnorm && layer != getLayers()-1){
-	    return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	    return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -2669,7 +2669,7 @@ namespace whiteice
 	  T output = T(((double)RELUcoef))*input;
 
 	  if(batchnorm && layer != getLayers()-1){
-	    return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	    return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -2680,7 +2680,7 @@ namespace whiteice
 	  T output = input;
 
 	  if(batchnorm && layer != getLayers()-1){
-	    return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	    return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -2725,7 +2725,7 @@ namespace whiteice
       T output = T(1.0f)/divider;
 
       if(batchnorm && layer != getLayers()-1){
-	return output/bn_sigma[layer][neuron];
+	return output*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -2742,7 +2742,7 @@ namespace whiteice
       output = math::exp(-in) / (output*output);
 
       if(batchnorm && layer != getLayers()-1){
-	return output/bn_sigma[layer][neuron];
+	return output*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -2762,7 +2762,7 @@ namespace whiteice
 
 
       if(batchnorm && layer != getLayers()-1){
-	return output/bn_sigma[layer][neuron];
+	return output*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -2789,7 +2789,7 @@ namespace whiteice
 
       
       if(batchnorm && layer != getLayers()-1){
-	return output/bn_sigma[layer][neuron];
+	return output*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -2814,7 +2814,7 @@ namespace whiteice
       T output = a*b*(T(1.0f) - tanhbx*tanhbx);
 
       if(batchnorm && layer != getLayers()-1){
-	return output/bn_sigma[layer][neuron];
+	return output*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -2833,7 +2833,7 @@ namespace whiteice
 	  T output = T(0.0f) + T(0.5f)*a*b;
 
 	  if(batchnorm && layer != getLayers()-1){
-	    return output/bn_sigma[layer][neuron];
+	    return output*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -2852,7 +2852,7 @@ namespace whiteice
 
 	
 	if(batchnorm && layer != getLayers()-1){
-	  return output/bn_sigma[layer][neuron];
+	  return output*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -2894,7 +2894,7 @@ namespace whiteice
 
 
       if(batchnorm && layer != getLayers()-1){
-	return output/bn_sigma[layer][neuron];
+	return output*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -2914,7 +2914,7 @@ namespace whiteice
 	    T output = T(RELUcoef);
 	    
 	    if(batchnorm && layer != getLayers()-1){
-	      return output/bn_sigma[layer][neuron];
+	      return output*bn_sigma[layer][neuron];
 	    }
 	    else{
 	      return output;
@@ -2924,7 +2924,7 @@ namespace whiteice
 	    T output = T(1.00f);
 	    
 	    if(batchnorm && layer != getLayers()-1){
-	      return output/bn_sigma[layer][neuron];
+	      return output*bn_sigma[layer][neuron];
 	    }
 	    else{
 	      return output;
@@ -2958,7 +2958,7 @@ namespace whiteice
 	  T output = T(out);
 	  
 	  if(batchnorm && layer != getLayers()-1){
-	    return output/bn_sigma[layer][neuron];
+	    return output*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -2972,7 +2972,7 @@ namespace whiteice
 	T output = cos(input);
 
 	if(batchnorm && layer != getLayers()-1){
-	  return output/bn_sigma[layer][neuron];
+	  return output*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -2982,7 +2982,7 @@ namespace whiteice
 	T output = -sin(input);
 
 	if(batchnorm && layer != getLayers()-1){
-	  return output/bn_sigma[layer][neuron];
+	  return output*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -2993,7 +2993,7 @@ namespace whiteice
       T output = T(1.0f); // all layers/neurons are linear..
 
       if(batchnorm && layer != getLayers()-1){
-	return output/bn_sigma[layer][neuron];
+	return output*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -3007,7 +3007,7 @@ namespace whiteice
 	  T output = T(RELUcoef);
 
 	  if(batchnorm && layer != getLayers()-1){
-	    return output/bn_sigma[layer][neuron];
+	    return output*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -3017,7 +3017,7 @@ namespace whiteice
 	  T output = T(1.00f);
 
 	  if(batchnorm && layer != getLayers()-1){
-	    return output/bn_sigma[layer][neuron];
+	    return output*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -3051,7 +3051,7 @@ namespace whiteice
 	T output = T(out);
 
 	if(batchnorm && layer != getLayers()-1){
-	  return output/bn_sigma[layer][neuron];
+	  return output*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -3118,7 +3118,7 @@ namespace whiteice
 	// return output;
 	
 	if(batchnorm && layer != getLayers()-1){
-	  return output/bn_sigma[layer][neuron];
+	  return output*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -3188,7 +3188,7 @@ namespace whiteice
 	// return output;
 	
 	if(batchnorm && layer != getLayers()-1){
-	  return output/bn_sigma[layer][neuron];
+	  return output*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -3225,7 +3225,7 @@ namespace whiteice
 
 	
 	if(batchnorm && layer != getLayers()-1){
-	  return output/bn_sigma[layer][neuron];
+	  return output*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -3262,7 +3262,7 @@ namespace whiteice
       T output = whiteice::math::log(T(1.0f) + whiteice::math::exp(k*in))/k;
       
       if(batchnorm && layer != getLayers()-1){
-	return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -3279,7 +3279,7 @@ namespace whiteice
       T output = T(1.0f) / (T(1.0f) + math::exp(-in));
 
       if(batchnorm && layer != getLayers()-1){
-	return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -3311,7 +3311,7 @@ namespace whiteice
       whiteice::math::convert(output, T(value));
       
       if(batchnorm && layer != getLayers()-1){
-	return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -3332,7 +3332,7 @@ namespace whiteice
       const T output = a*tanhbx;
 
       if(batchnorm && layer != getLayers()-1){
-	return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -3352,7 +3352,7 @@ namespace whiteice
       const T output = a*tanhbx;
 
       if(batchnorm && layer != getLayers()-1){
-	return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -3380,7 +3380,7 @@ namespace whiteice
 	output = (output + T(0.5f)*a*b*input);
 	
 	if(batchnorm && layer != getLayers()-1){
-	  return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	  return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -3422,7 +3422,7 @@ namespace whiteice
 
 
       if(batchnorm && layer != getLayers()-1){
-	return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -3442,7 +3442,7 @@ namespace whiteice
 	    T output = T(RELUcoef*input.first().real());
 	    
 	    if(batchnorm && layer != getLayers()-1){
-	      return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	      return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	    }
 	    else{
 	      return output;
@@ -3452,7 +3452,7 @@ namespace whiteice
 	    T output = T(input.first().real());
 	    
 	    if(batchnorm && layer != getLayers()-1){
-	      return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	      return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	    }
 	    else{
 	      return output;
@@ -3477,7 +3477,7 @@ namespace whiteice
 	  T output = T(out);
 	  
 	  if(batchnorm && layer != getLayers()-1){
-	    return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	    return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -3490,7 +3490,7 @@ namespace whiteice
 	T output = sin(input);
 
 	if(batchnorm && layer != getLayers()-1){
-	  return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	  return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -3500,7 +3500,7 @@ namespace whiteice
 	T output = cos(input);
 
 	if(batchnorm && layer != getLayers()-1){
-	  return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	  return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -3512,7 +3512,7 @@ namespace whiteice
       T output = input; // all layers/neurons are linear..
       
       if(batchnorm && layer != getLayers()-1){
-	return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -3526,7 +3526,7 @@ namespace whiteice
 	  T output = T(RELUcoef*input.first().real());
 
 	  if(batchnorm && layer != getLayers()-1){
-	    return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	    return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -3536,7 +3536,7 @@ namespace whiteice
 	  T output = T(input.first().real());
 	  
 	  if(batchnorm && layer != getLayers()-1){
-	    return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	    return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -3560,7 +3560,7 @@ namespace whiteice
 	T output = T(out);
 
 	if(batchnorm && layer != getLayers()-1){
-	  return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	  return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -3581,7 +3581,7 @@ namespace whiteice
 	}
 
 	if(batchnorm && layer != getLayers()-1){
-	  return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	  return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -3607,7 +3607,7 @@ namespace whiteice
 
 	
 	if(batchnorm && layer != getLayers()-1){
-	  return (output - bn_mu[layer][neuron])/bn_sigma[layer][neuron];
+	  return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -3643,7 +3643,7 @@ namespace whiteice
       T output = T(1.0f)/divider;
       
       if(batchnorm && layer != getLayers()-1){
-	return output/bn_sigma[layer][neuron];
+	return output*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -3660,7 +3660,7 @@ namespace whiteice
       output = math::exp(-in) / (output*output);
 
       if(batchnorm && layer != getLayers()-1){
-	return output/bn_sigma[layer][neuron];
+	return output*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -3680,7 +3680,7 @@ namespace whiteice
       
       
       if(batchnorm && layer != getLayers()-1){
-	return output/bn_sigma[layer][neuron];
+	return output*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -3707,7 +3707,7 @@ namespace whiteice
       T output = a*b*(T(1.0f) - tanhbx*tanhbx);
 
       if(batchnorm && layer != getLayers()-1){
-	return output/bn_sigma[layer][neuron];
+	return output*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -3733,7 +3733,7 @@ namespace whiteice
       T output = a*b*(T(1.0f) - tanhbx*tanhbx);
 
       if(batchnorm && layer != getLayers()-1){
-	return output/bn_sigma[layer][neuron];
+	return output*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -3752,7 +3752,7 @@ namespace whiteice
 	  T output = T(0.0f) + T(0.5f)*a*b;
 	  
 	  if(batchnorm && layer != getLayers()-1){
-	    return output/bn_sigma[layer][neuron];
+	    return output*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -3770,7 +3770,7 @@ namespace whiteice
 	output = (output + T(0.5f)*a*b);
 
 	if(batchnorm && layer != getLayers()-1){
-	  return output/bn_sigma[layer][neuron];
+	  return output*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -3812,7 +3812,7 @@ namespace whiteice
       
       
       if(batchnorm && layer != getLayers()-1){
-	return output/bn_sigma[layer][neuron];
+	return output*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -3832,7 +3832,7 @@ namespace whiteice
 	    T output = T(RELUcoef);
 	    
 	    if(batchnorm && layer != getLayers()-1){
-	      return output/bn_sigma[layer][neuron];
+	      return output*bn_sigma[layer][neuron];
 	    }
 	    else{
 	      return output;
@@ -3842,7 +3842,7 @@ namespace whiteice
 	    T output = T(1.00f);
 	    
 	    if(batchnorm && layer != getLayers()-1){
-	      return output/bn_sigma[layer][neuron];
+	      return output*bn_sigma[layer][neuron];
 	    }
 	    else{
 	      return output;
@@ -3876,7 +3876,7 @@ namespace whiteice
 	  T output = T(out);
 	  
 	  if(batchnorm && layer != getLayers()-1){
-	    return output/bn_sigma[layer][neuron];
+	    return output*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -3890,7 +3890,7 @@ namespace whiteice
 	T output = cos(input);
 
 	if(batchnorm && layer != getLayers()-1){
-	  return output/bn_sigma[layer][neuron];
+	  return output*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -3900,7 +3900,7 @@ namespace whiteice
 	T output = -sin(input);
 
 	if(batchnorm && layer != getLayers()-1){
-	  return output/bn_sigma[layer][neuron];
+	  return output*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -3912,7 +3912,7 @@ namespace whiteice
       T output = T(1.0f); // all layers/neurons are linear..
 
       if(batchnorm && layer != getLayers()-1){
-	return output/bn_sigma[layer][neuron];
+	return output*bn_sigma[layer][neuron];
       }
       else{
 	return output;
@@ -3926,7 +3926,7 @@ namespace whiteice
 	  T output = T(RELUcoef);
 	  
 	  if(batchnorm && layer != getLayers()-1){
-	    return output/bn_sigma[layer][neuron];
+	    return output*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -3936,7 +3936,7 @@ namespace whiteice
 	  T output = T(1.00f);
 	  
 	  if(batchnorm && layer != getLayers()-1){
-	    return output/bn_sigma[layer][neuron];
+	    return output*bn_sigma[layer][neuron];
 	  }
 	  else{
 	    return output;
@@ -3970,7 +3970,7 @@ namespace whiteice
 	T output = T(out);
 
 	if(batchnorm && layer != getLayers()-1){
-	  return output/bn_sigma[layer][neuron];
+	  return output*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -4037,7 +4037,7 @@ namespace whiteice
 	// return output;
 	
 	if(batchnorm && layer != getLayers()-1){
-	  return output/bn_sigma[layer][neuron];
+	  return output*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -4107,7 +4107,7 @@ namespace whiteice
 	// return output;
 	
 	if(batchnorm && layer != getLayers()-1){
-	  return output/bn_sigma[layer][neuron];
+	  return output*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -4136,7 +4136,7 @@ namespace whiteice
 	}
 	
 	if(batchnorm && layer != getLayers()-1){
-	  return output/bn_sigma[layer][neuron];
+	  return output*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -4175,7 +4175,7 @@ namespace whiteice
 
 
 	if(batchnorm && layer != getLayers()-1){
-	  return output/bn_sigma[layer][neuron];
+	  return output*bn_sigma[layer][neuron];
 	}
 	else{
 	  return output;
@@ -6251,6 +6251,8 @@ namespace whiteice
 
 	if(sigma[i] <= T(1e-6)) // don't divide using zeros [keep near zero stdev values zero]
 	  sigma[i] = T(1.0f);
+
+	sigma[i] = T(1.0f)/sigma[i]; // use inverse value of sigma so you multiply and not divide: (1/sigma)*(x-mu)
       }
 
       
@@ -6258,7 +6260,6 @@ namespace whiteice
 
     return true; 
   }
-
   
 
   /////////////////////////////////////////////////////////////////////////////

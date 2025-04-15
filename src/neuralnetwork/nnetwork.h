@@ -368,7 +368,7 @@ namespace whiteice
 
     bool calculateBatchNorm(const std::vector< math::vertex<T> >& data,
 			    unsigned int NUMLAYERS = 0);
-    
+
     ////////////////////////////////////////////////////////////
   public:
 
