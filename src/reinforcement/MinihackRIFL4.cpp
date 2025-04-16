@@ -36,10 +36,11 @@ namespace whiteice
   {
     // we inteprete action values as one hot encoded probabilistic values from which one-hot-encoded
     // vector is chosen: [0 0 1 0] means 3rd action is chosen.
-    this->setOneHotAction(false);
-    // this->setSmartEpisodes(true); // gives more weight to reinforcement values when calculating Q
-    this->setGamma(0.80);
-    this->setReinforcementWeighting(false);
+    this->setOneHotAction(true);
+    this->setSmartEpisodes(true); // gives more weight to reinforcement values when calculating Q
+    this->setGamma(0.95);
+    this->setReinforcementWeighting(true);
+    this->setLearningDatasetSize(10000);
     
     
     if(!Py_IsInitialized()){

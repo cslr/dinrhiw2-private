@@ -54,6 +54,11 @@ namespace whiteice
     bool exportNetworks(std::vector< whiteice::nnetwork<T>* >& nnlist,
 			int latestN = 0) const;
 
+    // batch normalization
+    void setBatchNorm(const bool bn = true);
+
+    bool getBatchNorm();
+
     bool calculateBatchNorm(const std::vector< math::vertex<T> >& data); 
 
       

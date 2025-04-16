@@ -142,6 +142,18 @@ namespace whiteice
       return LOOP_UPDATE_HZ;
     }
 
+    int getLearningDatasetSize() const{
+      return SAMPLESIZE;
+    }
+
+    bool setLearningDatasetSize(unsigned int size){
+      if(size <= 0) return false;
+      
+      SAMPLESIZE = size;
+      
+      return true;
+    }
+
     // clear reinforcement statistics
     bool clearStatistics();
 
@@ -199,6 +211,8 @@ namespace whiteice
     
     std::atomic<float> latestError;
     std::atomic<bool> learningMode, sleepMode;
+
+    std::atomic<unsigned int> SAMPLESIZE = 4000;
     
     T epsilon;
     mutable std::mutex epsilon_mutex;

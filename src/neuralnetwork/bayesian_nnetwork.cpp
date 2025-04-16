@@ -281,6 +281,26 @@ namespace whiteice
     return true;
   }
 
+  
+  template <typename T>
+  void bayesian_nnetwork<T>::setBatchNorm(const bool bn)
+  {
+    if(nnets.size() <= 0) return;
+
+    for(unsigned int i=0;i<nnets.size();i++){
+      nnets[i]->setBatchNorm(bn);
+    }
+  }
+  
+
+  template <typename T>
+  bool bayesian_nnetwork<T>::getBatchNorm()
+  {
+    if(nnets.size() <= 0) return false;
+
+    return nnets[0]->getBatchNorm();
+  }
+
 
   template <typename T>
   bool bayesian_nnetwork<T>::calculateBatchNorm(const std::vector< math::vertex<T> >& data)

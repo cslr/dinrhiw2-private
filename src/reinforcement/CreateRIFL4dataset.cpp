@@ -286,7 +286,7 @@ namespace whiteice
       
       assert(total_weight > T(0.0f));
 
-      T mixing_factor = T(0.5f);
+      T mixing_factor = T(0.10f); // 10% goes to generic mixing_factor
       T sump = T(0.0f);
 
       for(unsigned int i=0;i<episodes_weights.size();i++){
@@ -695,7 +695,7 @@ namespace whiteice
     }
 
     // add preprocessing to dataset
-#if 0
+#if 1
     {
       data.preprocess(0, whiteice::dataset<T>::dnMeanVarianceNormalization);
     

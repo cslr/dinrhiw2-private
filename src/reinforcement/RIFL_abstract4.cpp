@@ -29,12 +29,14 @@ namespace whiteice
 				    const unsigned int RECURRENT_DIMENSIONS_) :
     numActions(numActions_),
     numStates(numStates_),
-    RECURRENT_DIMENSIONS(RECURRENT_DIMENSIONS_)
+    RECURRENT_DIMENSIONS(RECURRENT_DIMENSIONS_),
+    negativeQ(alsoNegativeQValues)
   {
     // initializes parameters
     {
       // zero = learn pure Q(state,action) = x function which action=policy(state) is optimized
       gamma = T(0.95); // how much weight future values Q() have: was 0.95 WAS: 0.80
+      SAMPLESIZE = 4000; // dataset size used to learning
 
       if(sequentialRandomMoves_ >= 1)
 	this->sequentialRandomMoves = sequentialRandomMoves_;
@@ -101,17 +103,17 @@ namespace whiteice
 	{
 	  whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::rectifier);
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::sigmoid); // tanh, sigmoid, halfLinear
-	  //nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::pureLinear);
-	  if(alsoNegativeQValues == false){
-	    nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid); // ([0,+1])
-	  }
-	  else{
-	    nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // ([-1,1])
-	  }
+	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::pureLinear);
+	  //if(alsoNegativeQValues == false){
+	  //  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid); // ([0,+1])
+	  //}
+	  //else{
+	  //  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // ([-1,1])
+	  //}
 	  
 	  nn.randomize(2, T(0.5)); // was 1.0
 	  nn.setResidual(true);
-	  nn.setBatchNorm(true); // NOW: Q-also has batch norm enabled
+	  nn.setBatchNorm(false); // NOW: Q-also has batch norm enabled
 	  
 	  Q.importNetwork(nn);
 	  lagged_Q.importNetwork(nn);
@@ -167,7 +169,7 @@ namespace whiteice
 	  
 	  nn.randomize(2, T(0.9)); // was 1.0
 	  nn.setResidual(true);
-	  nn.setBatchNorm(true);
+	  nn.setBatchNorm(false);
 
 	  policy.importNetwork(nn);
 	  lagged_policy.importNetwork(nn);
@@ -204,6 +206,7 @@ namespace whiteice
     {
       // zero = learn pure Q(state,action) = x function which action=policy(state) is optimized
       gamma = T(0.95); // how much weight future values Q() have: WAS: 0.95
+      SAMPLESIZE = 4000; // dataset size used to learning
 
       if(sequentialRandomMoves_ >= 1)
 	this->sequentialRandomMoves = sequentialRandomMoves_;
@@ -264,16 +267,17 @@ namespace whiteice
 	{
 	  whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::rectifier);
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::sigmoid); // tanh, sigmoid, halfLinear
-	  if(alsoNegativeQValues == false){
-	    nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid); // [0,+1]
-	  }
-	  else{
-	    nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // [-1,+1]
-	  }
+	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::pureLinear);
+	  //if(alsoNegativeQValues == false){
+	  //  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid); // [0,+1]
+	  //}
+	  //else{
+	  //  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // [-1,+1]
+	  //}
 	  
 	  nn.randomize(2, T(0.5)); // was 1.0
 	  nn.setResidual(true);
-	  nn.setBatchNorm(true); // NOW: Q-also have batch norm enabled! (=> needs many iterations to stabilize)
+	  nn.setBatchNorm(false); // NOW: Q-also have batch norm enabled! (=> needs many iterations to stabilize)
 	  
 	  Q.importNetwork(nn);
 	  lagged_Q.importNetwork(nn);
@@ -308,7 +312,7 @@ namespace whiteice
 	  
 	  nn.randomize(2, T(0.9)); // was 1.0
 	  nn.setResidual(true);
-	  nn.setBatchNorm(true);
+	  nn.setBatchNorm(false);
 	  
 	  policy.importNetwork(nn);
 	  lagged_policy.importNetwork(nn);
@@ -1625,7 +1629,7 @@ namespace whiteice
     new_action.resize(action.size());
     new_action.zero();
 
-#if 0
+#if 1
     for(unsigned int i=0;i<new_action.size();i++){
       new_action[ACTION] = T(-1.0f);
     }
@@ -1646,7 +1650,7 @@ namespace whiteice
     const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 50
     
     // tau = 1.0 => no lagged neural networks [don't work]
-    const T tau = T(1.0); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
+    const T tau = T(0.001); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
     
     std::vector< rifl4_datapoint<T> > episode;
 
@@ -1677,12 +1681,12 @@ namespace whiteice
     int old_grad_iterations = -1;
     int old_grad2_iterations = -1;
 
-    const unsigned long DATASIZE = 100000; // was: 100.000 / 1M history of samples
+    const unsigned long DATASIZE = 1000000; // 1M history of samples
     // assumes each episode length is 100 so this is ~ equal to 1.000.000 samples
     const unsigned long EPISODES_MAX_SIZE = 10000;
     const unsigned long MINIMUM_EPISODE_SIZE = 15; // was: 25
     const unsigned long MINIMUM_DATASIZE = 500; // samples required to start learning, was:1000
-    const unsigned long SAMPLESIZE = 4000; // number of samples used in learning, was: 2000, 3500, 5000=(10bins^3variables*5samples = 5000)
+    // const unsigned long SAMPLESIZE = 4000; // number of samples used in learning, was: 2000, 3500, 5000=(10bins^3variables*5samples = 5000)
     unsigned long database_counter = 0;
     unsigned long episodes_counter = 0;
 
@@ -2103,8 +2107,15 @@ namespace whiteice
 
 	  T episode_weight = T(0.0f);
 
-	  for(const auto& e : episode)
-	    episode_weight += whiteice::math::abs(e.reinforcement);
+	  for(const auto& e : episode){
+	    if(negativeQ){
+	      episode_weight += whiteice::math::abs((T(1.0f) + e.reinforcement)/T(2.0f)); // values are between [-1,+1] => [0,1]
+	    }
+	    else{
+	      episode_weight += whiteice::math::abs(e.reinforcement);
+	    }
+	      
+	  }
 	  
 	  if(episode.size())
 	    episode_weight /= T(episode.size());
@@ -2241,23 +2252,24 @@ namespace whiteice
 #if 1
 		whiteice::nnetwork<T> nn2;
 		std::vector< math::vertex<T> > lagged_weights;
-		
-		lagged_Q.exportSamples(nn2, lagged_weights, 1);
+		std::vector< math::vertex<T> > lagged_bndata;
+
+		if(lagged_Q.getBatchNorm()){
+		  if(lagged_Q.exportSamples(nn2, lagged_weights, lagged_bndata, 1) == false)
+		    assert(0);
+		}
+		else{
+		  if(lagged_Q.exportSamples(nn2, lagged_weights, 1) == false)
+		    assert(0);
+		}
 
 		if(lagged_weights.size() > 0){
 
-		  if(0){
-		    whiteice::logging.info("RIFL_abstract4: current Q diagnostics");
-		    lagged_Q.diagnosticsInfo();
-		    whiteice::logging.info("RIFL_abstract4: current Q-model imported");
-		    
-		    whiteice::logging.info("RIFL_abstract4: solved Q diagnostics");
-		    Q.diagnosticsInfo();
-		    whiteice::logging.info("RIFL_abstract4: solved Q-model imported");
-		  }
-		    
 		  math::vertex<T> weights;
+		  math::vertex<T> bndata;
+		  
 		  if(nn.exportdata(weights) == false) assert(0);
+		  if(nn.getBatchNorm()) if(nn.exportBNdata(bndata) == false) assert(0);
 
 		  {
 		    std::lock_guard<std::mutex> lockh(has_model_mutex);
@@ -2265,85 +2277,22 @@ namespace whiteice
 		    if(hasModel[1] == 0){
 		      // don't lag results with the first update
 		      lagged_weights[0] = weights;
+		      if(nn.getBatchNorm()) lagged_bndata[0] = bndata;
 		    }
 		  }
 		  
-		  if(0){
-		    logging.info("lagged_Q update:");
-		    
-		    char buffer[256];
-		    
-		    snprintf(buffer, 256, "lw.size %d lw[0].size() %d w.size() %d tau %f\n",
-			     (int)lagged_weights.size(), (int)lagged_weights[0].size(),
-			     (int)weights.size(),
-			     tau.c[0]);
-		    
-		    logging.info(buffer);
-		  }
+		  lagged_weights[0] = tau*weights + (T(1.0)-tau)*lagged_weights[0];
+		  if(nn.getBatchNorm()) lagged_bndata[0]  = tau*bndata  + (T(1.0)-tau)*lagged_bndata[0];
 
-		  if(0){
-		    char buffer[256];
-
-		    snprintf(buffer, 256, "before lw v: %f %f %f %f %f",
-			     lagged_weights[0][0].c[0],lagged_weights[0][1].c[0],
-			     lagged_weights[0][2].c[0],lagged_weights[0][3].c[0],
-			     lagged_weights[0][4].c[0]);
-		    
-		    logging.info(buffer);
-
-		    snprintf(buffer, 256, "before w v: %f %f %f %f %f",
-			     weights[0].c[0],weights[1].c[0],
-			     weights[2].c[0],weights[3].c[0],
-			     weights[4].c[0]);
-		    
-		    logging.info(buffer);
-		  }
-
-		  // lagged_weights[0] = tau*weights + (T(1.0)-tau)*lagged_weights[0];
-
-		  auto part1 = tau*weights; // THIS DOES NOT WORK PROPERLY (BUG!)
-		  auto part2 = (T(1.0)-tau)*lagged_weights[0];
-
-		  if(0){
-		    char buffer[256];
-		    
-		    snprintf(buffer, 256, "part1 v: %f %f %f %f %f",
-			     part1[0].c[0],part1[1].c[0],
-			     part1[2].c[0],part1[3].c[0],
-			     part1[4].c[0]);
-		    
-		    logging.info(buffer);
-		    
-		    snprintf(buffer, 256, "part2 v: %f %f %f %f %f",
-			     part2[0].c[0],part2[1].c[0],
-			     part2[2].c[0],part2[3].c[0],
-			     part2[4].c[0]);
-		    
-		    logging.info(buffer);
-		  }
-
+		  // 
+		  //auto part1 = tau*weights; // THIS DOES NOT WORK PROPERLY (BUG!)
+		  //auto part2 = (T(1.0)-tau)*lagged_weights[0];
+		  //
+		  //lagged_weights[0] = part1 + part2;
+		  //
 		  
-		  lagged_weights[0] = part1 + part2;
-		  
-		  if(0){
-		    char buffer[256];
-		    
-		    snprintf(buffer, 256, "after lw v: %f %f %f %f %f",
-			     lagged_weights[0][0].c[0],lagged_weights[0][1].c[0],
-			     lagged_weights[0][2].c[0],lagged_weights[0][3].c[0],
-			     lagged_weights[0][4].c[0]);
-		    
-		    logging.info(buffer);
-		    
-		    snprintf(buffer, 256, "after w v: %f %f %f %f %f",
-			     weights[0].c[0],weights[1].c[0],
-			     weights[2].c[0],weights[3].c[0],
-			     weights[4].c[0]);
-		    
-		    logging.info(buffer);
-		  }
-
 		  if(nn.importdata(lagged_weights[0]) == false) assert(0);
+		  if(nn.getBatchNorm()) if(nn.importBNdata(lagged_bndata[0]) == false) assert(0);
 		  if(lagged_Q.importNetwork(nn) == false) assert(0);
 		}
 		else{
@@ -2427,11 +2376,19 @@ namespace whiteice
 	  
 	  {
 	    std::vector< math::vertex<T> > weights;
+	    std::vector< math::vertex<T> > bndatas;
 	    
 	    std::lock_guard<std::mutex> lock(Q_mutex);
-	    
-	    if(lagged_Q.exportSamples(qnn, weights, 1) == false){ // was: lagged_Q
-	      assert(0);
+
+	    if(lagged_Q.getBatchNorm()){
+	      if(lagged_Q.exportSamples(qnn, weights, bndatas, 1) == false){ // was: lagged_Q
+		assert(0);
+	      }
+	    }
+	    else{
+	      if(lagged_Q.exportSamples(qnn, weights, 1) == false){ // was: lagged_Q
+		assert(0);
+	      }
 	    }
 
 	    if(weights.size() <= 0)
@@ -2439,6 +2396,12 @@ namespace whiteice
 
 	    if(qnn.importdata(weights[0]) == false){
 	      assert(0);
+	    }
+
+	    if(qnn.getBatchNorm()){
+	      if(qnn.importBNdata(bndatas[0]) == false){
+		assert(0);
+	      }
 	    }
 	  }
 	  
@@ -2575,10 +2538,24 @@ namespace whiteice
 #if 1
 		whiteice::nnetwork<T> nn2;
 		std::vector< math::vertex<T> > lagged_weights;
-		lagged_policy.exportSamples(nn2, lagged_weights, 1);
+		std::vector< math::vertex<T> > lagged_bndatas;
+
+		if(lagged_policy.getBatchNorm()){
+		  if(lagged_policy.exportSamples(nn2, lagged_weights, lagged_bndatas, 1) == false){
+		    assert(0);
+		  }
+		}
+		else{
+		  if(lagged_policy.exportSamples(nn2, lagged_weights, 1) == false){
+		    assert(0);
+		  }
+		}
 
 		math::vertex<T> weights;
+		math::vertex<T> bndata;
+		
 		nn.exportdata(weights);
+		if(nn.getBatchNorm()) nn.exportBNdata(bndata);
 
 		{
 		  std::lock_guard<std::mutex> lockh(has_model_mutex);
@@ -2588,6 +2565,7 @@ namespace whiteice
 		  if(hasModel[1] == 0){
 		    // don't lag results with the first update
 		    lagged_weights[0] = weights;
+		    if(nn.getBatchNorm()) lagged_bndatas[0] = bndata;
 		  }
 		}
 		  
@@ -2598,7 +2576,11 @@ namespace whiteice
 		    logging.info("lagged_policy updated");
 				 
 		    lagged_weights[0] = tau*weights + (T(1.0)-tau)*lagged_weights[0];
+		    if(nn.getBatchNorm()) lagged_bndatas[0] = tau*bndata  + (T(1.0)-tau)*lagged_bndatas[0];
+		    
 		    nn.importdata(lagged_weights[0]);
+		    if(nn.getBatchNorm()) nn.importBNdata(lagged_bndatas[0]);
+		    
 		    lagged_policy.importNetwork(nn);
 		  }
 		  else{
@@ -2683,9 +2665,17 @@ namespace whiteice
 	    {
 	      std::lock_guard<std::mutex> lock(Q_mutex);
 	      std::vector< math::vertex<T> > weights;
-	      
-	      if(lagged_Q.exportSamples(q_nn, weights, 1) == false){ // was: lagged_Q
-		assert(0);
+	      std::vector< math::vertex<T> > bndatas;
+
+	      if(lagged_Q.getBatchNorm()){
+		if(lagged_Q.exportSamples(q_nn, weights, bndatas, 1) == false){ // was: lagged_Q
+		  assert(0);
+		}
+	      }
+	      else{
+		if(lagged_Q.exportSamples(q_nn, weights, 1) == false){ // was: lagged_Q
+		  assert(0);
+		}
 	      }
 	      
 	      assert(weights.size() > 0);
@@ -2694,22 +2684,42 @@ namespace whiteice
 		assert(0);
 	      }
 
+	      if(q_nn.getBatchNorm()){
+		if(q_nn.importBNdata(bndatas[0]) == false){
+		  assert(0);
+		}
+	      }
+
 	      Q_preprocess_copy = Q_preprocess;
 	    }
 
 	    {
 	      std::vector< math::vertex<T> > weights;
+	      std::vector< math::vertex<T> > bndatas;
 	      
 	      std::lock_guard<std::mutex> lock(policy_mutex);
-	      
-	      if(lagged_policy.exportSamples(nn, weights, 1) == false){ // was: lagged_policy
-		assert(0);
+
+	      if(lagged_policy.getBatchNorm()){
+		if(lagged_policy.exportSamples(nn, weights, bndatas, 1) == false){ // was: lagged_policy
+		  assert(0);
+		}
+	      }
+	      else{
+		if(lagged_policy.exportSamples(nn, weights, 1) == false){ // was: lagged_policy
+		  assert(0);
+		}
 	      }
 	      
 	      assert(weights.size() > 0);
 	      
 	      if(nn.importdata(weights[0]) == false){
 		assert(0);
+	      }
+
+	      if(nn.getBatchNorm()){
+		if(nn.importBNdata(bndatas[0]) == false){
+		  assert(0);
+		}
 	      }
 
 	      logging.info("lagged_policy loading diagnostics");

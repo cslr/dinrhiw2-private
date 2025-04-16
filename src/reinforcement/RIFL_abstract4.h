@@ -159,8 +159,20 @@ namespace whiteice
       use_smart_weights = use_weighting; // does we use weighted sampling using reinforcement-values in RIFL4?
     }
 
-    bool getReinforcementWeighting(){
+    bool getReinforcementWeighting() const{
       return use_smart_weights;
+    }
+
+    int getLearningDatasetSize() const{
+      return SAMPLESIZE;
+    }
+
+    bool setLearningDatasetSize(unsigned int size){
+      if(size <= 0) return false;
+
+      SAMPLESIZE = size;
+
+      return true;
     }
 
     // clear reinforcement statistics
@@ -195,7 +207,7 @@ namespace whiteice
 			    const T temperature = T(1.0f));
 
     // reinforcement Q model: Q(state, action) ~ discounted future cost
-    whiteice::bayesian_nnetwork<T> Q, lagged_Q;
+    whiteice::bayesian_nnetwork<T> Q, lagged_Q, lagged_Q2;
     whiteice::dataset<T> Q_preprocess;
     mutable std::mutex Q_mutex;
 
@@ -226,6 +238,10 @@ namespace whiteice
     
     std::atomic<float> latestError;
     std::atomic<bool> learningMode, sleepMode;
+
+    std::atomic<bool> negativeQ; // is negative Q values enabled q E [-1,+1] instead of [0,+1]
+
+    std::atomic<unsigned int> SAMPLESIZE = 4000;
     
     T epsilon;
     mutable std::mutex epsilon_mutex;
