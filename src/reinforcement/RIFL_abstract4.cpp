@@ -1643,14 +1643,15 @@ namespace whiteice
   void RIFL_abstract4<T>::loop()
   {
     // number of iteratios to use per epoch for optimization
-    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 500; // WAS: 500
+    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 1000; // WAS: 500
     const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 100
 
-    const unsigned int Q_OPTIMIZE_ITERATIONS = 500; // 3; // WAS: 500
-    const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 50
+    const unsigned int Q_OPTIMIZE_ITERATIONS = 10; // 3; // WAS: 1000
+    const unsigned int P_OPTIMIZE_ITERATIONS = 10; // 3; // WAS: 50
     
     // tau = 1.0 => no lagged neural networks [don't work]
     const T tau = T(0.001); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
+    const T tau_policy = T(1.0);
     
     std::vector< rifl4_datapoint<T> > episode;
 
@@ -1681,7 +1682,7 @@ namespace whiteice
     int old_grad_iterations = -1;
     int old_grad2_iterations = -1;
 
-    const unsigned long DATASIZE = 1000000; // 1M history of samples
+    const unsigned long DATASIZE = 100000; // 100K history of samples
     // assumes each episode length is 100 so this is ~ equal to 1.000.000 samples
     const unsigned long EPISODES_MAX_SIZE = 10000;
     const unsigned long MINIMUM_EPISODE_SIZE = 15; // was: 25
@@ -2380,13 +2381,13 @@ namespace whiteice
 	    
 	    std::lock_guard<std::mutex> lock(Q_mutex);
 
-	    if(lagged_Q.getBatchNorm()){
-	      if(lagged_Q.exportSamples(qnn, weights, bndatas, 1) == false){ // was: lagged_Q
+	    if(Q.getBatchNorm()){
+	      if(Q.exportSamples(qnn, weights, bndatas, 1) == false){ // was: lagged_Q
 		assert(0);
 	      }
 	    }
 	    else{
-	      if(lagged_Q.exportSamples(qnn, weights, 1) == false){ // was: lagged_Q
+	      if(Q.exportSamples(qnn, weights, 1) == false){ // was: lagged_Q
 		assert(0);
 	      }
 	    }
@@ -2575,8 +2576,8 @@ namespace whiteice
 
 		    logging.info("lagged_policy updated");
 				 
-		    lagged_weights[0] = tau*weights + (T(1.0)-tau)*lagged_weights[0];
-		    if(nn.getBatchNorm()) lagged_bndatas[0] = tau*bndata  + (T(1.0)-tau)*lagged_bndatas[0];
+		    lagged_weights[0] = tau_policy*weights + (T(1.0)-tau_policy)*lagged_weights[0];
+		    if(nn.getBatchNorm()) lagged_bndatas[0] = tau_policy*bndata  + (T(1.0)-tau_policy)*lagged_bndatas[0];
 		    
 		    nn.importdata(lagged_weights[0]);
 		    if(nn.getBatchNorm()) nn.importBNdata(lagged_bndatas[0]);
@@ -2667,13 +2668,13 @@ namespace whiteice
 	      std::vector< math::vertex<T> > weights;
 	      std::vector< math::vertex<T> > bndatas;
 
-	      if(lagged_Q.getBatchNorm()){
-		if(lagged_Q.exportSamples(q_nn, weights, bndatas, 1) == false){ // was: lagged_Q
+	      if(Q.getBatchNorm()){
+		if(Q.exportSamples(q_nn, weights, bndatas, 1) == false){ // was: lagged_Q
 		  assert(0);
 		}
 	      }
 	      else{
-		if(lagged_Q.exportSamples(q_nn, weights, 1) == false){ // was: lagged_Q
+		if(Q.exportSamples(q_nn, weights, 1) == false){ // was: lagged_Q
 		  assert(0);
 		}
 	      }
@@ -2699,13 +2700,13 @@ namespace whiteice
 	      
 	      std::lock_guard<std::mutex> lock(policy_mutex);
 
-	      if(lagged_policy.getBatchNorm()){
-		if(lagged_policy.exportSamples(nn, weights, bndatas, 1) == false){ // was: lagged_policy
+	      if(policy.getBatchNorm()){
+		if(policy.exportSamples(nn, weights, bndatas, 1) == false){ // was: lagged_policy
 		  assert(0);
 		}
 	      }
 	      else{
-		if(lagged_policy.exportSamples(nn, weights, 1) == false){ // was: lagged_policy
+		if(policy.exportSamples(nn, weights, 1) == false){ // was: lagged_policy
 		  assert(0);
 		}
 	      }
@@ -2722,8 +2723,8 @@ namespace whiteice
 		}
 	      }
 
-	      logging.info("lagged_policy loading diagnostics");
-	      lagged_policy.diagnosticsInfo();
+	      logging.info("policy loading diagnostics");
+	      policy.diagnosticsInfo();
 	      nn.diagnosticsInfo();
 	    }
 	    

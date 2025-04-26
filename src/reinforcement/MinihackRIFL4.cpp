@@ -31,16 +31,16 @@ namespace whiteice
   template <typename T>
   MinihackRIFL4<T>::MinihackRIFL4(const std::string& pythonScript) 
     : RIFL_abstract4<T>(8, 52, true, {50,50,50,50}, {50,50,50,50})
-    // RIFL_abstract2<T>(8, 52, false, {100,100,100,100}, {100,100,100,100})
-    //RIFL_abstract2<T>(8, 51, false, {200,200,200,200}, {200,200,200,200})
+    // RIFL_abstract4<T>(8, 52, true, {75,75,75,75}, {75,75,75,75})
+    //RIFL_abstract4<T>(8, 52, true, {200,200,200,200}, {200,200,200,200})
   {
     // we inteprete action values as one hot encoded probabilistic values from which one-hot-encoded
     // vector is chosen: [0 0 1 0] means 3rd action is chosen.
     this->setOneHotAction(true);
     this->setSmartEpisodes(true); // gives more weight to reinforcement values when calculating Q
     this->setGamma(0.95);
-    this->setReinforcementWeighting(true);
-    this->setLearningDatasetSize(10000);
+    this->setReinforcementWeighting(false);
+    this->setLearningDatasetSize(10000); // disabled (use default 4000)
     
     
     if(!Py_IsInitialized()){

@@ -693,9 +693,9 @@ namespace whiteice
       if(running == false)
 	return; // exit point
     }
-
+    
     // add preprocessing to dataset
-#if 1
+#if 0
     {
       data.preprocess(0, whiteice::dataset<T>::dnMeanVarianceNormalization);
     

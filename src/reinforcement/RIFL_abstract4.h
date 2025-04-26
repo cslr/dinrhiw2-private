@@ -207,7 +207,7 @@ namespace whiteice
 			    const T temperature = T(1.0f));
 
     // reinforcement Q model: Q(state, action) ~ discounted future cost
-    whiteice::bayesian_nnetwork<T> Q, lagged_Q, lagged_Q2;
+    whiteice::bayesian_nnetwork<T> Q, lagged_Q;
     whiteice::dataset<T> Q_preprocess;
     mutable std::mutex Q_mutex;
 

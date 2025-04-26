@@ -50,6 +50,7 @@ random.seed()
 #env_name = "MiniHack-River-v0"
 #env_name = "MiniHack-MazeWalk-45x19-v0"
 #env_name = "MiniHack-MazeWalk-Mapped-15x15-v0"
+
 env_name = "MiniHack-Room-5x5-v0"
 
 env = gym.make(env_name, observation_keys=("chars_crop", "blstats"), obs_crop_w=5, obs_crop_h=5)
