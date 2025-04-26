@@ -643,7 +643,7 @@ namespace whiteice
 	char buf[256];
 
 	snprintf(buf, 256,
-		 "getError() init: data.size(0)=%d use_minibatch=%d regularize=%d dropout=%d\n",
+		 "getError() init: data.size(0)=%d use_minibatch=%d regularize=%d dropout=%d",
 		 dtest.size(0), (int)use_minibatch, (int)regularize, (int)dropout);
 	whiteice::logging.info(buf);
 
