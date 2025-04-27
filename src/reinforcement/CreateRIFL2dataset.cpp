@@ -47,6 +47,7 @@ namespace whiteice
 	std::lock_guard<std::mutex> lock(rifl.Q_mutex);
 	
 	this->lagged_Q = rifl.lagged_Q;
+	this->lagged_Q2 = rifl.lagged_Q2;
 	this->Q_preprocess = rifl.Q_preprocess;
       }
     }
@@ -326,6 +327,9 @@ namespace whiteice
 	  // calculates updated utility value
 	  whiteice::math::vertex<T> y(1);
 	  y.zero();
+
+	  whiteice::math::vertex<T> y2(1);
+	  y2.zero();
 	  
 	  T maxvalue = T(-INFINITY);
 	  
@@ -364,7 +368,7 @@ namespace whiteice
 		logging.info(line.c_str());
 	      }
 
-#if 0
+#if 1
 	      // add exploration noise..
 	      auto noise = u;
 	      // Normal EX[n]=0 StDev[n]=1 [OPTMIZE ME: don't create new RNG everytime but use global one]
@@ -395,14 +399,26 @@ namespace whiteice
 	    
 	    if(this->lagged_Q.calculate(tmp, y, 1, 0) == false)
 	      assert(0);
+
+	    if(this->lagged_Q2.calculate(tmp, y2, 1, 0) == false)
+	      assert(0);
 	    
 	    this->Q_preprocess.invpreprocess(1, y);
+	    this->Q_preprocess.invpreprocess(1, y2);
 	    
 	    if(maxvalue < abs(y[0]))
 	      maxvalue = abs(y[0]);
+
+	    if(maxvalue < abs(y2[0]))
+	      maxvalue = abs(y2[0]);
 	    
 	    if(epoch >= 2 && datum.lastStep == false){
-	      out[0] = rifl.gamma*y[0] + datum.reinforcement;
+	      if(y[0] < y2[0]){
+		out[0] = rifl.gamma*y[0] + datum.reinforcement;
+	      }
+	      else{
+		out[0] = rifl.gamma*y2[0] + datum.reinforcement;
+	      }
 	    }
 	    else{ // the first iteration of reinforcement learning do not use Q or if this is last step
 	      out[0] = datum.reinforcement;
@@ -463,6 +479,9 @@ namespace whiteice
 	// calculates updated utility value
 	whiteice::math::vertex<T> y(1);
 	y.zero();
+
+	whiteice::math::vertex<T> y2(1);
+	y2.zero();
 	
 	T maxvalue = T(-INFINITY);
 	
@@ -502,7 +521,7 @@ namespace whiteice
 	    }
 	    
 	    // add exploration noise..
-#if 0
+#if 1
 	    auto noise = u;
 	    // Normal EX[n]=0 StDev[n]=1 [OPTMIZE ME: don't create new RNG everytime but use global one]
 	    rng.normal(noise);
@@ -539,6 +558,10 @@ namespace whiteice
 	  if(this->lagged_Q.calculate(tmp, y, 1, 0) == false)
 	    assert(0);
 
+	  if(this->lagged_Q2.calculate(tmp, y2, 1, 0) == false)
+	    assert(0);
+	  
+
 	  {
 	    char buf[80];
 	    snprintf(buf, 80, "CreateRIFL2dataset: y.after=%f", y[0].real());
@@ -546,12 +569,21 @@ namespace whiteice
 	  }
 	  
 	  this->Q_preprocess.invpreprocess(1, y);
+	  this->Q_preprocess.invpreprocess(1, y2);
 	  
 	  if(maxvalue < abs(y[0]))
 	    maxvalue = abs(y[0]);
+
+	  if(maxvalue < abs(y2[0]))
+	    maxvalue = abs(y2[0]);
 	  
 	  if(epoch >= 2 && datum.lastStep == false){
-	    out[0] = datum.reinforcement + rifl.gamma*y[0];
+	    if(y[0] < y2[0]){
+	      out[0] = rifl.gamma*y[0] + datum.reinforcement;
+	    }
+	    else{
+	      out[0] = rifl.gamma*y2[0] + datum.reinforcement;
+	    }
 	  }
 	  else{ // the first iteration of reinforcement learning do not use Q or if this is last step
 	    out[0] = datum.reinforcement;

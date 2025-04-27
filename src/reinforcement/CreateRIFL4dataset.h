@@ -53,7 +53,7 @@ namespace whiteice
       whiteice::bayesian_nnetwork<T> lagged_policy;
       
       whiteice::dataset<T> Q_preprocess;
-      whiteice::bayesian_nnetwork<T> lagged_Q;
+      whiteice::bayesian_nnetwork<T> lagged_Q, lagged_Q2;
       
       whiteice::RNG<T> rng;
       
