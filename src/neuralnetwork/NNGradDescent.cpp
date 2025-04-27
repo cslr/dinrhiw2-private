@@ -230,7 +230,8 @@ namespace whiteice
 					 unsigned int NTHREADS,
 					 unsigned int MAXITERS,
 					 bool dropout,
-					 bool initiallyUseNN)
+					 bool initiallyUseNN,
+					 bool alwaysUpdateSolution)
     {
       if(data.getNumberOfClusters() < 2){
 	char buffer[256];
@@ -311,6 +312,8 @@ namespace whiteice
 	this->data = data;
 	this->NTHREADS = NTHREADS;
 	this->MAXITERS = MAXITERS;
+	this->always_update_solution = alwaysUpdateSolution;
+	
 	best_error = T(LARGE_INF_VALUE);
 	best_pure_error = T(LARGE_INF_VALUE);
 	iterations = 0;
@@ -947,7 +950,7 @@ namespace whiteice
 
 	  real_besty = pure_real_besty;
 
-	  if(best_pure_error > pure_real_besty){
+	  if(best_pure_error > pure_real_besty || always_update_solution){
 	    std::lock_guard<std::mutex> lock(solution_lock);
 	    
 	    this->best_error = pure_real_besty;
@@ -1166,8 +1169,9 @@ namespace whiteice
 	    if(new_error >= real_besty){
 	      no_improve_iterations++;
 	    }
-	    else{
-	      if(new_error < this->best_pure_error){
+
+	    if(new_error <= real_besty || always_update_solution){
+	      if(new_error < this->best_pure_error || always_update_solution){
 		this->bestx = x;
 		this->best_error = new_error;
 		this->best_pure_error = new_error;
@@ -1414,7 +1418,7 @@ namespace whiteice
 	    {
 	      solution_lock.lock();
 	      
-	      if(real(error) < real(best_error)){
+	      if(real(error) < real(best_error) || always_update_solution){
 		// improvement (smaller error with early stopping)
 		
 		if(dropout){
@@ -1424,7 +1428,7 @@ namespace whiteice
 		  const T gerror = getError(nn_without_dropout, data,
 					    false, false);
 		  
-		  if(real(gerror) < real(best_pure_error)){
+		  if(real(gerror) < real(best_pure_error) || always_update_solution){
 		    nn_without_dropout.exportdata(bestx);
 		    best_error = error;
 		    best_pure_error = gerror;
@@ -1433,7 +1437,7 @@ namespace whiteice
 		else{
 		  const T gerror = getError(*nn, data, false, false);
 		  
-		  if(real(gerror) < real(best_pure_error)){
+		  if(real(gerror) < real(best_pure_error) || always_update_solution){
 		    nn->exportdata(bestx);
 		    best_error = error;
 		    best_pure_error = gerror;
@@ -1784,7 +1788,7 @@ namespace whiteice
 	      w0 = weights;
 	      
 	      if(use_SGD == false){
-		if(real(error) < real(best_error)){
+		if(real(error) < real(best_error) || always_update_solution){
 		  std::lock_guard<std::mutex> lock(solution_lock);
 		  
 		  if(dropout){
@@ -1794,7 +1798,7 @@ namespace whiteice
 		    const T gerror = getError(nn_without_dropout, data,
 					      false, false);
 		    
-		    if(real(gerror) < real(best_pure_error)){
+		    if(real(gerror) < real(best_pure_error) || always_update_solution){
 		      nn_without_dropout.exportdata(bestx);
 		      best_error = error;
 		      best_pure_error = gerror;
@@ -1803,7 +1807,7 @@ namespace whiteice
 		  else{
 		    const T gerror = getError(*nn, data, false, false);
 		    
-		    if(real(gerror) < real(best_pure_error)){
+		    if(real(gerror) < real(best_pure_error) || always_update_solution){
 		      nn->exportdata(bestx);
 		      best_error = error;
 		      best_pure_error = gerror;
@@ -1816,7 +1820,7 @@ namespace whiteice
 		
 		std::lock_guard<std::mutex> lock(solution_lock);
 		
-		if(real(gerror) < real(best_pure_error)){
+		if(real(gerror) < real(best_pure_error) || always_update_solution){
 		  nn->exportdata(bestx);
 		  best_error = error;
 		  best_pure_error = gerror;
@@ -1867,7 +1871,7 @@ namespace whiteice
 	    {
 	      solution_lock.lock();
 	      
-	      if(real(error) < real(best_error)){
+	      if(real(error) < real(best_error) || always_update_solution){
 		// improvement (smaller error with early stopping)
 		
 		if(dropout){
@@ -1877,7 +1881,7 @@ namespace whiteice
 		  const T gerror = getError(nn_without_dropout, data,
 					    false, false);
 		  
-		  if(real(gerror) < real(best_pure_error)){
+		  if(real(gerror) < real(best_pure_error) || always_update_solution){
 		    nn_without_dropout.exportdata(bestx);
 		    best_error = error;
 		    best_pure_error = gerror;
@@ -1886,7 +1890,7 @@ namespace whiteice
 		else{
 		  const T gerror = getError(*nn, data, false, false);
 		  
-		  if(real(gerror) < real(best_pure_error)){
+		  if(real(gerror) < real(best_pure_error) || always_update_solution){
 		    nn->exportdata(bestx);
 		    best_error = error;
 		    best_pure_error = gerror;

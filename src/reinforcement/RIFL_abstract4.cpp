@@ -3001,6 +3001,7 @@ namespace whiteice
 	    
 	    const bool dropout = false;
 	    const bool useInitialNN = true; // WAS: start from scratch everytime
+	    const bool alwaysUpdateSolution = false;
 	    
 
 	    {
@@ -3010,11 +3011,11 @@ namespace whiteice
 		eta2.start(0.0, P_OPTIMIZE_ITERATIONS);
 		
 		grad2.setUseMinibatch(false);
-		grad2.setSGD(T(-1.0)); // what is correct learning rate???
+		grad2.setSGD(T(-1.0)); // what is correct learning rate???		
 		
 		if(grad2.startOptimize(&data2, q_nn, Q_preprocess_copy, nn, 1,
 				       P_OPTIMIZE_ITERATIONS,
-				       dropout, useInitialNN) == true){
+				       dropout, useInitialNN, alwaysUpdateSolution) == true){
 		  logging.info("========> POLICY OPTIMIZATION STARTED (1)");
 		}
 		else{
@@ -3029,7 +3030,7 @@ namespace whiteice
 		
 		if(grad2.startOptimize(&data2, q_nn, Q_preprocess_copy, nn, 1,
 				       P_OPTIMIZE_ITERATIONS_FIRST,
-				       dropout, useInitialNN) == true){
+				       dropout, useInitialNN, alwaysUpdateSolution) == true){
 		  logging.info("========> POLICY OPTIMIZATION STARTED (2)");
 		}
 		else{

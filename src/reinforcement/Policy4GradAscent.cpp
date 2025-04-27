@@ -151,14 +151,15 @@ namespace whiteice
    */
   template <typename T>
   bool Policy4GradAscent<T>::startOptimize(const whiteice::dataset<T>* data_,
-					  const whiteice::nnetwork<T>& Q_,
-					  const whiteice::dataset<T>& Q_preprocess_,
-					  // optimized policy
-					  const whiteice::nnetwork<T>& policy_, 
-					  unsigned int NTHREADS,
-					  unsigned int MAXITERS,
-					  bool dropout,
-					  bool initiallyUseNN)
+					   const whiteice::nnetwork<T>& Q_,
+					   const whiteice::dataset<T>& Q_preprocess_,
+					   // optimized policy
+					   const whiteice::nnetwork<T>& policy_, 
+					   unsigned int NTHREADS,
+					   unsigned int MAXITERS,
+					   bool dropout,
+					   bool initiallyUseNN,
+					   bool alwaysUpdateSolution)
   {
     if(data_ == NULL){
       logging.error("Policy4GradAscent:startOptimize(): data_ == NULL error");
@@ -209,11 +210,13 @@ namespace whiteice
     
     this->NTHREADS = NTHREADS;
     this->MAXITERS = MAXITERS;
+    this->always_update_solution = alwaysUpdateSolution;
+    
     best_value = T(-INFINITY);
     best_q_value = T(-INFINITY);
     iterations = 0;
     running = true;
-    thread_is_running = 0;
+    thread_is_running = 0;    
     
     {
       std::lock_guard<std::mutex> lock(first_time_lock);

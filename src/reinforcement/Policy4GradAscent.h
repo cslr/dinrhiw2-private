@@ -58,7 +58,8 @@ namespace whiteice
 		       unsigned int NTHREADS,
 		       unsigned int MAXITERS = 10000,
 		       bool dropout = false,
-		       bool useInitialNN = true);
+		       bool useInitialNN = true,
+		       bool alwaysUpdateSolution = false);
     
     /*
      * Returns true if optimizer is running
@@ -134,6 +135,8 @@ namespace whiteice
     T regularizer;
 
     bool use_minibatch = false; // use minibatch to estimate gradient
+    
+    bool always_update_solution = false;
     
     bool use_SGD = false; // stochastic gradient descent with fixed learning rate
     T sgd_lrate = T(0.01f);

@@ -153,7 +153,8 @@ namespace whiteice
 					  unsigned int NTHREADS,
 					  unsigned int MAXITERS,
 					  bool dropout,
-					  bool initiallyUseNN)
+					  bool initiallyUseNN,
+					  bool alwaysUpdateSolution)
   {
     if(data_ == NULL){
       logging.error("PolicyGradAscent:startOptimize(): data_ == NULL error");
@@ -204,6 +205,8 @@ namespace whiteice
     
     this->NTHREADS = NTHREADS;
     this->MAXITERS = MAXITERS;
+    this->always_update_solution = alwaysUpdateSolution;
+    
     best_value = T(-INFINITY);
     best_q_value = T(-INFINITY);
     iterations = 0;
@@ -692,7 +695,7 @@ namespace whiteice
 
 	solution_lock.lock();
 	
-	if(value > best_value){
+	if(value > best_value || always_update_solution){
 	  // improvement (larger mean q-value of the policy)
 	  best_value = value;
 	  best_q_value = value; // 
@@ -1000,7 +1003,7 @@ namespace whiteice
 	  {
 	    solution_lock.lock();
 	    
-	    if(value > best_value){
+	    if(value > best_value || always_update_solution){
 	      // improvement (larger mean q-value of the policy)
  
 	      best_value = value;

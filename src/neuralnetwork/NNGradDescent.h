@@ -103,7 +103,8 @@ namespace whiteice
 			 unsigned int NTHREADS,
 			 unsigned int MAXITERS = 0xFFFFFFFF,
 			 bool dropout = false,
-			 bool initiallyUseNN = true);
+			 bool initiallyUseNN = true,
+			 bool alwaysUpdateSolution = false);
       
       /*
        * Returns true if optimizer is running
@@ -188,6 +189,8 @@ namespace whiteice
       //whiteice::RNG<T> rng; // we use random numbers (can use global rng source)
       bool use_minibatch; // use minibatch to estimate gradient
       bool overfit; // use all data to fit to solution (disabled as default)
+
+      bool always_update_solution = false;
 
       bool use_SGD = false; // stochastic gradient descent with fixed learning rate
       T sgd_lrate = T(0.01f);
