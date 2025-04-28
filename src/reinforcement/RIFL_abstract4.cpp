@@ -495,6 +495,7 @@ namespace whiteice
     
     this->hasModel[0] = hasModel;
     this->hasModel[1] = hasModel;
+    this->hasModel[2] = hasModel;
   }
 
   template <typename T>
@@ -502,8 +503,12 @@ namespace whiteice
   {
     std::lock_guard<std::mutex> lockh(has_model_mutex);
     
-    if(hasModel[0] < hasModel[1]) return hasModel[0];
-    else return hasModel[1];
+    unsigned int min = hasModel[0];
+
+    if(min > hasModel[1]) min = hasModel[1];
+    if(min > hasModel[2]) min = hasModel[2];
+
+    return min;
   }
 
 
