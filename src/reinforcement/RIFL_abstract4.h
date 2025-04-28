@@ -180,7 +180,9 @@ namespace whiteice
 
     // how many percent smaller is reinforcement value with random actions vs policy actions
     bool executionStatistics(T& percent_change, T& distances_percent_change,
-			     const bool rescale_to_min_value = false, const bool use_only_most_recent = false) const;
+			     const bool rescale_to_min_value = false,
+			     const bool use_only_most_recent = false,
+			     unsigned int history_size = 0) const;
     
     // saves learnt Reinforcement Learning Model to file
     bool save(const std::string& filename) const;

@@ -543,8 +543,11 @@ namespace whiteice
   bool RIFL_abstract4<T>::executionStatistics(T& percent_change,
 					      T& distances_percent_change,
 					      const bool rescale_to_min_value,
-					      const bool use_only_most_recent) const
+					      const bool use_only_most_recent,
+					      unsigned int history_size) const
   {
+    if(history_size <= 0) history_size = 1000;
+
     std::lock_guard<std::mutex> lock(reinforcements_mutex);
     
     percent_change = T(0.0f);
@@ -584,7 +587,7 @@ namespace whiteice
 	int SAMPLES = 1;
 	{
 	  std::lock_guard<std::mutex> locke(epsilon_mutex);
-	  SAMPLES = (int)round(1000*epsilon.c[0]);
+	  SAMPLES = (int)round(history_size*epsilon.c[0]);
 	}
 	
 	if(SAMPLES <= 0) SAMPLES = 1;
@@ -637,7 +640,7 @@ namespace whiteice
 	
 	{
 	  std::lock_guard<std::mutex> locke(epsilon_mutex);
-	  SAMPLES = (int)round(1000*(1.0 - epsilon.c[0]));
+	  SAMPLES = (int)round(history_size*(1.0 - epsilon.c[0]));
 	}
 	
 	if(SAMPLES <= 0) SAMPLES = 1;
@@ -705,7 +708,7 @@ namespace whiteice
 	int SAMPLES = 1;
 	{
 	  std::lock_guard<std::mutex> locke(epsilon_mutex);
-	  SAMPLES = (int)round(1000*epsilon.c[0]);
+	  SAMPLES = (int)round(history_size*epsilon.c[0]);
 	}
 	
 	if(SAMPLES <= 0) SAMPLES = 1;
@@ -758,7 +761,7 @@ namespace whiteice
 	
 	{
 	  std::lock_guard<std::mutex> locke(epsilon_mutex);
-	  SAMPLES = (int)round(1000*(1.0 - epsilon.c[0]));
+	  SAMPLES = (int)round(history_size*(1.0 - epsilon.c[0]));
 	}
 	
 	if(SAMPLES <= 0) SAMPLES = 1;
