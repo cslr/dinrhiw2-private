@@ -1355,8 +1355,8 @@ namespace whiteice
     const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 1000; // WAS: 200,500
     const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 100
 
-    const unsigned int Q_OPTIMIZE_ITERATIONS = 10; // 3; // WAS: 500
-    const unsigned int P_OPTIMIZE_ITERATIONS = 10; // 3; // WAS: 100
+    const unsigned int Q_OPTIMIZE_ITERATIONS = 20; // 3; // WAS: 500
+    const unsigned int P_OPTIMIZE_ITERATIONS = 20; // 3; // WAS: 100
     
     // tau = 1.0 => no lagged neural networks [don't work]
     const T tau = T(0.001); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
