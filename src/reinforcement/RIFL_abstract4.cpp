@@ -1977,7 +1977,7 @@ namespace whiteice
 	{
 	  std::lock_guard<std::mutex> lockh(has_model_mutex);
 	  
-	  if(hasModel[0] == 0 || hasModel[1] == 0){
+	  if(hasModel[0] == 0 || hasModel[1] == 0 || hasModel[2] == 0){
 	    recurrent.zero();
 	    // recurrent_new.zero();
 
