@@ -1693,11 +1693,11 @@ namespace whiteice
   void RIFL_abstract4<T>::loop()
   {
     // number of iteratios to use per epoch for optimization
-    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 1000; // WAS: 1000
-    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 100
+    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 5; // WAS: 1000
+    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 5; // WAS: 100
 
-    const unsigned int Q_OPTIMIZE_ITERATIONS = 10; // 3; // WAS: 1000
-    const unsigned int P_OPTIMIZE_ITERATIONS = 10; // 3; // WAS: 50
+    const unsigned int Q_OPTIMIZE_ITERATIONS = 5; // 3; // WAS: 1000
+    const unsigned int P_OPTIMIZE_ITERATIONS = 5; // 3; // WAS: 50
     
     // tau = 1.0 => no lagged neural networks [don't work]
     const T tau = T(0.001); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
@@ -1865,6 +1865,7 @@ namespace whiteice
 
 	firstTime = false;
       }
+
 
       // 2. selects action using policy
       // (+ random selection if there is no model or in

@@ -777,7 +777,7 @@ namespace whiteice
 
 	solution_lock.lock();
 	
-	if(value > best_value){
+	if(value > best_value || always_update_solution){
 	  // improvement (larger mean q-value of the policy)
 	  best_value = value;
 	  best_q_value = value; // 
@@ -1295,7 +1295,7 @@ namespace whiteice
 	  {
 	    solution_lock.lock();
 	    
-	    if(value > this->best_value){
+	    if(value > this->best_value || always_update_solution){
 	      // improvement (larger mean q-value of the policy)
  
 	      this->best_value = value;
