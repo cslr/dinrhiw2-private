@@ -1352,11 +1352,11 @@ namespace whiteice
     // const unsigned int P_OPTIMIZE_ITERATIONS = 100; // 10, was 1 (dont work), 5, 10, WAS: 1000
 
     // number of iteratios to use per epoch for optimization
-    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 5; // WAS: 1000
-    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 5; // WAS: 100
+    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 20; // WAS: 1000
+    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 20; // WAS: 100
 
-    const unsigned int Q_OPTIMIZE_ITERATIONS = 5; // 3; // WAS: 500
-    const unsigned int P_OPTIMIZE_ITERATIONS = 5; // 3; // WAS: 100
+    const unsigned int Q_OPTIMIZE_ITERATIONS = 20; // 3; // WAS: 500
+    const unsigned int P_OPTIMIZE_ITERATIONS = 20; // 3; // WAS: 100
     
     // tau = 1.0 => no lagged neural networks [don't work]
     const T tau = T(0.001); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
@@ -2579,7 +2579,7 @@ namespace whiteice
 
 	    const bool dropout = false;
 	    const bool useInitialNN = true; // WAS: start from scratch everytime
-	    const bool alwaysUpdateSolution = true;
+	    const bool alwaysUpdateSolution = false;
 	    
 
 	    {
