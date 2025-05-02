@@ -8,7 +8,7 @@ OBJECTS = RIFL_abstract.o RIFL_abstract3.o CartPole.o PolicyGradAscent.o RIFL_ab
 	CreateRIFLdataset.o CreateRIFL3dataset.o CreateRIFL2dataset.o CreatePolicyDataset.o \
 	RIFL_abstract4.o CreateRIFL4dataset.o CreatePolicy4Dataset.o Policy4GradAscent.o \
 	RotationProblem.o AdditionProblem.o AdditionProblem4.o EvolutionStrategies.o \
-	IPD_ES.o
+	IPD_ES.o CartPole4.o
 
 EXTRA_OBJECTS = ../dataset.o ../dynamic_bitset.o \
 	../math/vertex.o ../math/matrix.o ../math/ownexception.o \
@@ -40,6 +40,8 @@ TEST4_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) tst/test4.o
 
 TEST4A_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) tst/test4a.o
 
+TEST42_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) tst/test42.o
+
 TEST5_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) tst/test_minihack.o MinihackRIFL2.o
 
 TEST6_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) tst/test_minihack2.o MinihackRIFL.o
@@ -56,6 +58,7 @@ SOURCES = RIFL_abstract.cpp RIFL_abstract3.cpp CartPole.cpp PolicyGradAscent.cpp
 	RotationProblem.cpp AdditionProblem.cpp MinihackRIFL2.cpp MinihackRIFL.cpp AdditionProblem4.cpp \
 	EvolutionStrategies.cpp IPD_ES.cpp \
 	CartPole2.cpp tst/test.cpp tst/test2.cpp tst/test3.cpp tst/test4a.cpp \
+	CartPole4.cpp \
 	tst/test_minihack.cpp tst/test_minihack2.cpp \
 	../dataset.cpp \
 	../dynamic_bitset.cpp \
@@ -87,6 +90,7 @@ TARGET2=testsuite2
 TARGET3=testsuite3
 TARGET4=testsuite4
 TARGET4A=testsuite4a
+TARGET42=testsuite42
 TARGET5=minihack_test
 TARGET6=minihack2_test
 TARGET7=testsuite5
@@ -108,12 +112,13 @@ CD = cd
 ##################################################
 
 # $(TEST5_OBJECTS) $(TEST6_OBJECTS)
-all: $(TEST1_OBJECTS) $(TEST2_OBJECTS) $(TEST3_OBJECTS) $(TEST4_OBJECTS) $(TEST4A_OBJECTS) $(TEST7_OBJECTS) $(TEST8_OBJECTS)
+all: $(TEST1_OBJECTS) $(TEST2_OBJECTS) $(TEST3_OBJECTS) $(TEST4_OBJECTS) $(TEST4A_OBJECTS) $(TEST42_OBJECTS) $(TEST7_OBJECTS) $(TEST8_OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET1) $(TEST1_OBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET2) $(TEST2_OBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET3) $(TEST3_OBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET4) $(TEST4_OBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET4A) $(TEST4A_OBJECTS) $(LIBS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET42) $(TEST42_OBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET7) $(TEST7_OBJECTS) $(LIBS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET8) $(TEST8_OBJECTS) $(LIBS)
 
@@ -131,6 +136,8 @@ clean:
 	$(RM) $(TARGET4)
 	$(RM) $(TEST4A_OBJECTS)
 	$(RM) $(TARGET4A)
+	$(RM) $(TEST42_OBJECTS)
+	$(RM) $(TARGET42)
 	$(RM) $(TEST5_OBJECTS)
 	$(RM) $(TARGET5)
 	$(RM) $(TEST6_OBJECTS)
