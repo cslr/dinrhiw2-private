@@ -453,7 +453,7 @@ namespace whiteice
 	      }
 #endif
 
-#if 0
+#if 1
 	      // add exploration noise..
 	      auto noise = u;
 	      // Normal EX[n]=0 StDev[n]=1 [OPTMIZE ME: don't create new RNG everytime but use global one]
@@ -504,8 +504,8 @@ namespace whiteice
 		out[0] = rifl.gamma*y[0] + datum.reinforcement;
 	      }
 	      else{
-		out[0] = rifl.gamma*y[0] + datum.reinforcement;
-		//out[0] = rifl.gamma*y2[0] + datum.reinforcement;
+		// out[0] = rifl.gamma*y[0] + datum.reinforcement;
+		out[0] = rifl.gamma*y2[0] + datum.reinforcement;
 	      }
 	    }
 	    else{ // the first iteration of reinforcement learning do not use Q or if this is last step
@@ -626,7 +626,7 @@ namespace whiteice
 #endif
 	  
 	    // add exploration noise..
-#if 0
+#if 1
 	    auto noise = u;
 	    // Normal EX[n]=0 StDev[n]=1 [OPTMIZE ME: don't create new RNG everytime but use global one]
 	    rng.normal(noise);
@@ -682,8 +682,8 @@ namespace whiteice
 	      out[0] = rifl.gamma*y[0] + datum.reinforcement;
 	    }
 	    else{
-	      out[0] = rifl.gamma*y[0] + datum.reinforcement;
-	      //out[0] = rifl.gamma*y2[0] + datum.reinforcement;
+	      // out[0] = rifl.gamma*y[0] + datum.reinforcement;
+	      out[0] = rifl.gamma*y2[0] + datum.reinforcement;
 	    }
 	  }
 	  else{ // the first iteration of reinforcement learning do not use Q or if this is last step

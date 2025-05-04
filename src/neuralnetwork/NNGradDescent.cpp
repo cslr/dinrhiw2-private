@@ -1009,6 +1009,7 @@ namespace whiteice
 		
 		const whiteice::nnetwork<T>& nnet = *nn;
 		std::vector< math::vertex<T> > bpdata;
+		std::vector< math::vertex<T> > lndata;
 		std::vector< std::vector<bool> > net_dropout; // NOTE: dropout code don't work?
 		  
 		math::vertex<T> err;
@@ -1022,14 +1023,14 @@ namespace whiteice
 		  if(dropout){
 		    nnet.setDropOut(net_dropout);
 		    if(nnet.calculate(dtrain.access(0, index), output,
-				      net_dropout, bpdata) == false){
+				      net_dropout, bpdata, lndata) == false){
 		      std::cout << "calculate failed (1)." << std::endl;
 		      assert(0);
 		    }
 		  }
 		  else{
 		    if(nnet.calculate(dtrain.access(0, index), output,
-				      bpdata) == false){
+				      bpdata, lndata) == false){
 		      std::cout << "calculate failed (2)." << std::endl;
 		      assert(0);
 		    }
@@ -1040,13 +1041,13 @@ namespace whiteice
 		  if(mne) err.normalize(); // minimum norm error gradient instead
 		  
 		  if(dropout){
-		    if(nnet.mse_gradient(err, bpdata, net_dropout, grad) == false){
+		    if(nnet.mse_gradient(err, bpdata, lndata, net_dropout, grad) == false){
 		      std::cout << "gradient failed (1)." << std::endl;
 		      assert(0);
 		    }
 		  }
 		  else{
-		    if(nnet.mse_gradient(err, bpdata, grad) == false){
+		    if(nnet.mse_gradient(err, bpdata, lndata, grad) == false){
 		      std::cout << "gradient failed (2)." << std::endl;
 		      assert(0);
 		    }
@@ -1077,6 +1078,7 @@ namespace whiteice
 		
 		const whiteice::nnetwork<T>& nnet = *nn;
 		std::vector< math::vertex<T> > bpdata;
+		std::vector< math::vertex<T> > lndata;
 		std::vector< std::vector<bool> > net_dropout;
 		
 		math::vertex<T> output;
@@ -1089,14 +1091,14 @@ namespace whiteice
 		  if(dropout){
 		    nnet.setDropOut(net_dropout);
 		    if(nnet.calculate(dtrain.access(0, index), output,
-				      net_dropout, bpdata) == false){
+				      net_dropout, bpdata, lndata) == false){
 		      std::cout << "calculate failed. (3)" << std::endl;
 		      assert(0);
 		    }
 		  }
 		  else{
 		    if(nnet.calculate(dtrain.access(0, index), output,
-				      bpdata) == false){
+				      bpdata, lndata) == false){
 		      std::cout << "calculate failed. (4)" << std::endl;
 		      assert(0);
 		    }
@@ -1107,13 +1109,13 @@ namespace whiteice
 		  if(mne) err.normalize(); // minimum norm error gradient instead
 		  
 		  if(dropout){
-		    if(nnet.mse_gradient(err, bpdata, net_dropout, grad) == false){
+		    if(nnet.mse_gradient(err, bpdata, lndata, net_dropout, grad) == false){
 		      std::cout << "gradient failed (3)." << std::endl;
 		      assert(0);
 		    }
 		  }
 		  else{
-		    if(nnet.mse_gradient(err, bpdata, grad) == false){
+		    if(nnet.mse_gradient(err, bpdata, lndata, grad) == false){
 		      std::cout << "gradient failed (4)." << std::endl;
 		      assert(0);
 		    }
@@ -1495,6 +1497,7 @@ namespace whiteice
 		  
 		  const whiteice::nnetwork<T>& nnet = *nn;
 		  std::vector< math::vertex<T> > bpdata;
+		  std::vector< math::vertex<T> > lndata;
 		  std::vector< std::vector<bool> > net_dropout;
 		  
 		  math::vertex<T> err;
@@ -1508,14 +1511,14 @@ namespace whiteice
 		    if(dropout){
 		      nnet.setDropOut(net_dropout);
 		      if(nnet.calculate(dtrain.access(0, index), output,
-					net_dropout, bpdata) == false){
+					net_dropout, bpdata, lndata) == false){
 			std::cout << "calculate failed (1)." << std::endl;
 			assert(0);
 		      }
 		    }
 		    else{
 		      if(nnet.calculate(dtrain.access(0, index), output,
-					bpdata) == false){
+					bpdata, lndata) == false){
 			std::cout << "calculate failed (2)." << std::endl;
 			assert(0);
 		      }
@@ -1526,13 +1529,13 @@ namespace whiteice
 		    if(mne) err.normalize(); // minimum norm error gradient instead
 		    
 		    if(dropout){
-		      if(nnet.mse_gradient(err, bpdata, net_dropout, grad) == false){
+		      if(nnet.mse_gradient(err, bpdata, lndata, net_dropout, grad) == false){
 			std::cout << "gradient failed (1)." << std::endl;
 			assert(0);
 		      }
 		    }
 		    else{
-		      if(nnet.mse_gradient(err, bpdata, grad) == false){
+		      if(nnet.mse_gradient(err, bpdata, lndata, grad) == false){
 			std::cout << "gradient failed (2)." << std::endl;
 			assert(0);
 		      }
@@ -1564,6 +1567,7 @@ namespace whiteice
 		  
 		  const whiteice::nnetwork<T>& nnet = *nn;
 		  std::vector< math::vertex<T> > bpdata;
+		  std::vector< math::vertex<T> > lndata;
 		  std::vector< std::vector<bool> > net_dropout;
 		  
 		  math::vertex<T> output;
@@ -1576,14 +1580,14 @@ namespace whiteice
 		    if(dropout){
 		      nnet.setDropOut(net_dropout);
 		      if(nnet.calculate(dtrain.access(0, index), output,
-					net_dropout, bpdata) == false){
+					net_dropout, bpdata, lndata) == false){
 			std::cout << "calculate failed. (3)" << std::endl;
 			assert(0);
 		      }
 		    }
 		    else{
 		      if(nnet.calculate(dtrain.access(0, index), output,
-					bpdata) == false){
+					bpdata, lndata) == false){
 			std::cout << "calculate failed. (4)" << std::endl;
 			assert(0);
 		      }
@@ -1594,13 +1598,13 @@ namespace whiteice
 		    if(mne) err.normalize(); // minimum norm error gradient instead
 		    
 		    if(dropout){
-		      if(nnet.mse_gradient(err, bpdata, net_dropout, grad) == false){
+		      if(nnet.mse_gradient(err, bpdata, lndata, net_dropout, grad) == false){
 			std::cout << "gradient failed (3)." << std::endl;
 			assert(0);
 		      }
 		    }
 		    else{
-		      if(nnet.mse_gradient(err, bpdata, grad) == false){
+		      if(nnet.mse_gradient(err, bpdata, lndata, grad) == false){
 			std::cout << "gradient failed (4)." << std::endl;
 			assert(0);
 		      }

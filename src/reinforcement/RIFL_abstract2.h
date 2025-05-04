@@ -141,6 +141,15 @@ namespace whiteice
     float getLoopUpdateFrequency() const{
       return LOOP_UPDATE_HZ;
     }
+    
+    void setReinforcementWeighting(bool use_weighting = true){
+      use_smart_weights = use_weighting; // does we use weighted sampling using reinforcement-values in RIFL4?
+    }
+
+    bool getReinforcementWeighting() const{
+      return use_smart_weights;
+    }
+
 
     int getLearningDatasetSize() const{
       return SAMPLESIZE;
@@ -210,6 +219,8 @@ namespace whiteice
     
     std::vector<unsigned int> hasModel;
     mutable std::mutex has_model_mutex;
+
+    std::atomic<bool> use_smart_weights = false; // does we use weighted sampling in RIFL2?
     
     std::atomic<float> latestError;
     std::atomic<bool> learningMode, sleepMode;

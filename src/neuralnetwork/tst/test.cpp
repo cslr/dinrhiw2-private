@@ -101,6 +101,9 @@ extern "C" {
 
 using namespace whiteice;
 
+void nn_layer_norm_gradient_value_test();
+
+void nn_layer_norm_test();
 
 void nn_save_load_test();
 
@@ -195,8 +198,12 @@ int main()
   whiteice::logging.setOutputFile("testsuite1.log");
 
   try{
-    nn_save_load_test();
+    nn_layer_norm_gradient_value_test();
 
+    // nn_layer_norm_test();
+
+    // nn_save_load_test();
+    
     return 0;
 
     // r_hmc_test(); // tests recurrent Hamiltonian Monte Carlo sampling..
@@ -376,6 +383,213 @@ private:
   
 };
 
+/**********************************************************************/
+/**********************************************************************/
+
+void nn_layer_norm_gradient_value_test()
+{
+  // gradient_value test..
+  
+  std::cout << "nnetwork::gradient_value() optimization test (with LayerNorm)." << std::endl;
+
+  whiteice::RNG< whiteice::math::blas_real<double> > rng;
+
+  for(unsigned int e=0;e<10;e++)
+  {
+    std::vector<unsigned int> arch;
+
+    const unsigned int dimInput = rng.rand() % 10 + 3;
+    const unsigned int dimOutput = 1;
+    const unsigned int layers = rng.rand() % 3 + 4;
+    const unsigned int width = rng.rand() % 10 + 10;
+
+    arch.push_back(dimInput);
+    for(unsigned int i=0;i<layers;i++)
+      arch.push_back(width);
+    arch.push_back(dimOutput);
+
+    whiteice::nnetwork< whiteice::math::blas_real<double> >::nonLinearity nl =
+      whiteice::nnetwork< whiteice::math::blas_real<double> >::rectifier;
+    unsigned int nli = 5; // rng.rand() % 7;
+
+    if(nli == 0){
+      nl = whiteice::nnetwork< whiteice::math::blas_real<double> >::sigmoid;
+    }
+    else if(nli == 1){
+      // do not calculate gradients for stochastic sigmoid..
+      nl = whiteice::nnetwork< whiteice::math::blas_real<double> >::sigmoid; 
+    }
+    else if(nli == 2){
+      nl = whiteice::nnetwork< whiteice::math::blas_real<double> >::halfLinear;
+    }
+    else if(nli == 3){
+      nl = whiteice::nnetwork< whiteice::math::blas_real<double> >::pureLinear;
+    }
+    else if(nli == 4){
+      nl = whiteice::nnetwork< whiteice::math::blas_real<double> >::tanh;
+    }
+    else if(nli == 5){
+      nl = whiteice::nnetwork< whiteice::math::blas_real<double> >::rectifier;
+    }
+    else if(nli == 6){
+      nl = whiteice::nnetwork< whiteice::math::blas_real<double> >::softmax;
+    }
+
+    whiteice::nnetwork< whiteice::math::blas_real<double> > nn(arch, nl);
+    
+    nn.randomize();
+    nn.setResidual(true);
+    nn.setLayerNorm(true);
+
+    whiteice::math::vertex< whiteice::math::blas_real<double> > x(dimInput);
+    whiteice::math::vertex< whiteice::math::blas_real<double> > y(dimOutput);
+    whiteice::math::matrix< whiteice::math::blas_real<double> > GRAD_x;
+    whiteice::math::vertex< whiteice::math::blas_real<double> > grad_x;
+    whiteice::math::blas_real<double> alpha = 0.1f; // 0.0001f
+
+    x.zero();
+    rng.normal(x);
+
+    nn.calculate(x, y);
+
+    auto start_value = y;
+    
+    for(unsigned int i=0;i<1000;i++){
+      //printf("ABOUT TO CALCULATE GRAD VALUE..\n"); fflush(stdout);
+      nn.gradient_value(x, GRAD_x);
+      //printf("ABOUT TO CALCULATE GRAD VALUE.. DONE\n"); fflush(stdout);
+      //printf("GRAD_x: %d %d = %f\n", GRAD_x.ysize(), GRAD_x.xsize(), GRAD_x(0,0).c[0]);
+      
+      grad_x.resize(GRAD_x.xsize());
+      for(unsigned int i=0;i<grad_x.size();i++)
+	grad_x[i] = GRAD_x(0, i);
+      
+      x += alpha*grad_x;
+
+      nn.calculate(x, y);
+
+      // std::cout << i << "/1000: " << y << std::endl;
+    }
+
+    auto end_value = y;
+
+    if(end_value < start_value){
+      std::cout << "ERROR: start value larger than end value. "
+		<< start_value << " > " << end_value << std::endl;
+      std::cout << "arch " << arch.size() << " : ";
+#if 0
+      for(unsigned int i=0;i<arch.size();i++)
+	std::cout << arch[i]  << " ";
+      std::cout << std::endl;
+#endif
+      
+      return;
+    }
+    else{
+      std::cout << "GOOD: start value smaller than end value. "
+		<< start_value << " < " << end_value << std::endl;
+#if 0
+      std::cout << "arch " << arch.size() << " : ";
+      for(unsigned int i=0;i<arch.size();i++)
+	std::cout << arch[i]  << " ";
+      std::cout << std::endl;
+#endif
+    }
+  }
+  
+}
+
+void nn_layer_norm_test()
+{
+  std::vector<unsigned int> arch;
+
+  arch.push_back(1);
+  arch.push_back(10);
+  arch.push_back(10);
+  arch.push_back(1);
+
+  whiteice::nnetwork<> nn(arch);
+  whiteice::nnetwork<> target(arch);
+
+  nn.randomize();
+  target.randomize();
+
+  nn.setLayerNorm(true);
+
+  std::vector< math::vertex<> > input, output;
+
+  for(unsigned int i=0;i<100;i++){
+    math::vertex<> in, out;
+    in.resize(arch[0]);
+    rng.normal(in);
+
+    target.calculate(in, out);
+
+    input.push_back(in);
+    output.push_back(out);
+  }
+
+  std::cout << "gradient_size = " << nn.gradient_size() << std::endl;
+
+  // return;
+
+  unsigned int counter = 0;
+  whiteice::math::blas_real<float> evalue = 0.0f, prev_error = 0.0f, N = input.size();
+
+  while(counter < 100000){
+
+    whiteice::math::blas_real<float> lrate = 0.01f;    
+    math::vertex<> grad, g, p, err;
+    
+    grad.resize(nn.gradient_size());
+    grad.zero();
+
+    evalue = 0.0f;
+
+    // calculates error and calculates gradient
+    for(unsigned int i=0;i<input.size();i++){
+
+      std::vector< math::vertex<> > bpdata;
+      std::vector< math::vertex<> > lndata;
+
+      nn.calculate(input[i], err, bpdata, lndata);
+      err -= output[i];
+    
+      nn.mse_gradient(err, bpdata, lndata, g);
+
+      // calculates jacobian matrix and from there gradient..
+      //math::matrix<> J;
+      //nn.jacobian(input[i], J);
+      //g = err*J;
+
+      evalue += (err*err)[0]/N;
+
+      grad += g/N;
+    }
+
+    std::cout << "NN error: " << evalue << std::endl;
+
+    nn.exportdata(p);
+    p -= lrate*grad;
+    nn.importdata(p);
+
+    if(evalue < prev_error){
+      lrate *= 1.1f;
+    }
+    else{
+      lrate /= 1.1f;
+    }
+
+    // std::cout << "grad = " << grad << std::endl;
+
+    prev_error = evalue;
+
+    // counter++;
+  }
+  
+}
+
+/**********************************************************************/
 /**********************************************************************/
 
 void nn_save_load_test()
@@ -1526,6 +1740,7 @@ void nnetwork_kl_divergence_test()
 
     // calculates gradient
     std::vector< math::vertex<> > bpdata;
+    std::vector< math::vertex<> > lndata;
     math::vertex<> grad, tmp_grad;
     grad.resize(net.gradient_size());
     grad.zero();
@@ -1534,9 +1749,9 @@ void nnetwork_kl_divergence_test()
       input = data.access(0, i);
       correct = data.access(1, i);
 
-      net.calculate(input, output, bpdata);
+      net.calculate(input, output, bpdata, lndata);
 
-      net.kl_divergence_gradient(output, 0 , output.size(), correct, bpdata, tmp_grad);
+      net.kl_divergence_gradient(output, 0 , output.size(), correct, bpdata, lndata, tmp_grad);
 
       grad += tmp_grad;
     }
@@ -1656,6 +1871,7 @@ void nnetwork_entropy_test()
 
     // calculates gradient
     std::vector< math::vertex<> > bpdata;
+    std::vector< math::vertex<> > lndata;
     math::vertex<> grad, tmp_grad;
     grad.resize(net.gradient_size());
     grad.zero();
@@ -1663,9 +1879,9 @@ void nnetwork_entropy_test()
     for(unsigned int i=0;i<data.size(0);i++){
       input = data.access(0, i);
 
-      net.calculate(input, output, bpdata);
+      net.calculate(input, output, bpdata, lndata);
 
-      net.entropy_gradient(output, 0 , output.size(), bpdata, tmp_grad);
+      net.entropy_gradient(output, 0 , output.size(), bpdata, lndata, tmp_grad);
 
       grad += tmp_grad;
     }

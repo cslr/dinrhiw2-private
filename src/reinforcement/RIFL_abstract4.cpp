@@ -117,6 +117,7 @@ namespace whiteice
 	  nn.randomize(2, T(0.5)); // was 1.0
 	  nn.setResidual(true);
 	  nn.setBatchNorm(false); // NOW: Q-also has batch norm enabled
+	  nn.setLayerNorm(false);
 	  
 	  Q.importNetwork(nn);
 	  lagged_Q.importNetwork(nn);
@@ -177,6 +178,7 @@ namespace whiteice
 	  nn.randomize(2, T(0.9)); // was 1.0
 	  nn.setResidual(true);
 	  nn.setBatchNorm(false);
+	  nn.setLayerNorm(true);
 
 	  policy.importNetwork(nn);
 	  lagged_policy.importNetwork(nn);
@@ -286,6 +288,7 @@ namespace whiteice
 	  nn.randomize(2, T(0.5)); // was 1.0
 	  nn.setResidual(true);
 	  nn.setBatchNorm(false); // NOW: Q-also have batch norm enabled! (=> needs many iterations to stabilize)
+	  nn.setLayerNorm(false);
 	  
 	  Q.importNetwork(nn);
 	  lagged_Q.importNetwork(nn);
@@ -325,6 +328,7 @@ namespace whiteice
 	  nn.randomize(2, T(0.9)); // was 1.0
 	  nn.setResidual(true);
 	  nn.setBatchNorm(false);
+	  nn.setLayerNorm(true);
 	  
 	  policy.importNetwork(nn);
 	  lagged_policy.importNetwork(nn);
@@ -1693,15 +1697,15 @@ namespace whiteice
   void RIFL_abstract4<T>::loop()
   {
     // number of iteratios to use per epoch for optimization
-    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 20; // WAS: 1000, 5
-    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 20; // WAS: 100, 5
+    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 50; // WAS: 1000, 5, 1000
+    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 50; // WAS: 100, 5, 50
 
-    const unsigned int Q_OPTIMIZE_ITERATIONS = 20; // 3; // WAS: 1000, 5 
-    const unsigned int P_OPTIMIZE_ITERATIONS = 20; // 3; // WAS: 50, 5 
+    const unsigned int Q_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 1000, 5, 1000
+    const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 50, 5, 50
     
     // tau = 1.0 => no lagged neural networks [don't work]
     const T tau = T(0.001); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
-    const T tau_policy = T(1.0);
+    const T tau_policy = T(0.005); // was: 1.0*
     
     std::vector< rifl4_datapoint<T> > episode;
 

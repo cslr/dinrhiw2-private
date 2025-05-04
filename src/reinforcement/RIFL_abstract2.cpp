@@ -1114,7 +1114,7 @@ namespace whiteice
 
       v = db.access(0,0);
 
-      if(v.size() == 2){
+      if(v.size() == 3){
 	hasModel_load.resize(3);
 	hasModel_load[0] = (int)v[0].c[0];
 	hasModel_load[1] = (int)v[1].c[0];
@@ -1360,7 +1360,7 @@ namespace whiteice
     
     // tau = 1.0 => no lagged neural networks [don't work]
     const T tau = T(0.001); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
-    const T tau_policy = T(1.0);
+    const T tau_policy = T(0.005); // was: 1.0*
     
     std::vector< std::vector< rifl2_datapoint<T> > > episodes;
     std::vector< rifl2_datapoint<T> > episode;

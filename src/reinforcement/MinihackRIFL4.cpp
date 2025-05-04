@@ -39,7 +39,7 @@ namespace whiteice
     this->setOneHotAction(true);
     this->setSmartEpisodes(true); // gives more weight to reinforcement values when calculating Q
     this->setGamma(0.95);
-    this->setReinforcementWeighting(false);
+    this->setReinforcementWeighting(true);
     this->setLearningDatasetSize(10000); // disabled (use default 4000)
     
     

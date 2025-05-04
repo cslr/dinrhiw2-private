@@ -1223,6 +1223,21 @@ namespace whiteice
 	    sumgrad -= regularizer*w0;
 	  }
 
+
+	  // gradient clipping
+	  {
+	    const T max_grad_norm = T(0.25);
+	    const T norm = sumgrad.norm()/sumgrad.size();
+
+	    // std::cout << "policy gradient norm: " << norm << " sumgrad size: " << sumgrad.size() << std::endl;
+	    // std::cout << "layernorm: " << policy->getLayerNorm() << std::endl;
+
+	    if(norm >= max_grad_norm){
+	      sumgrad = sumgrad*max_grad_norm/norm;
+	    }
+	  }
+	  
+
 	  if(debug)
 	    whiteice::logging.info("Policy4GradAscent: calculates linesearch..");
 

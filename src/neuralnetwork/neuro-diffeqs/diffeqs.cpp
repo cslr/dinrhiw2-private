@@ -261,11 +261,12 @@ class nnet_gradient_ode : public whiteice::math::odefunction<T>
     // we return delta(t)^T*Jacobian(f(x(t), w))
 
     std::vector< math::vertex<T> > bpdata;
+    std::vector< math::vertex<T> > lndata;
 
-    if(nnet.calculate(xvalue, output, bpdata) == false)
+    if(nnet.calculate(xvalue, output, bpdata, lndata) == false)
       assert(0);
     
-    if(nnet.mse_gradient(delta, bpdata, output) == false)
+    if(nnet.mse_gradient(delta, bpdata, lndata, output) == false)
       assert(0);
 
     return output;

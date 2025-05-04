@@ -25,6 +25,14 @@ namespace whiteice
   CartPole2<T>::CartPole2() : RIFL_abstract2<T>(1, 6)
   {
     {
+      this->setSmartEpisodes(true); // gives more weight to reinforcement values when calculating Q
+      this->setGamma(0.95);
+      this->setReinforcementWeighting(true);
+      // this->setLearningDatasetSize(10000); // disabled (use default 4000)
+    }
+    
+    
+    {
       g = T(9.81); // gravity
       l = T(1.00);  // 1 meter long pole [was 0.10]
       

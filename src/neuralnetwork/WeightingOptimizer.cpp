@@ -284,6 +284,7 @@ namespace whiteice
 	  M.resize(experts.size(), experts[0].output_size());
 	  
 	  std::vector< math::vertex<T> > bpdata;
+	  std::vector< math::vertex<T> > lndata;
 	  
 	  for(unsigned int i=0;i<dtrain.size(0);i++){
 	    
@@ -298,12 +299,12 @@ namespace whiteice
 	      M.rowcopyfrom(tmp, k);
 	    }
 	    
-	    weighting.calculate(input, w, bpdata);
+	    weighting.calculate(input, w, bpdata, lndata);
 	    
 	    err = (output - w*M);
 	    err = M*err;
 	    
-	    assert(weighting.mse_gradient(err, bpdata, tmp) == true);
+	    assert(weighting.mse_gradient(err, bpdata, lndata, tmp) == true);
 	    
 	    gradient += tmp;
 	  }

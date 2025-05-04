@@ -18,7 +18,7 @@
 
 int main(int argc, char** argv)
 {
-  printf("REINFORCEMENT (CONTINUOS) LEARNING TESTCASES 2. (CartPole problem)\n");
+  printf("REINFORCEMENT (CONTINUOS) LEARNING TESTCASES 2. (CartPole2 problem (RIFL2))\n");
   fflush(stdout);
 
   use_gpu_sync = false; 

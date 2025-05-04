@@ -129,13 +129,14 @@ namespace whiteice
       sumgrad.zero();
       
       std::vector< math::vertex<T> > bpdata;
+      std::vector< math::vertex<T> > lndata;
       
 #pragma omp for nowait schedule(auto)
       for(unsigned int i=0;i<data.size(0);i++){
-	nnet.calculate(data.access(0, i), err, bpdata);
+	nnet.calculate(data.access(0, i), err, bpdata, lndata);
 	err -= data.access(1, i);
 	
-	if(nnet.mse_gradient(err, bpdata, grad) == false){
+	if(nnet.mse_gradient(err, bpdata, lndata, grad) == false){
 	  std::cout << "gradient failed." << std::endl;
 	  assert(0); // FIXME
 	}

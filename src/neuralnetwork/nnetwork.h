@@ -115,7 +115,8 @@ namespace whiteice
 		   const std::vector< std::vector<bool> >& dropout) const;
 
     bool calculate(const math::vertex<T>& input, math::vertex<T>& output,
-		   std::vector< math::vertex<T> >& bpdata) const;
+		   std::vector< math::vertex<T> >& bpdata,
+		   std::vector< math::vertex<T> >& lndata) const;
 
     // thread safe calculate call which also stores backpropagation data
     // bpdata can be used calculate mse_gradient() with backpropagation
@@ -125,7 +126,8 @@ namespace whiteice
     // used in thread safe manner.
     bool calculate(const math::vertex<T>& input, math::vertex<T>& output,
 		   const std::vector< std::vector<bool> >& dropout,
-		   std::vector< math::vertex<T> >& bpdata) const;
+		   std::vector< math::vertex<T> >& bpdata,
+		   std::vector< math::vertex<T> >& lndata) const;
 
     unsigned int length() const; // number of layers+1 (arch size)
 
@@ -160,6 +162,7 @@ namespace whiteice
     // uses backpropagation data provided by user
     bool mse_gradient(const math::vertex<T>& error,
 		      const std::vector< math::vertex<T> >& bpdata,
+		      const std::vector< math::vertex<T> >& lndata,
 		      math::vertex<T>& grad) const;
     
     // calculates gradient of parameter weights w f(v|w) when using squared error: 
@@ -168,6 +171,7 @@ namespace whiteice
     // dropout heuristic if dropout vector is non empty object.
     bool mse_gradient(const math::vertex<T>& error,
 		      const std::vector< math::vertex<T> >& bpdata,
+		      const std::vector< math::vertex<T> >& lndata,
 		      const std::vector< std::vector<bool> >& dropout,
 		      math::vertex<T>& grad) const;
 
@@ -206,6 +210,7 @@ namespace whiteice
     bool entropy_gradient(const math::vertex<T>& output,
 			  const unsigned int START, const unsigned int END,
 			  const std::vector< math::vertex<T> >& bpdata,
+			  const std::vector< math::vertex<T> >& lndata,
 			  math::vertex<T>& entropy_gradient) const;
 
     // calculates entropy output gradient given jacobian matrix of neural network.
@@ -231,6 +236,7 @@ namespace whiteice
 				const unsigned int START, const unsigned int END,
 				const math::vertex<T>& correct_pvalues,
 				const std::vector< math::vertex<T> >& bpdata,
+				const std::vector< math::vertex<T> >& lndata,
 				math::vertex<T>& entropy_gradient) const;
 
     // calculates Kullback-Leibler divergence gradient
@@ -258,6 +264,7 @@ namespace whiteice
 					const unsigned int START, const unsigned int END,
 					const math::vertex<T>& correct_pvalues,
 					const std::vector< math::vertex<T> >& bpdata,
+					const std::vector< math::vertex<T> >& lndata,
 					math::vertex<T>& entropy_gradient) const;
 
     // calculates REVERSE Kullback-Leibler divergence gradient
@@ -369,6 +376,32 @@ namespace whiteice
     bool calculateBatchNorm(const std::vector< math::vertex<T> >& data,
 			    unsigned int NUMLAYERS = 0);
 
+    
+    void setLayerNorm(const bool layerNorm = true);
+    bool getLayerNorm() const;
+
+    bool doLayerNorm(const unsigned int layer, math::vertex<T>& state) const;
+
+    // returns new lgrad value and returns gamma and beta gradients as reference parameters
+    const math::vertex<T> DlayerNorm(const math::vertex<T>& lgrad,
+				     const math::vertex<T>& x,
+				     const math::vertex<T>& ln_gamma,
+				     const math::vertex<T>& ln_beta,
+				     math::vertex<T>& grad_gamma,
+				     math::vertex<T>& grad_beta) const;
+
+    bool jacobianLayerNorm(math::matrix<T>& J,
+			   const math::vertex<T>& x,
+			   const math::vertex<T>& ln_gamma,
+			   const math::vertex<T>& ln_beta,
+			   math::vertex<T>& grad_gamma,
+			   math::vertex<T>& grad_beta) const;
+
+    bool jacobianLayerNorm(math::matrix<T>& J,
+			   math::vertex<T>& x,
+			   const math::vertex<T>& ln_gamma,
+			   const math::vertex<T>& ln_beta) const;
+    
     ////////////////////////////////////////////////////////////
   public:
 
@@ -448,6 +481,11 @@ namespace whiteice
     // used to collect samples about data passing through the network,
     // this will then be used later to do unsupervised regularization of training data
     std::vector< std::vector< math::vertex<T> > > samples;
+
+    // is layer norm enabled?
+    std::vector< bool > layerNorm;
+    std::vector< math::vertex<T> > ln_gamma, ln_beta;
+    std::vector< math::vertex<T> > lndata; // input x for layernorm
     
     // bool compressed;
     // MemoryCompressor* compressor;

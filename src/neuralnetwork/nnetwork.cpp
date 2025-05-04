@@ -32,7 +32,7 @@ namespace whiteice
     size = 0;
     for(unsigned int i=0;i<arch.size();i++){
       if(i > 0)
-	size += (arch[i-1] + 1)*arch[i];
+	size += (arch[i-1] + 1)*arch[i] + 2*arch[i]; // adds layer norm parameters
       
       if(arch[i] > maxwidth)
 	maxwidth = arch[i];
@@ -67,9 +67,10 @@ namespace whiteice
     // residual = false;
     residual = true; // ENABLES residual neural networks as the default.
 
-    randomize();
-
     this->setBatchNorm(false); // DISABLES batch normalization!
+    this->setLayerNorm(false); // DISABLES layer normalization!
+
+    randomize();
   }
   
   
@@ -96,7 +97,11 @@ namespace whiteice
     dropout = nn.dropout;
     residual = nn.residual;
     batchnorm = nn.batchnorm;
-    
+
+    layerNorm = nn.layerNorm;
+    ln_gamma = nn.ln_gamma;
+    ln_beta = nn.ln_beta;
+    lndata = nn.lndata;
   }
   
   
@@ -136,7 +141,7 @@ namespace whiteice
       W[i-1].resize(arch[i], arch[i-1]);
       b[i-1].resize(arch[i]);
 
-      size += arch[i]*(1 +arch[i-1]);
+      size += arch[i]*(1 +arch[i-1]) + 2*arch[i]; // adds layer norm parameters
     }
     
     inputValues.resize(arch[0]);
@@ -158,6 +163,7 @@ namespace whiteice
     randomize();
     
     this->setBatchNorm(false); // ENABLES/DISABLES batch normalization!
+    this->setLayerNorm(false); // DISABLES LayerNorm
   }
   
   
@@ -188,6 +194,10 @@ namespace whiteice
     bn_mu  = nn.bn_mu;
     bn_sigma = nn.bn_sigma;
     bpdata = nn.bpdata;
+    layerNorm = nn.layerNorm;
+    ln_gamma = nn.ln_gamma;
+    ln_beta = nn.ln_beta;
+    lndata = nn.lndata;
 
     inputValues = nn.inputValues;
     outputValues = nn.outputValues;
@@ -475,6 +485,9 @@ namespace whiteice
     if(gradInfo){
       bpdata.resize(getLayers()+1);
       bpdata[0] = state; // input value
+
+      lndata.resize(getLayers()+1);
+      lndata[0] = state;
     }
 
     math::vertex<T> skipValue;
@@ -492,6 +505,13 @@ namespace whiteice
 	state = W[l]*state + b[l] + skipValue;
       else
 	state = W[l]*state + b[l];
+
+      if(gradInfo){
+	if(getLayerNorm()){
+	  lndata[l+1] = state;
+	  if(layerNorm[l]) doLayerNorm(l, state);
+	}
+      }
 
       if(gradInfo) // saves local field information
 	bpdata[l+1] = state;
@@ -522,6 +542,8 @@ namespace whiteice
 				  const std::vector< std::vector<bool> >& dropout,
 				  bool collectSamples)
   {
+    if(getLayerNorm()) return false; // CURRENTLY INV() IS NOT SUPPORTED BY LAYERNORM
+    
     // TODO write cblas and cuBLAS optimized version which uses
     // direct accesses to matrix/vertex memory areas
 
@@ -660,6 +682,12 @@ namespace whiteice
 	state = W[l]*state + b[l] + skipValue;
       else
 	state = W[l]*state + b[l];
+      
+      if(getLayerNorm()){
+	if(layerNorm[l]){
+	  doLayerNorm(l, state);
+	}
+      }
 
       for(unsigned int i=0;i<state.size();i++){
 	state[i] = nonlin(state[i], l, i);
@@ -697,6 +725,12 @@ namespace whiteice
       else
 	state = W[l]*state + b[l];
 
+      if(getLayerNorm()){
+	if(layerNorm[l]){
+	  doLayerNorm(l, state);
+	}
+      }
+      
       for(unsigned int i=0;i<state.size();i++){
 	state[i] = nonlin(state[i], l, i);
       }
@@ -736,12 +770,18 @@ namespace whiteice
 	state = W[l]*state + b[l] + skipValue;
       else
 	state = W[l]*state + b[l];
+
+      if(getLayerNorm()){
+	if(layerNorm[l]){
+	  doLayerNorm(l, state);
+	}
+      }
       
       for(unsigned int i=0;i<state.size();i++){
 	if(dropout[l][i]) state[i] = T(0.0f);
 	else state[i] = nonlin_nodropout(state[i], l, i);
       }
-      
+
       if(residual && (l % 2) == 0 && l != 0)
 	skipValue = state;
     }
@@ -754,7 +794,8 @@ namespace whiteice
   // This allows same nnetwork<> object to be used in thread safe manner (const).
   template <typename T>
   bool nnetwork<T>::calculate(const math::vertex<T>& input, math::vertex<T>& output,
-			      std::vector< math::vertex<T> >& bpdata) const
+			      std::vector< math::vertex<T> >& bpdata,
+			      std::vector< math::vertex<T> >& lndata) const
   {
     // TODO write cblas and cuBLAS optimized version which uses
     // direct accesses to matrix/vertex memory areas
@@ -767,6 +808,9 @@ namespace whiteice
     bpdata.resize(getLayers()+1);
     bpdata[0] = state; // input value
 
+    lndata.resize(getLayers()+1);
+    lndata[0] = state;
+
     math::vertex<T> skipValue;
 
     if(residual) skipValue = state;
@@ -778,6 +822,14 @@ namespace whiteice
       else
 	state = W[l]*state + b[l];
 
+      lndata[l+1] = state;
+
+      if(getLayerNorm()){
+	if(layerNorm[l]){
+	  doLayerNorm(l, state);
+	}
+      }
+      
       // stores neuron's local field
       bpdata[l+1] = state;
       
@@ -802,7 +854,8 @@ namespace whiteice
   template <typename T>
   bool nnetwork<T>::calculate(const math::vertex<T>& input, math::vertex<T>& output,
 			      const std::vector< std::vector<bool> >& dropout,
-			      std::vector< math::vertex<T> >& bpdata) const
+			      std::vector< math::vertex<T> >& bpdata,
+			      std::vector< math::vertex<T> >& lndata) const
   {
     if(input.size() != input_size()) return false;
     if(dropout.size() != getLayers()) return false;
@@ -815,6 +868,9 @@ namespace whiteice
 
     bpdata.resize(getLayers()+1);
     bpdata[0] = state; // input value
+
+    lndata.resize(getLayers()+1);
+    lndata[0] = state;
 
     math::vertex<T> skipValue;
 
@@ -829,6 +885,14 @@ namespace whiteice
 	state = W[l]*state + b[l] + skipValue;
       else
 	state = W[l]*state + b[l];
+
+      lndata[l+1] = state;
+
+      if(getLayerNorm()){
+	if(layerNorm[l]){
+	  doLayerNorm(l, state);
+	}
+      }
       
       // stores neuron's local field
       bpdata[l+1] = state;
@@ -837,7 +901,7 @@ namespace whiteice
 	if(dropout[l][i]) state[i] = T(0.0f);
 	else state[i] = nonlin_nodropout(state[i], l, i);
       }
-      
+
       if(residual && ((l % 2) == 0) && l != 0){
 	skipValue = state;
       }
@@ -884,8 +948,15 @@ namespace whiteice
 	  
 	  whiteice::math::convert(b[l][i], value);
 	}
-	
-      }      
+      }
+
+      for(unsigned int i=0;i<b.size();i++){
+	for(unsigned int h=0;h<arch[i+1];h++){
+	  ln_gamma[i][h] = T(rng.normal());
+	  ln_beta[i][h] = T(rng.normal());
+	}
+      }
+      
     }
     else if(type == 1)
     {
@@ -1040,6 +1111,14 @@ namespace whiteice
     }
     else{
       return false;
+    }
+
+    
+    for(unsigned int i=0;i<ln_gamma.size();i++){
+      for(unsigned int h=0;h<ln_gamma[i].size();h++){
+	ln_gamma[i][h] = T(rng.normal());
+	ln_beta[i][h] = T(rng.normal());
+      }
     }
     
     return true;
@@ -1334,14 +1413,26 @@ namespace whiteice
     // initial local gradient is error[i]*NONLIN'(v)
     math::vertex<T> lgrad(error);
     
+    math::vertex<T> grad_gamma;
+    math::vertex<T> grad_beta;
+    
     for(unsigned int i=0;i<lgrad.size();i++){
       if(complex_data) lgrad[i].conj();
 
       lgrad[i] *= Dnonlin(bpdata[layer+1][i], layer, i);
+
+      if(getLayerNorm()){
+	if(layerNorm[layer+1]){
+	  lgrad = DlayerNorm(lgrad, lndata[layer+1],
+			     ln_gamma[layer+1], ln_beta[layer+1],
+			     grad_gamma, grad_beta);
+	}
+      }
     }
 
     grad.resize(size);
     unsigned int gindex = grad.size();
+
 
     if(residual){
       std::vector< math::vertex<T> > lgrad_prev;
@@ -1351,11 +1442,13 @@ namespace whiteice
       lgrad_prev[2] = lgrad;
 
       while(layer >= 0){
-	const unsigned int gsize = W[layer].size() + b[layer].size();
+	const unsigned int gsize = W[layer].size() + b[layer].size() + 2*b[layer].size(); // adds LayerNorm parameters
 	gindex -= gsize;
 	
 	// delta W = (lgrad * input^T) [input for the layer is bpdata's localfield]
 	// delta b =  lgrad;
+	// delta gamma = grad_gamma
+	// delta beta  = grad_beta
 	
 	if(frozen[layer] == false){
 	  
@@ -1379,6 +1472,42 @@ namespace whiteice
 	  for(unsigned int y=0;y<b[layer].size();y++){
 	    grad[gindex] = lgrad[y];
 	    gindex++;
+	  }
+
+	  bool has_layer_norm = false;
+
+	  if(getLayerNorm()){
+	    if(layerNorm[layer]){
+	      has_layer_norm = true;
+
+	      // printf("HAS LAYER NORM: %d %d %d\n", layer, grad_gamma.size(), grad_beta.size());
+	      
+	      for(unsigned int y=0;y<grad_gamma.size();y++){
+		grad[gindex] = grad_gamma[y];
+		gindex++;
+	      }
+
+	      for(unsigned int y=0;y<grad_beta.size();y++){
+		grad[gindex] = grad_beta[y];
+		gindex++;
+	      }
+	    }
+	  }
+
+	  // fills with zeros if layer norm is not enabled..
+	  if(has_layer_norm == false){
+
+	    // printf("NO LAYER NORM: %d %d %d\n", layer, b[layer].size(), b[layer].size());
+	    
+	    for(unsigned int y=0;y<b[layer].size();y++){
+	      grad[gindex] = T(0.0f);
+	      gindex++;
+	    }
+
+	    for(unsigned int y=0;y<b[layer].size();y++){
+	      grad[gindex] = T(0.0f);
+	      gindex++;
+	    }
 	  }
 	  
 	  gindex -= gsize;
@@ -1408,40 +1537,34 @@ namespace whiteice
 	    for(unsigned int i=0;i<lgrad.size();i++){
 	      lgrad[i] *= Dnonlin(bpdata[layer][i], layer-1, i);
 	    }
+	    
+	    if(getLayerNorm()){
+	      if(layerNorm[layer-1]){
+		lgrad = DlayerNorm(lgrad, lndata[layer],
+				   ln_gamma[layer], ln_beta[layer],
+				   grad_gamma, grad_beta);
+	      }
+	    }
 	  }
 	  else{
 	    //printf("RESIDUAL NNETWORK LAYER: %d\n", layer); fflush(stdout);
 	    
 	    lgrad = lgrad * W[layer];
 
-	    lgrad += lgrad_prev[1];
+	    lgrad += lgrad_prev[1];	    
 	    
 	    for(unsigned int i=0;i<lgrad.size();i++){
 	      lgrad[i] *= Dnonlin(bpdata[layer][i], layer-1, i);
 	    }
 	    
-#if 0
-	    // residual new local grad
-	    // lgrad[n] = diag(..g'..)*
-	    // lgrad[n+1] + W[layer]^t*diag(..h'..)*W[layer+1]^t*lgrad[n+1]
-	    // 
-	    
-	    auto e = lgrad_prev[1]*W[layer+1];
-	    
-	    for(unsigned int i=0;i<e.size();i++){
-	      e[i] *= Dnonlin(bpdata[layer+1][i], layer, i);
+	    if(getLayerNorm()){
+	      if(layerNorm[layer-1]){
+		lgrad = DlayerNorm(lgrad, lndata[layer],
+				   ln_gamma[layer], ln_beta[layer],
+				   grad_gamma, grad_beta);
+	      }
 	    }
 	    
-	    auto wdw = e * W[layer];
-
-	    wdw += lgrad_prev[1];
-
-	    for(unsigned int i=0;i<wdw.size();i++){
-	      wdw[i] *= Dnonlin(bpdata[layer][i], layer-1, i);
-	    }
-	    
-	    lgrad = wdw;
-#endif	    
 	  }
 	}
 	
@@ -1452,7 +1575,7 @@ namespace whiteice
     else{
 
       while(layer >= 0){
-	const unsigned int gsize = W[layer].size() + b[layer].size();
+	const unsigned int gsize = W[layer].size() + b[layer].size() + 2*b[layer].size(); // added layer norm parameters
 	gindex -= gsize;
 	
 	// delta W = (lgrad * input^T) [input for the layer is bpdata's localfield]
@@ -1481,6 +1604,43 @@ namespace whiteice
 	    grad[gindex] = lgrad[y];
 	    gindex++;
 	  }
+
+	  bool has_layer_norm = false;
+
+	  if(getLayerNorm()){
+	    if(layerNorm[layer]){
+
+	      // printf("HAS LAYER NORM: %d %d %d\n", layer, grad_gamma.size(), grad_beta.size());
+	      
+	      has_layer_norm = true;
+	      
+	      for(unsigned int y=0;y<grad_gamma.size();y++){
+		grad[gindex] = grad_gamma[y];
+		gindex++;
+	      }
+
+	      for(unsigned int y=0;y<grad_beta.size();y++){
+		grad[gindex] = grad_beta[y];
+		gindex++;
+	      }
+	    }
+	  }
+
+	  // fills with zeros if layer norm is not enabled..
+	  if(has_layer_norm == false){
+
+	    // printf("NO LAYER NORM: %d %d %d\n", layer, b[layer].size(), b[layer].size());
+	    
+	    for(unsigned int y=0;y<b[layer].size();y++){
+	      grad[gindex] = T(0.0f);
+	      gindex++;
+	    }
+
+	    for(unsigned int y=0;y<b[layer].size();y++){
+	      grad[gindex] = T(0.0f);
+	      gindex++;
+	    }
+	  }
 	  
 	  gindex -= gsize;
 	  
@@ -1498,6 +1658,14 @@ namespace whiteice
 	  for(unsigned int i=0;i<lgrad.size();i++){
 	    lgrad[i] *= Dnonlin(bpdata[layer][i], layer-1, i);
 	  }
+
+	  if(getLayerNorm()){
+	    if(layerNorm[layer-1]){
+	      lgrad = DlayerNorm(lgrad, lndata[layer],
+				 ln_gamma[layer], ln_beta[layer],
+				 grad_gamma, grad_beta);
+	    }
+	  }	    
 	}
 	
 	layer--;
@@ -1525,6 +1693,7 @@ namespace whiteice
   template <typename T>
   bool nnetwork<T>::mse_gradient(const math::vertex<T>& error,
 				 const std::vector< math::vertex<T> >& bpdata,
+				 const std::vector< math::vertex<T> >& lndata,
 				 math::vertex<T>& grad) const
   {
 
@@ -1535,6 +1704,11 @@ namespace whiteice
 
     if(bpdata.size() != getLayers()+1){ // no backpropagation data
       printf("FAIL 2: %d != %d\n", (int)bpdata.size(), getLayers()+1);
+      return false;
+    }
+
+    if(lndata.size() != getLayers()+1){
+      printf("FAIL 3: %d != %d\n", (int)lndata.size(), getLayers()+1);
       return false;
     }
     
@@ -1557,11 +1731,22 @@ namespace whiteice
 
     // initial local gradient is error[i]*NONLIN'(v)
     math::vertex<T> lgrad(error);
+
+    math::vertex<T> grad_gamma;
+    math::vertex<T> grad_beta;
     
     for(unsigned int i=0;i<lgrad.size();i++){
       if(complex_data) lgrad[i].conj();
 
       lgrad[i] *= Dnonlin(bpdata[layer+1][i], layer, i);
+
+      if(getLayerNorm()){
+	if(layerNorm[layer+1]){
+	  lgrad = DlayerNorm(lgrad, lndata[layer+1],
+			     ln_gamma[layer+1], ln_beta[layer+1],
+			     grad_gamma, grad_beta);
+	}
+      }
     }
 
     grad.resize(size);
@@ -1574,11 +1759,13 @@ namespace whiteice
     lgrad_prev[2] = lgrad;
     
     while(layer >= 0){
-      const unsigned int gsize = W[layer].size() + b[layer].size();
+      const unsigned int gsize = W[layer].size() + b[layer].size() + 2*b[layer].size(); // adds LayerNorm parameters
       gindex -= gsize;
       
       // delta W = (lgrad * input^T) [input for the layer is bpdata's localfield]
       // delta b =  lgrad;
+      // delta gamma = grad_gamma
+      // delta beta  = grad_beta
       
       if(frozen[layer] == false){
 	
@@ -1602,6 +1789,42 @@ namespace whiteice
 	for(unsigned int y=0;y<b[layer].size();y++){
 	  grad[gindex] = lgrad[y];
 	  gindex++;
+	}
+
+	bool has_layer_norm = false;
+
+	if(getLayerNorm()){
+	  if(layerNorm[layer]){
+	    has_layer_norm = true;
+	    
+	    // printf("HAS LAYER NORM: %d %d %d\n", layer, grad_gamma.size(), grad_beta.size());
+	    
+	    for(unsigned int y=0;y<grad_gamma.size();y++){
+	      grad[gindex] = grad_gamma[y];
+	      gindex++;
+	    }
+	    
+	    for(unsigned int y=0;y<grad_beta.size();y++){
+	      grad[gindex] = grad_beta[y];
+	      gindex++;
+	    }
+	  }
+	}
+	
+	// fills with zeros if layer norm is not enabled..
+	if(has_layer_norm == false){
+	  
+	  // printf("NO LAYER NORM: %d %d %d\n", layer, b[layer].size(), b[layer].size());
+	  
+	  for(unsigned int y=0;y<b[layer].size();y++){
+	    grad[gindex] = T(0.0f);
+	    gindex++;
+	  }
+	  
+	  for(unsigned int y=0;y<b[layer].size();y++){
+	    grad[gindex] = T(0.0f);
+	    gindex++;
+	  }
 	}
 	
 	gindex -= gsize;
@@ -1631,6 +1854,15 @@ namespace whiteice
 	  for(unsigned int i=0;i<lgrad.size();i++){
 	    lgrad[i] *= Dnonlin(bpdata[layer][i], layer-1, i);
 	  }
+
+	  if(getLayerNorm()){
+	    if(layerNorm[layer-1]){
+	      lgrad = DlayerNorm(lgrad, lndata[layer],
+				 ln_gamma[layer], ln_beta[layer],
+				 grad_gamma, grad_beta);
+	    }
+	  }
+	  
 	}
 	else{
 	  //printf("RESIDUAL NNETWORK LAYER: %d\n", layer); fflush(stdout);
@@ -1642,29 +1874,14 @@ namespace whiteice
 	  for(unsigned int i=0;i<lgrad.size();i++){
 	    lgrad[i] *= Dnonlin(bpdata[layer][i], layer-1, i);
 	  }
-	  
-#if 0
-	  // residual new local grad
-	  // lgrad[n] = diag(..g'..)*
-	  // lgrad[n+1] + W[layer]^t*diag(..h'..)*W[layer+1]^t*lgrad[n+1]
-	  // 
-	  
-	  auto e = lgrad_prev[1]*W[layer+1];
-	  
-	  for(unsigned int i=0;i<e.size();i++){
-	    e[i] *= Dnonlin(bpdata[layer+1][i], layer, i);
+
+	  if(getLayerNorm()){
+	    if(layerNorm[layer-1]){
+	      lgrad = DlayerNorm(lgrad, lndata[layer],
+				 ln_gamma[layer], ln_beta[layer],
+				 grad_gamma, grad_beta);
+	    }
 	  }
-	  
-	  auto wdw = e * W[layer];
-	  
-	  wdw += lgrad_prev[1];
-	  
-	  for(unsigned int i=0;i<wdw.size();i++){
-	    wdw[i] *= Dnonlin(bpdata[layer][i], layer-1, i);
-	  }
-	  
-	  lgrad = wdw;
-#endif	  
 	}
       }
       
@@ -1693,6 +1910,7 @@ namespace whiteice
   template <typename T>
   bool nnetwork<T>::mse_gradient(const math::vertex<T>& error,
 				 const std::vector< math::vertex<T> >& bpdata,
+				 const std::vector< math::vertex<T> >& lndata,
 				 const std::vector< std::vector<bool> >& dropout,
 				 math::vertex<T>& grad) const
   {
@@ -1702,8 +1920,11 @@ namespace whiteice
     if(bpdata.size() != getLayers()+1)
       return false; // no backpropagation data
 
+    if(lndata.size() != getLayers()+1)
+      return false; // no layer norm data
+
     if(dropout.size() != getLayers())
-      return this->mse_gradient(error, bpdata, grad);
+      return this->mse_gradient(error, bpdata, lndata, grad);
     
     bool complex_data = false;
     
@@ -1725,11 +1946,22 @@ namespace whiteice
 
     // initial local gradient is error[i]*NONLIN'(v)
     math::vertex<T> lgrad(error);
+
+    math::vertex<T> grad_gamma;
+    math::vertex<T> grad_beta;
     
     for(unsigned int i=0;i<lgrad.size();i++){
       if(complex_data) lgrad[i].conj();
 
       lgrad[i] *= Dnonlin_nodropout(bpdata[layer+1][i], layer, i);
+
+      if(getLayerNorm()){
+	if(layerNorm[layer+1]){
+	  lgrad = DlayerNorm(lgrad, lndata[layer+1],
+			     ln_gamma[layer+1], ln_beta[layer+1],
+			     grad_gamma, grad_beta);
+	}
+      }
     }
 
     grad.resize(size);
@@ -1743,7 +1975,7 @@ namespace whiteice
 
     
     while(layer >= 0){
-      const unsigned int gsize = W[layer].size() + b[layer].size();
+      const unsigned int gsize = W[layer].size() + b[layer].size() + 2*b[layer].size(); // adds LayerNorm parameters
       gindex -= gsize;
 
       // delta W = (lgrad * input^T) [input for the layer is bpdata's localfield]
@@ -1776,6 +2008,44 @@ namespace whiteice
 	  gindex++;
 	}
 
+
+	bool has_layer_norm = false;
+
+	if(getLayerNorm()){
+	  if(layerNorm[layer]){
+	    has_layer_norm = true;
+	    
+	    // printf("HAS LAYER NORM: %d %d %d\n", layer, grad_gamma.size(), grad_beta.size());
+	    
+	    for(unsigned int y=0;y<grad_gamma.size();y++){
+	      grad[gindex] = grad_gamma[y];
+	      gindex++;
+	    }
+	    
+	    for(unsigned int y=0;y<grad_beta.size();y++){
+	      grad[gindex] = grad_beta[y];
+	      gindex++;
+	    }
+	  }
+	}
+	
+	// fills with zeros if layer norm is not enabled..
+	if(has_layer_norm == false){
+	  
+	  // printf("NO LAYER NORM: %d %d %d\n", layer, b[layer].size(), b[layer].size());
+	  
+	  for(unsigned int y=0;y<b[layer].size();y++){
+	    grad[gindex] = T(0.0f);
+	    gindex++;
+	  }
+	  
+	  for(unsigned int y=0;y<b[layer].size();y++){
+	    grad[gindex] = T(0.0f);
+	    gindex++;
+	  }
+	}
+	
+
 	gindex -= gsize;
 
       }
@@ -1803,6 +2073,15 @@ namespace whiteice
 	  for(unsigned int i=0;i<lgrad.size();i++){
 	    lgrad[i] *= Dnonlin(bpdata[layer][i], layer-1, i);
 	  }
+
+	  if(getLayerNorm()){
+	    if(layerNorm[layer-1]){
+	      lgrad = DlayerNorm(lgrad, lndata[layer],
+				 ln_gamma[layer], ln_beta[layer],
+				 grad_gamma, grad_beta);
+	    }
+	  }
+	  
 	}
 	else{
 	  //printf("RESIDUAL NNETWORK LAYER: %d\n", layer); fflush(stdout);
@@ -1815,28 +2094,14 @@ namespace whiteice
 	    lgrad[i] *= Dnonlin(bpdata[layer][i], layer-1, i);
 	  }
 	  
-#if 0
-	  // residual new local grad
-	  // lgrad[n] = diag(..g'..)*
-	  // lgrad[n+1] + W[layer]^t*diag(..h'..)*W[layer+1]^t*lgrad[n+1]
-	  // 
-	  
-	  auto e = lgrad_prev[1]*W[layer+1];
-	  
-	  for(unsigned int i=0;i<e.size();i++){
-	    e[i] *= Dnonlin(bpdata[layer+1][i], layer, i);
+	  if(getLayerNorm()){
+	    if(layerNorm[layer-1]){
+	      lgrad = DlayerNorm(lgrad, lndata[layer],
+				 ln_gamma[layer], ln_beta[layer],
+				 grad_gamma, grad_beta);
+	    }
 	  }
 	  
-	  auto wdw = e * W[layer];
-	  
-	  wdw += lgrad_prev[1];
-	  
-	  for(unsigned int i=0;i<wdw.size();i++){
-	    wdw[i] *= Dnonlin(bpdata[layer][i], layer-1, i);
-	  }
-	  
-	  lgrad = wdw;
-#endif	  
 	}
       }
 
@@ -1869,7 +2134,7 @@ namespace whiteice
     if(input.size() != this->input_size()) return false;
     
     // local fields for each layer (and input not stored)
-    std::vector< whiteice::math::vertex<T> > v;
+    std::vector< whiteice::math::vertex<T> > v, ln;
 
     auto x = input;
 
@@ -1885,6 +2150,12 @@ namespace whiteice
 	x = W[l]*x + b[l] + skipValue;
       else
 	x = W[l]*x + b[l];
+
+      if(getLayerNorm()){
+	ln.push_back(x);
+	if(layerNorm[l])
+	  doLayerNorm(l, x);
+      }
 
       v.push_back(x); // stores local field
 
@@ -1905,12 +2176,35 @@ namespace whiteice
     grad.zero(); // REMOVE ME: for debugging..
 
     whiteice::math::matrix<T> lgrad; // calculates local gradient
+    
+    math::vertex<T> grad_gamma;
+    math::vertex<T> grad_beta;
+    
     lgrad.resize(output_size(), output_size());
     lgrad.zero();
 
     for(unsigned int i=0;i<output_size();i++){
       lgrad(i,i) = Dnonlin(v[l][i], l, i);
     }
+
+    if(getLayerNorm()){
+      if(layerNorm[l]){
+
+	math::matrix<T> Jlayer_norm;
+
+	if(jacobianLayerNorm(Jlayer_norm,
+			     ln[l],
+			     ln_gamma[l],
+			     ln_beta[l],
+			     grad_gamma,
+			     grad_beta)){
+
+	  lgrad *= Jlayer_norm;
+	}
+      }
+    }
+
+    
 
     unsigned int index = gradient_size();
 
@@ -1924,7 +2218,7 @@ namespace whiteice
       
       // calculates gradient [gradient of W is always in ROW MAJOR format!]
       {
-	index -= W[l].ysize()*W[l].xsize() + b[l].size();
+	index -= W[l].ysize()*W[l].xsize() + b[l].size() + 2*b[l].size(); // adds LayerNorm parameters
 
 	// weight matrix gradient
 #pragma omp parallel for schedule(auto)
@@ -1957,7 +2251,90 @@ namespace whiteice
 
 	index += b[l].size();
 
-	index -= W[l].ysize()*W[l].xsize() + b[l].size();
+
+	// grad_gamma vector gradient
+	{
+	  bool has_layer_norm = false;
+	  
+	  if(getLayerNorm()){
+	    if(layerNorm[l]){
+	      has_layer_norm = true;
+	      
+#pragma omp parallel for schedule(auto)
+	      for(unsigned int j=0;j<grad_gamma.size();j++){
+		const unsigned int gindex = index + j;
+		
+		// TODO optimize with vector math
+		//#pragma omp parallel for schedule(auto)
+		for(unsigned int k=0;k<grad.ysize();k++)
+		  grad(k, gindex) = grad_gamma[j]; // lgrad(k,j)*grad_gamma[j];
+	      }
+	      
+	      index += grad_gamma.size();
+
+	      assert(grad_gamma.size() == b[l].size());
+	    }
+	  }
+
+	  if(has_layer_norm == false){
+	    // bias vector gradient
+#pragma omp parallel for schedule(auto)
+	    for(unsigned int j=0;j<b[l].size();j++){
+	      const unsigned int bindex = index + j;
+	      
+	      // TODO optimize with vector math
+	      //#pragma omp parallel for schedule(auto)
+	      for(unsigned int k=0;k<grad.ysize();k++)
+		grad(k, bindex) = T(0.0f);
+	    }
+	  
+	    index += b[l].size();
+	  }
+	}
+
+
+	// grad_beta vector gradient
+	{
+	  bool has_layer_norm = false;
+	  
+	  if(getLayerNorm()){
+	    if(layerNorm[l]){
+	      has_layer_norm = true;
+	      
+#pragma omp parallel for schedule(auto)
+	      for(unsigned int j=0;j<grad_beta.size();j++){
+		const unsigned int gindex = index + j;
+		
+		// TODO optimize with vector math
+		//#pragma omp parallel for schedule(auto)
+		for(unsigned int k=0;k<grad.ysize();k++)
+		  grad(k, gindex) = grad_beta[j];
+	      }
+	      
+	      index += grad_beta.size();
+
+	      assert(grad_beta.size() == b[l].size());
+	    }
+	  }
+
+	  if(has_layer_norm == false){
+	    // bias vector gradient
+#pragma omp parallel for schedule(auto)
+	    for(unsigned int j=0;j<b[l].size();j++){
+	      const unsigned int bindex = index + j;
+	      
+	      // TODO optimize with vector math
+	      //#pragma omp parallel for schedule(auto)
+	      for(unsigned int k=0;k<grad.ysize();k++)
+		grad(k, bindex) = T(0.0f);
+	    }
+	  
+	    index += b[l].size();
+	  }
+	}
+	
+
+	index -= W[l].ysize()*W[l].xsize() + b[l].size() + 2*b[l].size(); // adds LayerNorm parameters
       }
 
       lgrad_prev[2] = lgrad_prev[1];
@@ -1981,6 +2358,23 @@ namespace whiteice
 	    lgrad(j,i) = temp(j,i)*Df;
 	  }
 	}
+
+	if(getLayerNorm()){
+	  if(layerNorm[l-1]){
+	    math::matrix<T> Jlayer_norm;
+
+	    if(jacobianLayerNorm(Jlayer_norm,
+				 ln[l-1],
+				 ln_gamma[l-1],
+				 ln_beta[l-1],
+				 grad_gamma,
+				 grad_beta)){
+	      
+	      lgrad *= Jlayer_norm;
+	    }
+	    
+	  }
+	}
 	
       }
       else{
@@ -1997,6 +2391,24 @@ namespace whiteice
 	    lgrad(j,i) = temp(j,i)*Df;
 	  }
 	}
+
+	
+	if(getLayerNorm()){
+	  if(layerNorm[l-1]){
+	    math::matrix<T> Jlayer_norm;
+
+	    jacobianLayerNorm(Jlayer_norm,
+			      ln[l-1],
+			      ln_gamma[l-1],
+			      ln_beta[l-1],
+			      grad_gamma,
+			      grad_beta);
+
+	    lgrad *= Jlayer_norm;
+	    
+	  }
+	}
+	
       }
       
       
@@ -2008,7 +2420,9 @@ namespace whiteice
       
       // calculates gradient
       {
-	index -= W[0].ysize()*W[0].xsize() + b[0].size();
+	index -= W[0].ysize()*W[0].xsize() + b[0].size() + 2*b[0].size(); // adds LayerNorm parameters
+
+	// printf("LAYER ZERO INDEX: %d\n", (int)index);
 
 	// weight matrix gradient
 #pragma omp parallel for schedule(auto)
@@ -2039,7 +2453,90 @@ namespace whiteice
 
 	index += b[0].size();
 
-	index -= W[0].ysize()*W[0].xsize() + b[0].size();
+
+	// grad_gamma vector gradient
+	{
+	  bool has_layer_norm = false;
+	  
+	  if(getLayerNorm()){
+	    if(layerNorm[l]){
+	      has_layer_norm = true;
+	      
+#pragma omp parallel for schedule(auto)
+	      for(unsigned int j=0;j<grad_gamma.size();j++){
+		const unsigned int gindex = index + j;
+		
+		// TODO optimize with vector math
+		//#pragma omp parallel for schedule(auto)
+		for(unsigned int k=0;k<grad.ysize();k++)
+		  grad(k, gindex) = grad_gamma[j]; // lgrad(k,j)*grad_gamma[j];
+	      }
+	      
+	      index += grad_gamma.size();
+
+	      assert(grad_gamma.size() == b[l].size());
+	    }
+	  }
+
+	  if(has_layer_norm == false){
+	    // bias vector gradient
+#pragma omp parallel for schedule(auto)
+	    for(unsigned int j=0;j<b[l].size();j++){
+	      const unsigned int bindex = index + j;
+	      
+	      // TODO optimize with vector math
+	      //#pragma omp parallel for schedule(auto)
+	      for(unsigned int k=0;k<grad.ysize();k++)
+		grad(k, bindex) = T(0.0f);
+	    }
+	  
+	    index += b[l].size();	    
+	  }
+	}
+
+
+	// grad_beta vector gradient
+	{
+	  bool has_layer_norm = false;
+	  
+	  if(getLayerNorm()){
+	    if(layerNorm[l]){
+	      has_layer_norm = true;
+	      
+#pragma omp parallel for schedule(auto)
+	      for(unsigned int j=0;j<grad_beta.size();j++){
+		const unsigned int gindex = index + j;
+		
+		// TODO optimize with vector math
+		//#pragma omp parallel for schedule(auto)
+		for(unsigned int k=0;k<grad.ysize();k++)
+		  grad(k, gindex) = grad_beta[j];
+	      }
+	      
+	      index += grad_beta.size();
+
+	      assert(grad_beta.size() == b[l].size());
+	    }
+	  }
+
+	  if(has_layer_norm == false){
+	    // bias vector gradient
+#pragma omp parallel for schedule(auto)
+	    for(unsigned int j=0;j<b[l].size();j++){
+	      const unsigned int bindex = index + j;
+	      
+	      // TODO optimize with vector math
+	      //#pragma omp parallel for schedule(auto)
+	      for(unsigned int k=0;k<grad.ysize();k++)
+		grad(k, bindex) = T(0.0f);
+	    }
+	  
+	    index += b[l].size();
+	  }
+	}
+	
+
+	index -= W[0].ysize()*W[0].xsize() + b[0].size() + 2*b[0].size(); // adds LayerNorm parameters
       }
       
     }
@@ -2252,7 +2749,7 @@ namespace whiteice
 
   
   
-  template <typename T> // non-linearity used in neural network
+  template <typename T> // non-linearity used in neural network (ln_mu, ln_sigma are layers mu and sigma values)
   inline T nnetwork<T>::nonlin(const T& input, unsigned int layer, unsigned int neuron) const 
   {
     assert(layer < getLayers());
@@ -2264,7 +2761,8 @@ namespace whiteice
     }
 
     const float RELUcoef = 0.001f; // original was 0.01f
-
+    
+    
     if(nonlinearity[layer] == softmax){
       const T k = T(1.50f);
 
@@ -2323,7 +2821,7 @@ namespace whiteice
 
       T output_value;
       whiteice::math::convert(output_value, T(value));
-
+      
       if(batchnorm && layer != getLayers()-1){
 	return (output_value - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
@@ -2442,7 +2940,7 @@ namespace whiteice
 	output = T(16.0f)*in*in*in*in*in - T(20.0f)*in*in*in + T(5.0f)*in;
       }
 
-
+      
       if(batchnorm && layer != getLayers()-1){
 	return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
@@ -2462,7 +2960,7 @@ namespace whiteice
 	{
 	  if(input.first().real() < 0.0f){
 	    T output = T(RELUcoef*input.first().real());
-	    
+
 	    if(batchnorm && layer != getLayers()-1){
 	      return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	    }
@@ -2472,7 +2970,7 @@ namespace whiteice
 	  }
 	  else{
 	    T output = T(input.first().real());
-	    
+
 	    if(batchnorm && layer != getLayers()-1){
 	      return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	    }
@@ -2497,7 +2995,7 @@ namespace whiteice
 	  }
 	  
 	  T output = T(out);
-	  
+
 	  if(batchnorm && layer != getLayers()-1){
 	    return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	  }
@@ -2532,7 +3030,7 @@ namespace whiteice
     }
     else if(nonlinearity[layer] == pureLinear){
       T output = input; // all layers/neurons are linear..
-
+      
       if(batchnorm && layer != getLayers()-1){
 	return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
       }
@@ -2557,7 +3055,7 @@ namespace whiteice
 	}
 	else{
 	  T output = T(input.first().real());
-
+	  
 	  if(batchnorm && layer != getLayers()-1){
 	    return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	  }
@@ -2631,7 +3129,6 @@ namespace whiteice
 
 	//output.inverse_fft();
 
-	
 	if(batchnorm && layer != getLayers()-1){
 	  return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	}
@@ -2645,7 +3142,7 @@ namespace whiteice
 	
 	if(input.first().real() < 0.0f){
 	  T output = T(RELUcoef*input.first().real());
-	  
+
 	  if(batchnorm && layer != getLayers()-1){
 	    return (output - bn_mu[layer][neuron])*bn_sigma[layer][neuron];
 	  }
@@ -2699,7 +3196,7 @@ namespace whiteice
   }
   
   
-  template <typename T> // derivat of non-linearity used in neural network
+  template <typename T> // derivate of non-linearity used in neural network
   inline T nnetwork<T>::Dnonlin(const T& input, unsigned int layer, unsigned int neuron) const 
   {
     assert(layer < getLayers());
@@ -4366,6 +4863,20 @@ namespace whiteice
 
 	for(unsigned int i=0;i<hgrad.xsize();i++)
 	  hgrad(i,i) += T(1.0f);
+
+
+	if(getLayerNorm()){
+	  if(layerNorm[l]){
+	    
+	    math::matrix<T> Jlayer_norm;
+	    
+	    jacobianLayerNorm(Jlayer_norm, x,
+			      ln_gamma[l],
+			      ln_beta[l]);
+	    
+	    hgrad = Jlayer_norm*hgrad;
+	  }
+	}
 	
 #pragma omp parallel for schedule(auto)
 	for(unsigned int j=0;j<hgrad.ysize();j++){
@@ -4373,6 +4884,7 @@ namespace whiteice
 	    hgrad(j,i) *= Dnonlin(x[j], l, j);
 	  }
 	}
+
 	
 #pragma omp parallel for schedule(auto)
 	for(unsigned int i=0;i<x.size();i++){
@@ -4392,6 +4904,19 @@ namespace whiteice
 	//printf("HG MUL DONE\n");
       }
       else if(residual && l % 2 == 0 && l != 0){ // no same layer size (no skip)
+
+	if(getLayerNorm()){
+	  if(layerNorm[l]){
+	    
+	    math::matrix<T> Jlayer_norm;
+	    
+	    jacobianLayerNorm(Jlayer_norm, x,
+			      ln_gamma[l],
+			      ln_beta[l]);
+	    
+	    hgrad = Jlayer_norm*hgrad;
+	  }
+	}
 	
 #pragma omp parallel for schedule(auto)
 	for(unsigned int j=0;j<hgrad.ysize();j++){
@@ -4418,6 +4943,20 @@ namespace whiteice
 	//printf("HG MUL DONE\n");
       }
       else{
+
+	if(getLayerNorm()){
+	  if(layerNorm[l]){
+	    
+	    math::matrix<T> Jlayer_norm;
+	    
+	    jacobianLayerNorm(Jlayer_norm, x,
+			      ln_gamma[l],
+			      ln_beta[l]);
+	    
+	    hgrad = Jlayer_norm*hgrad;
+	  }
+	}
+	
 
 #pragma omp parallel for schedule(auto)
 	for(unsigned int j=0;j<hgrad.ysize();j++){
@@ -4487,6 +5026,19 @@ namespace whiteice
 
 	for(unsigned int i=0;i<hgrad.xsize();i++)
 	  hgrad(i,i) += T(1.0f);
+	
+	if(getLayerNorm()){
+	  if(layerNorm[l]){
+	    
+	    math::matrix<T> Jlayer_norm;
+	    
+	    jacobianLayerNorm(Jlayer_norm, x,
+			      ln_gamma[l],
+			      ln_beta[l]);
+	    
+	    hgrad = Jlayer_norm*hgrad;
+	  }
+	}
 
 #pragma omp parallel for schedule(auto)
 	for(unsigned int j=0;j<hgrad.ysize();j++){
@@ -4507,6 +5059,19 @@ namespace whiteice
       }
       else if(residual && l % 2 == 0 && l != 0){ // no same layer size (no skip)
 
+	if(getLayerNorm()){
+	  if(layerNorm[l]){
+	    
+	    math::matrix<T> Jlayer_norm;
+		
+	    jacobianLayerNorm(Jlayer_norm, x,
+			      ln_gamma[l],
+			      ln_beta[l]);
+	    
+	    hgrad = Jlayer_norm*hgrad;
+	  }
+	}
+
 #pragma omp parallel for schedule(auto)
 	for(unsigned int j=0;j<hgrad.ysize();j++){
 	  for(unsigned int i=0;i<hgrad.xsize();i++){
@@ -4526,6 +5091,19 @@ namespace whiteice
 	
       }
       else{
+
+	if(getLayerNorm()){
+	  if(layerNorm[l]){
+	    
+	    math::matrix<T> Jlayer_norm;
+	    
+	    jacobianLayerNorm(Jlayer_norm, x,
+			      ln_gamma[l],
+			      ln_beta[l]);
+	    
+	    hgrad = Jlayer_norm*hgrad;
+	  }
+	}
 
 #pragma omp parallel for schedule(auto)
 	for(unsigned int j=0;j<hgrad.ysize();j++){
@@ -4627,6 +5205,7 @@ namespace whiteice
   bool nnetwork<T>::entropy_gradient(const math::vertex<T>& output,
 				     const unsigned int START, const unsigned int END,
 				     const std::vector< math::vertex<T> >& bpdata,
+				     const std::vector< math::vertex<T> >& lndata,
 				     math::vertex<T>& entropy_gradient) const
   {
     if(START >= END) return false;
@@ -4675,7 +5254,7 @@ namespace whiteice
 
     const math::vertex<T> e = h*St;
     
-    return mse_gradient(e, bpdata, entropy_gradient);
+    return mse_gradient(e, bpdata, lndata, entropy_gradient);
   }
   
   
@@ -4802,6 +5381,7 @@ namespace whiteice
 					   const unsigned int START, const unsigned int END,
 					   const math::vertex<T>& correct_pvalues,
 					   const std::vector< math::vertex<T> >& bpdata,
+					   const std::vector< math::vertex<T> >& lndata,
 					   math::vertex<T>& entropy_gradient) const
   {
     if(START >= END) return false;
@@ -4851,7 +5431,7 @@ namespace whiteice
 
     const math::vertex<T> e = h*St;
     
-    return mse_gradient(e, bpdata, entropy_gradient);
+    return mse_gradient(e, bpdata, lndata, entropy_gradient);
   }
 
 
@@ -4966,6 +5546,7 @@ namespace whiteice
 						   const unsigned int START, const unsigned int END,
 						   const math::vertex<T>& correct_pvalues,
 						   const std::vector< math::vertex<T> >& bpdata,
+						   const std::vector< math::vertex<T> >& lndata,
 						   math::vertex<T>& entropy_gradient) const
   {
     if(START >= END) return false;
@@ -5015,7 +5596,7 @@ namespace whiteice
 
     const math::vertex<T> e = h*St;
     
-    return mse_gradient(e, bpdata, entropy_gradient);
+    return mse_gradient(e, bpdata, lndata, entropy_gradient);
   }
 
   
@@ -5528,6 +6109,7 @@ namespace whiteice
   bool nnetwork<T>::exportdata(math::vertex<T>& v) const
   {
     v.resize(size);
+    v.zero();
 
     unsigned int index = 0;
 
@@ -5539,8 +6121,24 @@ namespace whiteice
 
       if(b[l].exportData(&(v[index])) == false)
 	return false;
-
+      
       index += b[l].size();
+
+      if(l < ln_gamma.size()){
+	ln_gamma[l].exportData(&(v[index]));
+	index += ln_gamma[l].size();
+      }
+      else{
+	index += b[l].size();
+      }
+
+      if(l < ln_beta.size()){
+	ln_beta[l].exportData(&(v[index]));
+	index += ln_beta[l].size();
+      }
+      else{
+	index += b[l].size();
+      }
     }
 
     return true;
@@ -5556,6 +6154,9 @@ namespace whiteice
       return false;
 
     unsigned int index = 0;
+
+    ln_gamma.resize(getLayers());
+    ln_beta.resize(getLayers());
     
     for(unsigned int l=0;l<getLayers();l++){
       if(W[l].load_from_vertex(v, index) == false)
@@ -5567,6 +6168,20 @@ namespace whiteice
 	return false;
 
       index += b[l].size();
+
+      ln_gamma[l].resize(b[l].size());
+
+      if(ln_gamma[l].importData(&(v[index])) == false)
+	return false;
+
+      index += ln_gamma[l].size();
+
+      ln_beta[l].resize(b[l].size());
+
+      if(ln_beta[l].importData(&(v[index])) == false)
+	return false;
+
+      index += ln_beta[l].size();
     }
 
 #ifdef _GLIBCXX_DEBUG
@@ -6260,7 +6875,287 @@ namespace whiteice
 
     return true; 
   }
+
+  /////////////////////////////////////////////////////////////////////////////
+  // LayerNorm
+
+  template <typename T>
+  void nnetwork<T>::setLayerNorm(const bool layerNorm_)
+  {
+    if(layerNorm_ == false){
+      this->layerNorm.resize(0);
+      this->lndata.resize(0);
+      return;
+    }
+    else{
+      layerNorm.resize(b.size());
+
+      for(unsigned int i=0;i<layerNorm.size();i++){
+	if(i == layerNorm.size()-1) layerNorm[i] = false;
+	if(b[i].size() < 3) layerNorm[i] = false;
+	else layerNorm[i] = true;
+      }
+      
+      ln_gamma.resize(b.size());
+      ln_beta.resize(b.size());
+	
+      for(unsigned int i=0;i<b.size();i++){
+	ln_gamma[i].resize(arch[i+1]);
+	ln_beta[i].resize(arch[i+1]);
+	
+	for(unsigned int h=0;h<arch[i+1];h++){
+	  ln_gamma[i][h] = T(1.0f);
+	  ln_beta[i][h] = T(0.0f);
+	}
+      }
+
+      return;
+    }
+    
+  }
+
+
+  template <typename T>
+  bool nnetwork<T>::getLayerNorm() const
+  {
+    if(layerNorm.size() == b.size() &&
+       ln_gamma.size() == b.size() &&
+       ln_beta.size() == b.size()){
+      
+       return true;
+    }
+    else return false;
+  }
   
+
+  template <typename T>
+  bool nnetwork<T>::doLayerNorm(const unsigned int layer, math::vertex<T>& state) const
+  {
+    if(state.size() < 3) return false;
+    if(layerNorm.size() != b.size()) return false;
+    if(layer >= b.size()) return false;
+
+    T mu = T(0.0f), sigma2 = T(0.0f);
+    const T eps = T(1e-5);
+
+    for(unsigned int i=0;i<state.size();i++){
+      mu += state[i];
+      sigma2 += state[i]*state[i];
+    }
+
+    mu /= T(state.size());
+    sigma2 /= T(state.size());
+    sigma2 -= mu*mu;
+    sigma2 = whiteice::math::abs(sigma2);
+
+    const T scaling = T(1.0f)/whiteice::math::sqrt(sigma2 + eps);
+
+    for(unsigned int i=0;i<state.size();i++){
+      state[i] = ln_gamma[layer][i]*(state[i] - mu)*scaling + ln_beta[layer][i];
+    }
+
+    return true;
+  }
+
+  /*
+   * returns new lgrad and returns also gradient of gamma and beta parameters
+   */
+  template <typename T>
+  const math::vertex<T> nnetwork<T>::DlayerNorm(const math::vertex<T>& lgrad,
+						const math::vertex<T>& x,
+						const math::vertex<T>& ln_gamma,
+						const math::vertex<T>& ln_beta,
+						math::vertex<T>& grad_gamma,
+						math::vertex<T>& grad_beta) const
+  {
+    if(x.size() < 3){
+      return lgrad; // don't layer normalize less than 3 dimensions..
+    }
+    
+    assert(lgrad.size() == x.size());
+
+    T mu = T(0.0f), sigma2 = T(0.0f);
+    const T eps = T(1e-5);
+
+    for(unsigned int i=0;i<x.size();i++){
+      mu += x[i];
+      sigma2 += x[i]*x[i];
+    }
+
+    mu /= T(x.size());
+    sigma2 /= T(x.size());
+    sigma2 -= mu*mu;
+    sigma2 = whiteice::math::abs(sigma2);
+
+    const T scaling = T(1.0f)/whiteice::math::sqrt(sigma2 + eps);
+
+    grad_gamma.resize(lgrad.size());
+    grad_beta = lgrad;
+    
+    for(unsigned int i=0;i<grad_gamma.size();i++){
+      grad_gamma[i] = lgrad[i]*(x[i]-mu)*scaling;
+    }
+
+    // printf("DlayerNorm(): grad_gamma, grad_beta = %d %d\n", (int)grad_gamma.size(), (int)grad_beta.size());
+
+    math::vertex<T> new_grad(lgrad);
+
+    math::vertex<T> g_lgrad(lgrad);
+
+    for(unsigned int i=0;i<g_lgrad.size();i++){
+      g_lgrad[i] = lgrad[i]*ln_gamma[i];
+    }
+
+    new_grad = scaling*g_lgrad;
+
+    T sumL = T(0.0f);
+
+    for(unsigned int i=0;i<lgrad.size();i++)
+      sumL += g_lgrad[i];
+
+    sumL /= T(g_lgrad.size());
+
+    for(unsigned int i=0;i<lgrad.size();i++)
+      new_grad[i] -= scaling*sumL;
+
+    T lxmu = T(0.0);
+
+    for(unsigned int i=0;i<lgrad.size();i++)
+      lxmu += g_lgrad[i]*(x[i] - mu);
+
+    lxmu /= T(g_lgrad.size());
+    lxmu *= scaling;
+
+    for(unsigned int i=0;i<lgrad.size();i++)
+      new_grad[i] -= ((x[i]-mu)/(sigma2+eps))*lxmu;
+
+    return new_grad;
+  }
+
+
+  template <typename T>
+  bool nnetwork<T>::jacobianLayerNorm(math::matrix<T>& J,
+				      const math::vertex<T>& x,
+				      const math::vertex<T>& ln_gamma,
+				      const math::vertex<T>& ln_beta,
+				      math::vertex<T>& grad_gamma,
+				      math::vertex<T>& grad_beta) const
+  {
+    if(x.size() < 3){
+      J.resize(x.size(),x.size());
+      J.identity();
+      
+      grad_gamma.resize(x.size());
+      grad_beta.resize(x.size());
+      grad_gamma.zero();
+      grad_beta.zero();
+      
+      return false; // don't layer normalize less than 3 dimensions..
+    }
+
+    J.resize(x.size(),x.size());
+    J.zero();
+    
+    T mu = T(0.0f), sigma2 = T(0.0f);
+    const T eps = T(1e-5);
+
+    for(unsigned int i=0;i<x.size();i++){
+      mu += x[i];
+      sigma2 += x[i]*x[i];
+    }
+
+    mu /= T(x.size());
+    sigma2 /= T(x.size());
+    sigma2 -= mu*mu;
+    sigma2 = whiteice::math::abs(sigma2);
+
+    const T scaling = T(1.0f)/whiteice::math::sqrt(sigma2 + eps);
+
+    grad_gamma.resize(x.size());
+    grad_beta.resize(x.size());
+    
+    for(unsigned int i=0;i<grad_gamma.size();i++){
+      grad_gamma[i] = (x[i]-mu)*scaling;
+      grad_beta[i] = T(1.0f);
+    }
+
+    // printf("DlayerNorm(): grad_gamma, grad_beta = %d %d\n", (int)grad_gamma.size(), (int)grad_beta.size());
+
+    for(unsigned int j=0;j<J.ysize();j++){
+      for(unsigned int i=0;i<J.xsize();i++){
+	if(i != j) J(j,i) = - T(1.0f/((float)x.size()));
+	else{
+	  J(j,i) = scaling - T(1.0f/((float)x.size()));
+	}
+
+	J(j,i) -= ((x[i]-mu)*(x[j]-mu))/T(T(x.size())*(sigma2 + eps));
+      }
+    }
+
+    for(unsigned int j=0;j<J.ysize();j++){
+      for(unsigned int i=0;i<J.xsize();i++){
+	J(j,i) *= ln_gamma[i];
+      }
+    }
+
+    return true;
+  }
+
+
+  template <typename T>
+  bool nnetwork<T>::jacobianLayerNorm(math::matrix<T>& J,
+				      math::vertex<T>& x,
+				      const math::vertex<T>& ln_gamma,
+				      const math::vertex<T>& ln_beta) const
+  {
+    if(x.size() < 3){
+      J.resize(x.size(),x.size());
+      J.identity();      
+      return false; // don't layer normalize less than 3 dimensions..
+    }
+
+    J.resize(x.size(),x.size());
+    J.zero();
+    
+    T mu = T(0.0f), sigma2 = T(0.0f);
+    const T eps = T(1e-5);
+
+    for(unsigned int i=0;i<x.size();i++){
+      mu += x[i];
+      sigma2 += x[i]*x[i];
+    }
+
+    mu /= T(x.size());
+    sigma2 /= T(x.size());
+    sigma2 -= mu*mu;
+    sigma2 = whiteice::math::abs(sigma2);
+
+    const T scaling = T(1.0f)/whiteice::math::sqrt(sigma2 + eps);
+
+    for(unsigned int j=0;j<J.ysize();j++){
+      for(unsigned int i=0;i<J.xsize();i++){
+	if(i != j) J(j,i) = - T(1.0f/((float)x.size()));
+	else{
+	  J(j,i) = scaling - T(1.0f/((float)x.size()));
+	}
+
+	J(j,i) -= ((x[i]-mu)*(x[j]-mu))/T(T(x.size())*(sigma2 + eps));
+      }
+    }
+
+    for(unsigned int j=0;j<J.ysize();j++){
+      for(unsigned int i=0;i<J.xsize();i++){
+	J(j,i) *= ln_gamma[i];
+      }
+    }
+
+    for(unsigned int i=0;i<x.size();i++){
+      x[i] = ln_gamma[i]*(x[i]-mu)*scaling + ln_beta[i];
+    }
+
+    return true;
+  }
+
 
   /////////////////////////////////////////////////////////////////////////////
 

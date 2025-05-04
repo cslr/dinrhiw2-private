@@ -161,6 +161,46 @@ namespace whiteice
       logging.info(buf);
     }
 
+
+    std::map<T, unsigned int> weights;
+    
+    {
+      database_mutex.lock();
+      
+      T total_weight = T(0.0f);
+
+      for(unsigned int i=0;i<database.size();i++){
+	total_weight += whiteice::math::abs(database[i].reinforcement);
+      }
+      
+      // assert(total_weight > T(0.0f));
+      if(total_weight <= T(0.0f))
+	total_weight = 1.0f;
+
+      T mixing_factor = T(0.5f);
+      T sump = T(0.0f);
+
+      if(rifl.use_smart_weights)
+	mixing_factor = T(1.0f);
+      
+      for(unsigned int i=0;i<database.size();i++){
+	std::pair<T, unsigned int> p;
+
+	// sump += episodes_weights[i]/total_weight;
+	sump += (T(1.0f) - mixing_factor)*(whiteice::math::abs(database[i].reinforcement)/total_weight) +
+	  mixing_factor*(T(1.0f)/T(database.size()));
+
+	p.first = sump;
+	p.second = i;
+
+	weights.insert(p);
+      }
+
+      database_mutex.unlock();
+    }
+
+    
+
 #pragma omp parallel for schedule(guided)
     for(unsigned int i=0;i<NUMDATA;i++){
 
@@ -173,7 +213,17 @@ namespace whiteice
 
       database_mutex.lock();
       
-      const unsigned int index = rng.rand() % database.size();
+      // const unsigned int index = rng.rand() % database.size();
+
+      const T r = rng.uniform();
+      
+      auto iter = weights.upper_bound(r);
+
+      unsigned int index = 0;
+
+      if(iter != weights.end()){
+	index = iter->second;
+      }
       
       const auto datum = database[index];
       
