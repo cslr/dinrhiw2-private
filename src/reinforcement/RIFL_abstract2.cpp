@@ -868,7 +868,7 @@ namespace whiteice
 
       std::lock_guard<std::mutex> lockh(has_model_mutex);
       
-      if(hasModel.size() == 2){
+      if(hasModel.size() == 3){
 	v[0] = T(hasModel[0]);
 	v[1] = T(hasModel[1]);
 	v[2] = T(hasModel[2]);
@@ -1144,7 +1144,7 @@ namespace whiteice
       }
 
       if(db.size(0) != 1 || db.size(1) != 1  || db.size(2) != 1 || db.size(3) != 1){
-	logging.error("RIFL_abstract2::sload(): loading measurements data failed (3).");
+	logging.error("RIFL_abstract2::load(): loading measurements data failed (3).");
 	return false;
       }
 

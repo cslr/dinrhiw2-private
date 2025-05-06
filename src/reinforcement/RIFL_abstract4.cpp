@@ -898,7 +898,7 @@ namespace whiteice
 
       std::lock_guard<std::mutex> lockh(has_model_mutex);
       
-      if(hasModel.size() == 2){
+      if(hasModel.size() == 3){
 	v[0] = T(hasModel[0]);
 	v[1] = T(hasModel[1]);
 	v[2] = T(hasModel[2]);
@@ -1300,7 +1300,7 @@ namespace whiteice
 
       v = db.access(0,0);
 
-      if(v.size() == 2){
+      if(v.size() == 3){
 	hasModel_load.resize(2);
 	hasModel_load[0] = (int)v[0].c[0];
 	hasModel_load[1] = (int)v[1].c[0];
