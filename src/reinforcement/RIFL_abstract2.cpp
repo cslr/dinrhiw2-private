@@ -1540,8 +1540,8 @@ namespace whiteice
     // const unsigned int P_OPTIMIZE_ITERATIONS = 100; // 10, was 1 (dont work), 5, 10, WAS: 1000
 
     // number of iteratios to use per epoch for optimization
-    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 20; // WAS: 1000
-    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 20; // WAS: 100
+    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 20; // WAS: 1000,20
+    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 20; // WAS: 100,20
 
     const unsigned int Q_OPTIMIZE_ITERATIONS = 20; // 3; // WAS: 500
     const unsigned int P_OPTIMIZE_ITERATIONS = 20; // 3; // WAS: 100
