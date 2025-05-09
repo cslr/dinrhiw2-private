@@ -442,7 +442,7 @@ namespace whiteice
       W[i-1].resize(arch[i], arch[i-1]);
       b[i-1].resize(arch[i]);
       
-      memuse += (arch[i-1] + 1)*arch[i];
+      memuse += (arch[i-1] + 1)*arch[i] + 2*arch[i]; // adds layer norm parameters
     }
     
     size = memuse;
@@ -5687,6 +5687,8 @@ namespace whiteice
 #define FNN_BATCH_NORM_CFGSTR       "FNN_BATCHNORM"
 #define FNN_BN_DATA_CFGSTR          "FNN_BN_DATA"
 
+#define FNN_LN_DATA_CFGSTR          "FNN_LN_DATA"
+
   //////////////////////////////////////////////////////////////////////
 
   template <typename T>
@@ -5822,6 +5824,20 @@ namespace whiteice
 	if(conf.add(8, data) == false) return false;
       }
 
+      
+      {
+	data.resize(layerNorm.size());
+
+	for(unsigned int i=0;i<layerNorm.size();i++){
+	  data[i] = T((float)layerNorm[i]);
+	}	
+
+	if(conf.createCluster(FNN_LN_DATA_CFGSTR, data.size()) == false) return false;
+
+	if(conf.add(9, data) == false) return false;
+      }
+      
+
       // timestamp
       {
 	char buffer[128];
@@ -5832,7 +5848,7 @@ namespace whiteice
 
 	if(conf.createCluster(FNN_TIMESTAMP_CFGSTR, timestamp.length()) == false)
 	  return false;
-	if(conf.add(9, timestamp) == false) return false;
+	if(conf.add(10, timestamp) == false) return false;
       }
 
       // don't save dropout or retain probability
@@ -5873,6 +5889,7 @@ namespace whiteice
       bool conf_residual = false;
       bool conf_batchnorm = false;
       whiteice::math::vertex<T> conf_bn_data;
+      whiteice::math::vertex<T> conf_ln_data;
       
       if(conf.load(filename) == false) return false;
 
@@ -5889,9 +5906,9 @@ namespace whiteice
 	  return false;
       }
 
-      // checks number of clusters (10 in version 3.2 files)
+      // checks number of clusters (11 in version 3.2 files)
       {
-	if(conf.getNumberOfClusters() != 10) return false;
+	if(conf.getNumberOfClusters() != 11) return false;
       }
 
       // gets architecture information
@@ -6035,6 +6052,16 @@ namespace whiteice
 	conf_bn_data = conf.access(cluster, 0);
       }
 
+      // gets layer norm parameters vector
+      {
+	const unsigned int cluster = conf.getCluster(FNN_LN_DATA_CFGSTR);
+	if(cluster >= conf.getNumberOfClusters()) return false;
+	if(conf.size(cluster) != 1) return false; 
+	if(conf.dimension(cluster) < 1) return false; // bad weight size
+	
+	conf_ln_data = conf.access(cluster, 0);
+      }
+
       
       // don't check timestamp metainformation
 
@@ -6051,7 +6078,7 @@ namespace whiteice
 	
 	unsigned int i = 1;
 	while(i < arch.size()){
-	  memuse += (arch[i-1] + 1)*arch[i];
+	  memuse += (arch[i-1] + 1)*arch[i] + 2*arch[i]; // + layer norm terms..
 
 	  this->W[i-1].resize(arch[i], arch[i-1]);
 	  this->b[i-1].resize(arch[i]);
@@ -6074,6 +6101,37 @@ namespace whiteice
 	this->residual = conf_residual;
 	this->batchnorm = conf_batchnorm;
 
+	if(conf_ln_data.size() == this->b.size()){
+	  this->layerNorm.resize(conf_ln_data.size());
+	  this->lndata.resize(0);
+
+	  for(unsigned int i=0;i<layerNorm.size();i++){
+	    if(conf_ln_data[i] > T(0.5f)){
+	      layerNorm[i] = true;
+	    }
+	    else{
+	      layerNorm[i] = false;
+	    }
+	  }
+	  
+	  ln_gamma.resize(b.size());
+	  ln_beta.resize(b.size());
+	  
+	  for(unsigned int i=0;i<b.size();i++){
+	    ln_gamma[i].resize(arch[i+1]);
+	    ln_beta[i].resize(arch[i+1]);
+	    
+	    for(unsigned int h=0;h<arch[i+1];h++){
+	      ln_gamma[i][h] = T(1.0f);
+	      ln_beta[i][h] = T(0.0f);
+	    }
+	  }
+	}
+	else{
+	  this->layerNorm.resize(0);
+	  this->lndata.resize(0);
+	}
+
 	if(this->importdata(conf_weights) == false) // this should never fail
 	  return false;
 	
@@ -6081,8 +6139,7 @@ namespace whiteice
 	  this->setBatchNorm(true);
 	  if(this->importBNdata(conf_bn_data) == false) return false;
 	}
-	
-	
+
 	dropout.clear(); // dropout is disabled in saved networks
       }
 
@@ -6114,6 +6171,7 @@ namespace whiteice
     unsigned int index = 0;
 
     for(unsigned int l=0;l<getLayers();l++){
+
       if(W[l].save_to_vertex(v, index) == false)
 	return false;
 
@@ -6125,6 +6183,8 @@ namespace whiteice
       index += b[l].size();
 
       if(l < ln_gamma.size()){
+	assert(ln_gamma[l].size() == b[l].size());
+	
 	ln_gamma[l].exportData(&(v[index]));
 	index += ln_gamma[l].size();
       }
@@ -6133,6 +6193,8 @@ namespace whiteice
       }
 
       if(l < ln_beta.size()){
+	assert(ln_beta[l].size() == b[l].size());
+	
 	ln_beta[l].exportData(&(v[index]));
 	index += ln_beta[l].size();
       }
@@ -6926,6 +6988,52 @@ namespace whiteice
     }
     else return false;
   }
+
+
+  template <typename T>
+  bool nnetwork<T>::exportLNsettings(math::vertex<T>& v) const
+  {
+    v.resize(this->layerNorm.size());
+
+    for(unsigned int i=0;i<v.size();i++){
+      v[i] = T((float)this->layerNorm[i]);
+    }
+
+    return true;
+  }
+
+
+  template <typename T>
+  bool nnetwork<T>::importLNsettings(const math::vertex<T>& v)
+  {
+    if(v.size() != arch.size()-1) return false;
+
+    layerNorm.resize(v.size());
+
+    for(unsigned int i=0;i<layerNorm.size();i++){
+      if(v[i] < T(0.50f)) layerNorm[i] = false;
+      else layerNorm[i] = true;
+    }
+
+    if(ln_gamma.size() != b.size() || ln_beta.size() != b.size()){
+      
+      ln_gamma.resize(b.size());
+      ln_beta.resize(b.size());
+      
+      for(unsigned int i=0;i<b.size();i++){
+	ln_gamma[i].resize(arch[i+1]);
+	ln_beta[i].resize(arch[i+1]);
+	
+	for(unsigned int h=0;h<arch[i+1];h++){
+	  ln_gamma[i][h] = T(1.0f);
+	  ln_beta[i][h] = T(0.0f);
+	}
+      }
+    }
+
+    return true;
+  }
+  
   
 
   template <typename T>

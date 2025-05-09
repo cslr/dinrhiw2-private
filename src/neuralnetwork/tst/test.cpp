@@ -198,11 +198,11 @@ int main()
   whiteice::logging.setOutputFile("testsuite1.log");
 
   try{
-    nn_layer_norm_gradient_value_test();
+    // nn_layer_norm_gradient_value_test();
 
     // nn_layer_norm_test();
 
-    // nn_save_load_test();
+    nn_save_load_test();
     
     return 0;
 
@@ -613,6 +613,7 @@ void nn_save_load_test()
       arch.push_back(YDIM);
       
       net.setArchitecture(arch);
+      net.setLayerNorm(true);
       net.randomize();
       
       whiteice::nnetwork<> net2;
@@ -689,6 +690,26 @@ void nn_save_load_test()
 	}
 	
       }
+
+      {
+	math::vertex<> p1, p2;
+
+	net.exportLNsettings(p1);
+	net2.exportLNsettings(p2);
+
+	if(p1.size() != p2.size()){
+	  std::cout << "ERROR: loaded nnetwork LayerNorm params mismatch!." << std::endl;
+	  continue;
+	}
+	
+	for(unsigned int i=0;i<p1.size();i++){
+	  if(p1[i] != p2[i]){
+	    std::cout << "ERROR: loaded nnetwork LayerNorm params mismatch!.(2)" << std::endl;
+	    continue;
+	  }
+	}
+	
+      }
       
     }
 
@@ -715,6 +736,7 @@ void nn_save_load_test()
       
       net.setArchitecture(arch);
       net.randomize();
+      net.setLayerNorm(true);
 
       whiteice::bayesian_nnetwork<> bnet;
 
@@ -805,6 +827,26 @@ void nn_save_load_test()
 	for(unsigned int i=0;i<p1.size();i++){
 	  if(p1[i] != p2[i]){
 	    std::cout << "ERROR: loaded bayesian_nnetwork BN-params mismatch!.(2)" << std::endl;
+	    continue;
+	  }
+	}
+	
+      }
+
+      {
+	math::vertex<> p1, p2;
+	
+	net.exportLNsettings(p1);
+	net2.exportLNsettings(p2);
+	
+	if(p1.size() != p2.size()){
+	  std::cout << "ERROR: loaded nnetwork LayerNorm params mismatch!." << std::endl;
+	  continue;
+	}
+	
+	for(unsigned int i=0;i<p1.size();i++){
+	  if(p1[i] != p2[i]){
+	    std::cout << "ERROR: loaded nnetwork LayerNorm params mismatch!.(2)" << std::endl;
 	    continue;
 	  }
 	}

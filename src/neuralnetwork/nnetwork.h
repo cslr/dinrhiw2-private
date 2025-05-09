@@ -380,6 +380,9 @@ namespace whiteice
     void setLayerNorm(const bool layerNorm = true);
     bool getLayerNorm() const;
 
+    bool exportLNsettings(math::vertex<T>& v) const;
+    bool importLNsettings(const math::vertex<T>& v);
+
     bool doLayerNorm(const unsigned int layer, math::vertex<T>& state) const;
 
     // returns new lgrad value and returns gamma and beta gradients as reference parameters

@@ -717,6 +717,7 @@ namespace whiteice
 #define FNN_RESIDUAL_CFGSTR         "FNN_RESIDUAL"
 #define FNN_BATCH_NORM_CFGSTR       "FNN_BATCHNORM"
 #define FNN_BN_DATA_CFGSTR          "FNN_BN_DATA"
+#define FNN_LN_DATA_CFGSTR          "FNN_LN_DATA"
   
   // stores and loads bayesian nnetwork to a text file
   // (saves all samples into files)
@@ -764,12 +765,12 @@ namespace whiteice
       if(typeid(T) == typeid(whiteice::math::superresolution< whiteice::math::blas_real<float>, whiteice::math::modular<unsigned int> >) ||
 	 typeid(T) == typeid(whiteice::math::superresolution< whiteice::math::blas_real<double>, whiteice::math::modular<unsigned int> >)){
 	
-	if(versionid != (3800 + 1)) // v3.8 datafile (3.8 adds superresolutional numbers which add 1 to version number) (3.7 adds batch norm data)
+	if(versionid != (3900 + 1)) // v3.8 datafile (3.8 adds superresolutional numbers which add 1 to version number) (3.7 adds batch norm data)
 	  return false;
       }
       else{
 
-	if(versionid != (3800 + 0)) // v3.8 datafile (3.8 adds superresolutional numbers which add 10.000 to version number) (3.7 adds batch norm data)
+	if(versionid != (3900 + 0)) // v3.8 datafile (3.8 adds superresolutional numbers which add 10.000 to version number) (3.7 adds batch norm data)
 	  return false;
       }
       
@@ -939,6 +940,21 @@ namespace whiteice
 	nets[index]->setResidual(residual);
 	
 	math::vertex<T> w;
+
+	w = configuration.accessName(FNN_LN_DATA_CFGSTR, index);
+
+	if(w.size() == (arch.size()-1)){
+
+	  if(nets[index]->importLNsettings(w) == false){
+	    for(unsigned int j=0;j<=index;j++)
+	      delete nets[j];
+	    return false;
+	  }
+	  
+	}
+	else{
+	  return false;
+	}
 	
 	w = configuration.accessName(FNN_WEIGHTS_CFGSTR, index);
 	
@@ -1005,17 +1021,15 @@ namespace whiteice
 	   typeid(T) == typeid(whiteice::math::superresolution< whiteice::math::blas_real<double>, whiteice::math::modular<unsigned int> >)){
 
 	  // v3.8 datafile (3.8 adds superresolutional numbers which adds 1 to version number) (3.7 adds batch norm data)
-	  ints.push_back(3800 + 1);
+	  ints.push_back(3900 + 1);
 	  
 	}
 	else{
 	  // v3.8 datafile (3.8 adds superresolutional numbers which adds 1 to version number) (3.7 adds batch norm data)
-	  ints.push_back(3800 + 0);
+	  ints.push_back(3900 + 0);
 	}
-	      
 	
 	
-
 	if(configuration.createCluster(FNN_VERSION_CFGSTR, ints.size()) == false)
 	  return false;
 	
@@ -1250,6 +1264,44 @@ namespace whiteice
 	w[0] = T(0.0f);
 
 	if(configuration.add(configuration.getCluster(FNN_BN_DATA_CFGSTR), w) == false)
+	  return false;
+      }
+
+      
+      // layer norm neural network information
+      
+      if(nnets[0]->getLayerNorm()){
+	// weights: we just convert everything to a big vertex vector and write it
+	math::vertex<T> w;
+	if(nnets[0]->exportLNsettings(w) == false)
+    	  return false;
+	
+	if(configuration.createCluster(FNN_LN_DATA_CFGSTR, w.size()) == false)
+	  return false;
+	
+	for(unsigned int index=0;index<nnets.size();index++)
+	{
+	  // char buffer[80];
+	  math::vertex<T> w;
+	  
+	  if(nnets[index]->exportLNsettings(w) == false)
+	    return false;
+	  
+	  if(configuration.add(configuration.getCluster(FNN_LN_DATA_CFGSTR), w) == false)
+	    return false;
+	  
+	}
+	
+      }
+      else{
+	if(configuration.createCluster(FNN_LN_DATA_CFGSTR, 1) == false)
+	  return false;
+
+	math::vertex<T> w;
+	w.resize(1);
+	w[0] = T(0.0f);
+
+	if(configuration.add(configuration.getCluster(FNN_LN_DATA_CFGSTR), w) == false)
 	  return false;
       }
       
