@@ -4,7 +4,8 @@
 // sets mean and variance of layer outputs to (mean=0,stdev=1)
 //
 // "double Q" implementation is not enabled in the code because it seem to cause problems.
-// 
+//
+// now: activates layernorm which is not properly supported by nnetwork.load() or nnetwork.save() or bayesian_nnetwork etc.
 
 #include "RIFL_abstract4.h"
 
@@ -1301,7 +1302,7 @@ namespace whiteice
       v = db.access(0,0);
 
       if(v.size() == 3){
-	hasModel_load.resize(2);
+	hasModel_load.resize(3);
 	hasModel_load[0] = (int)v[0].c[0];
 	hasModel_load[1] = (int)v[1].c[0];
 	hasModel_load[2] = (int)v[2].c[0];
@@ -1551,6 +1552,7 @@ namespace whiteice
 
 	assert(START < db.size(0));
 	assert(END <= db.size(0));
+	assert(START <= END);
 
 	T weight = T(0.0f);
 
