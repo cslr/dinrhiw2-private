@@ -207,6 +207,8 @@ namespace whiteice
 
     // database
     std::vector< rifl2_datapoint<T> > database;
+    std::vector< std::vector< rifl2_datapoint<T> > > episodes;
+    
     mutable std::mutex database_mutex;
 
     mutable std::mutex reinforcements_mutex;

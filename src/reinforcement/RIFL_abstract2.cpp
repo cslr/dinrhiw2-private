@@ -1005,6 +1005,85 @@ namespace whiteice
       }
     }
 
+
+    {
+      snprintf(buffer, 256, "%s-episodes", filename.c_str());
+
+      whiteice::dataset<T> db;
+
+      std::lock_guard<std::mutex> lock1(database_mutex);
+
+      if(database.size() > 0)
+	db.createCluster("state", database[0].state.size());
+      else
+	db.createCluster("state", 1);
+
+      if(database.size() > 0)
+	db.createCluster("newstate", database[0].newstate.size());
+      else
+	db.createCluster("newstate", 1);
+
+      if(database.size() > 0)
+	db.createCluster("action", database[0].action.size());
+      else
+	db.createCluster("action", 1);
+
+      if(database.size() > 0)
+	db.createCluster("reinforcement", 1);
+      else
+	db.createCluster("reinforcement", 1);
+
+      if(database.size() > 0)
+	db.createCluster("last_step", 1);
+      else
+	db.createCluster("last_step", 1);
+
+      db.createCluster("episodes-range", 2);
+      
+
+      for(unsigned int e=0;e<episodes.size();e++){
+
+	const unsigned int start = db.size(0);
+	
+	for(unsigned int i=0;i<episodes[e].size();i++){
+	  db.add(0, episodes[e][i].state);
+	  db.add(1, episodes[e][i].newstate);
+	  db.add(2, episodes[e][i].action);
+	  
+	  whiteice::math::vertex<T> v;
+	  v.resize(1);
+	  
+	  v[0] = episodes[e][i].reinforcement;
+	  
+	  db.add(3, v);
+	  
+	  if(episodes[e][i].lastStep)
+	    v[0] = T(1.0f);
+	  else
+	    v[0] = T(0.0f);
+	  
+	  db.add(4, v);
+	}
+
+	const unsigned int end = db.size(0);
+
+	whiteice::math::vertex<T> v;
+	v.resize(2);
+
+	v[0] = T(start);
+	v[1] = T(end);
+
+	db.add(5, v);
+      }
+
+
+      if(db.save(buffer) == false){
+	logging.error("RIFL_abstract2::save() saving episodes failed");
+	return false;
+      }
+    }
+    
+
     return true;
   }
 
@@ -1035,6 +1114,7 @@ namespace whiteice
     auto reinforcements_random_load = reinforcements_random;
     auto distances_load = distances;
     auto distances_random_load = distances_random;
+    auto episodes_load = episodes;
 
     reinforcements_mutex.unlock();
     database_mutex.unlock();
@@ -1254,6 +1334,113 @@ namespace whiteice
       }
       
     }
+
+
+    {
+      snprintf(buffer, 256, "%s-episodes", filename.c_str());
+      
+      whiteice::dataset<T> db;
+
+      if(db.load(buffer) == false){
+	char buf[1024];
+	snprintf(buf, 1024, "RIFL_abstract2::load(\"%s\") loading episodes dataset FAILED", buffer);
+	logging.error(buf);
+	return false;
+      }
+
+      if(db.getNumberOfClusters() != 6){
+	logging.error("RIFL_abstract2::load() episodes database wrong number of clusters");
+	return false;
+      }
+
+      if(db.dimension(0) != db.dimension(1) ||
+	 db.dimension(3) != 1 || db.dimension(4) != 1 || db.dimension(5) != 2){
+	char buf[128];
+	snprintf(buf, 128, "RIFL_abstract2::load() database wrong dimensions %d %d %d %d %d %d",
+		 db.dimension(0), db.dimension(1), db.dimension(3), db.dimension(3),
+		 db.dimension(4), db.dimension(5));
+	logging.error(buf);
+	return false;
+      }
+
+      if(db.dimension(0) != this->numStates){
+	char buf[128];
+	snprintf(buf, 128, "RIFL_abstract2::load() database wrong dimensions %d %d (2)",
+		 db.dimension(0), this->numStates);
+	logging.error(buf);
+	return false;
+      }
+      
+      if(db.dimension(2) != this->numActions){
+	char buf[128];
+	snprintf(buf, 128, "RIFL_abstract2::load() database wrong dimensions %d %d (3)",
+		 db.dimension(2), this->numActions);
+	logging.error(buf);
+
+	return false;
+      }
+
+      if(db.dimension(5) != 2){
+	char buf[128];
+	snprintf(buf, 128, "RIFL_abstract2::load() database wrong dimensions %d %d (4)",
+		 db.dimension(5), 2);
+	logging.error(buf);
+
+	return false;	
+      }
+
+      if(db.size(0) != db.size(1) || db.size(1) != db.size(2) || db.size(2) != db.size(3) ||
+	 db.size(3) != db.size(4)){
+
+	char buf[128];
+	snprintf(buf, 128, "RIFL_abstract2::load() database wrong size %d %d %d %d %d",
+		 db.size(0), db.size(1), db.size(2), db.size(3), db.size(4));
+	logging.error(buf);
+	
+	return false;
+      }
+      
+      
+      episodes_load.clear();
+
+      for(unsigned int e=0;e<db.size(5);e++){
+
+	std::vector< whiteice::rifl2_datapoint<T> > epi;
+	
+	whiteice::rifl2_datapoint<T> p;
+	whiteice::math::vertex<T> v;
+
+	v = db.access(5, e);
+
+	unsigned int START = 0;
+	unsigned int END = 0;
+
+	whiteice::math::convert(START, v[0]);
+	whiteice::math::convert(END, v[1]);
+
+	assert(START < db.size(0));
+	assert(END <= db.size(0));
+
+	for(unsigned int i=START;i<END;i++){
+	  p.state = db.access(0, i);
+	  p.newstate = db.access(1, i);
+	  p.action = db.access(2, i);
+	  
+	  v = db.access(3, i);
+	  p.reinforcement = v[0];
+	  
+	  v = db.access(4, i);
+	  if(v[0] > T(0.5)) p.lastStep = true;
+	  else p.lastStep = false;
+	  
+	  epi.push_back(p);
+	}
+
+	episodes_load.push_back(epi);	
+      }
+      
+    }
+    
     
     {
       std::lock_guard<std::mutex> lock1(Q_mutex);
@@ -1276,6 +1463,7 @@ namespace whiteice
       reinforcements_random = reinforcements_random_load;
       distances = distances_load;
       distances_random = distances_random_load;
+      episodes = episodes_load;
     }
     
     return true;
@@ -1362,7 +1550,7 @@ namespace whiteice
     const T tau = T(0.001); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
     const T tau_policy = T(0.005); // was: 1.0*
     
-    std::vector< std::vector< rifl2_datapoint<T> > > episodes;
+    // std::vector< std::vector< rifl2_datapoint<T> > > episodes;
     std::vector< rifl2_datapoint<T> > episode;
 
     FILE* episodesFile = fopen("episodes-result.txt", "w");    
@@ -1796,6 +1984,11 @@ namespace whiteice
       }
 
 
+      /*
+      printf("DATABASE SIZE: %d / %d. EPISODES SIZE: %d / %d\n",
+	     (int)database.size(), (int)MINIMUM_DATASIZE,
+	     (int)episodes.size(), (int)MINIMUM_EPISODE_SIZE);
+      */
       
       // 5. update/optimize Q(state, action) network
       // activates batch learning if it is not running
@@ -2299,8 +2492,6 @@ namespace whiteice
 		logging.info("========> Q2 OPTIMIZATION STARTED FAILED");
 	    }
 	  }
-	  
-
 	  old_grad_q2_iterations = -1;
 	}
 	else{
