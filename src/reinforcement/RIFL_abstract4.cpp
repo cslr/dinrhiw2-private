@@ -1699,8 +1699,8 @@ namespace whiteice
   void RIFL_abstract4<T>::loop()
   {
     // number of iteratios to use per epoch for optimization
-    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 50; // WAS: 1000, 5, 1000, 50
-    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 50; // WAS: 100, 5, 50, 50
+    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 1000; // WAS: 1000, 5, 1000, 50
+    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 100, 5, 50, 50
 
     const unsigned int Q_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 1000, 5, 1000
     const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 50, 5, 50
