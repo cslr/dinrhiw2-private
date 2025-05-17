@@ -5890,8 +5890,12 @@ namespace whiteice
       bool conf_batchnorm = false;
       whiteice::math::vertex<T> conf_bn_data;
       whiteice::math::vertex<T> conf_ln_data;
+
+      // printf("A\n");
       
       if(conf.load(filename) == false) return false;
+
+      // printf("B\n");
 
       // checks version number
       {
@@ -5905,6 +5909,8 @@ namespace whiteice
 	if(conf_data[0] != T(3.200)) // only handles version 3.2 files (3.2 has batch norm info)
 	  return false;
       }
+
+      // printf("C\n");
 
       // checks number of clusters (11 in version 3.2 files)
       {
@@ -5934,6 +5940,8 @@ namespace whiteice
 	}
       }
 
+      // printf("D\n");
+
       // gets weights parameter vector
       {
 	const unsigned int cluster = conf.getCluster(FNN_VWEIGHTS_CFGSTR);
@@ -5943,6 +5951,8 @@ namespace whiteice
 	
 	conf_weights = conf.access(cluster, 0);
       }
+
+      // printf("E\n");
 
       // gets non-linearities
       {
@@ -5971,6 +5981,8 @@ namespace whiteice
 	}
       }
 
+      // printf("F\n");
+
       // gets frozen status of each layer
       {
 	const unsigned int cluster = conf.getCluster(FNN_FROZEN_CFGSTR);
@@ -5990,6 +6002,8 @@ namespace whiteice
 	}
       }
 
+      // printf("G\n");
+
       // gets misc parameters (retain_probability)
       {
 	const unsigned int cluster = conf.getCluster(FNN_RETAIN_CFGSTR);
@@ -6008,6 +6022,8 @@ namespace whiteice
 	  return false; // correct interval for data
       }
 
+      // printf("H\n");
+
       // gets boolean parameters (residual flag)
       {
 	const unsigned int cluster = conf.getCluster(FNN_RESIDUAL_CFGSTR);
@@ -6024,6 +6040,8 @@ namespace whiteice
 	else if(conf_data[0] == T(1.0f)) conf_residual = true;
 	else return false;
       }
+
+      // printf("I\n");
 
       // gets boolean parameters (batchnorm flag)
       {
@@ -6042,6 +6060,8 @@ namespace whiteice
 	else return false;
       }
 
+      // printf("J\n");
+
       // gets batch norm parameters vector
       {
 	const unsigned int cluster = conf.getCluster(FNN_BN_DATA_CFGSTR);
@@ -6052,15 +6072,18 @@ namespace whiteice
 	conf_bn_data = conf.access(cluster, 0);
       }
 
+      // printf("K\n");
+
       // gets layer norm parameters vector
       {
 	const unsigned int cluster = conf.getCluster(FNN_LN_DATA_CFGSTR);
 	if(cluster >= conf.getNumberOfClusters()) return false;
 	if(conf.size(cluster) != 1) return false; 
-	if(conf.dimension(cluster) < 1) return false; // bad weight size
 	
 	conf_ln_data = conf.access(cluster, 0);
       }
+
+      // printf("L\n");
 
       
       // don't check timestamp metainformation
@@ -6142,6 +6165,8 @@ namespace whiteice
 
 	dropout.clear(); // dropout is disabled in saved networks
       }
+
+      // printf("M\n");
 
       return true;
     }

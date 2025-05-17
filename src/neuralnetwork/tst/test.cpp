@@ -613,7 +613,7 @@ void nn_save_load_test()
       arch.push_back(YDIM);
       
       net.setArchitecture(arch);
-      net.setLayerNorm(true);
+      net.setLayerNorm(((bool)rng.rand()&1));
       net.randomize();
       
       whiteice::nnetwork<> net2;
@@ -736,7 +736,7 @@ void nn_save_load_test()
       
       net.setArchitecture(arch);
       net.randomize();
-      net.setLayerNorm(true);
+      net.setLayerNorm(((bool)rng.rand()&1));
 
       whiteice::bayesian_nnetwork<> bnet;
 

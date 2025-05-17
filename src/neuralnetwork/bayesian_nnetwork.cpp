@@ -953,7 +953,8 @@ namespace whiteice
 	  
 	}
 	else{
-	  return false;
+	  // return false;
+	  // we silently ignore bad LN-DATA (No LayerNorm set is the typical case)
 	}
 	
 	w = configuration.accessName(FNN_WEIGHTS_CFGSTR, index);
