@@ -5,7 +5,8 @@
  * layer which should be linear.
  * 
  * TODO
- * residual neural networks implement: jacobian(), gradient_value()
+ * FIXME jacobian() don't correctly work with LayerNorm!!! (must be computed differently),
+ * jacobian() also don't work with dropout???
  * 
  */
 

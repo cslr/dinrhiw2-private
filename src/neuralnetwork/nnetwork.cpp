@@ -1,5 +1,5 @@
 // TODO  optimize, nnetwork takes the most of the time in computations
-// FIXED jacobian() routines again use OpenMP for loops which should give 2% performance increase(??)
+// FIXME jacobian() don't correctly work with LayerNorm!!! (must be computed differently)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -2200,6 +2200,7 @@ namespace whiteice
 			     grad_beta)){
 
 	  lgrad *= Jlayer_norm;
+	  
 	}
       }
     }
@@ -2267,7 +2268,7 @@ namespace whiteice
 		// TODO optimize with vector math
 		//#pragma omp parallel for schedule(auto)
 		for(unsigned int k=0;k<grad.ysize();k++)
-		  grad(k, gindex) = grad_gamma[j]; // lgrad(k,j)*grad_gamma[j];
+		  grad(k, gindex) = lgrad(k,j)*grad_gamma[j]; // grad_gamma[j]; // 
 	      }
 	      
 	      index += grad_gamma.size();
@@ -2308,7 +2309,7 @@ namespace whiteice
 		// TODO optimize with vector math
 		//#pragma omp parallel for schedule(auto)
 		for(unsigned int k=0;k<grad.ysize();k++)
-		  grad(k, gindex) = grad_beta[j];
+		  grad(k, gindex) = lgrad(k, j)*grad_beta[j]; // grad_beta[j];
 	      }
 	      
 	      index += grad_beta.size();
@@ -2418,7 +2419,7 @@ namespace whiteice
     // l = 0 layer (input layer)
     {
       
-      // calculates gradient
+      // alculates gradient
       {
 	index -= W[0].ysize()*W[0].xsize() + b[0].size() + 2*b[0].size(); // adds LayerNorm parameters
 
@@ -2564,7 +2565,7 @@ namespace whiteice
       return this->jacobian(input, grad);
     
     // local fields for each layer (and input not stored)
-    std::vector< whiteice::math::vertex<T> > v;
+    std::vector< whiteice::math::vertex<T> > v, ln;
 
     auto x = input;
 
@@ -2580,6 +2581,12 @@ namespace whiteice
 	x = W[l]*x + b[l] + skipValue;
       else
 	x = W[l]*x + b[l];
+      
+      if(getLayerNorm()){
+	ln.push_back(x);
+	if(layerNorm[l])
+	  doLayerNorm(l, x);
+      }
 
       v.push_back(x); // stores local field
 
@@ -2608,6 +2615,28 @@ namespace whiteice
       lgrad(i,i) = Dnonlin_nodropout(v[l][i], l, i);
     }
 
+    math::vertex<T> grad_gamma;
+    math::vertex<T> grad_beta;
+    
+    if(getLayerNorm()){
+      if(layerNorm[l]){
+
+	math::matrix<T> Jlayer_norm;
+	
+	if(jacobianLayerNorm(Jlayer_norm,
+			     ln[l],
+			     ln_gamma[l],
+			     ln_beta[l],
+			     grad_gamma,
+			     grad_beta)){
+
+	  lgrad *= Jlayer_norm;
+	  
+	}
+      }
+    }
+    
+
     unsigned int index = gradient_size();
 
     std::vector< math::matrix<T> > lgrad_prev;
@@ -2620,7 +2649,7 @@ namespace whiteice
       
       // calculates gradient [gradient of W is always in ROW MAJOR format!]
       {
-	index -= W[l].ysize()*W[l].xsize() + b[l].size();
+	index -= W[l].ysize()*W[l].xsize() + b[l].size() + 2*b[l].size(); // adds LayerNorm parameters
 
 	// weight matrix gradient
 #pragma omp parallel for schedule(auto)
@@ -2654,7 +2683,89 @@ namespace whiteice
 
 	index += b[l].size();
 
-	index -= W[l].ysize()*W[l].xsize() + b[l].size();
+	// grad_gamma vector gradient
+	{
+	  bool has_layer_norm = false;
+	  
+	  if(getLayerNorm()){
+	    if(layerNorm[l]){
+	      has_layer_norm = true;
+	      
+#pragma omp parallel for schedule(auto)
+	      for(unsigned int j=0;j<grad_gamma.size();j++){
+		const unsigned int gindex = index + j;
+		
+		// TODO optimize with vector math
+		//#pragma omp parallel for schedule(auto)
+		for(unsigned int k=0;k<grad.ysize();k++)
+		  grad(k, gindex) = grad_gamma[j]; // lgrad(k,j)*grad_gamma[j];
+	      }
+	      
+	      index += grad_gamma.size();
+
+	      assert(grad_gamma.size() == b[l].size());
+	    }
+	  }
+
+	  if(has_layer_norm == false){
+	    // bias vector gradient
+#pragma omp parallel for schedule(auto)
+	    for(unsigned int j=0;j<b[l].size();j++){
+	      const unsigned int bindex = index + j;
+	      
+	      // TODO optimize with vector math
+	      //#pragma omp parallel for schedule(auto)
+	      for(unsigned int k=0;k<grad.ysize();k++)
+		grad(k, bindex) = T(0.0f);
+	    }
+	  
+	    index += b[l].size();
+	  }
+	}
+
+
+	// grad_beta vector gradient
+	{
+	  bool has_layer_norm = false;
+	  
+	  if(getLayerNorm()){
+	    if(layerNorm[l]){
+	      has_layer_norm = true;
+	      
+#pragma omp parallel for schedule(auto)
+	      for(unsigned int j=0;j<grad_beta.size();j++){
+		const unsigned int gindex = index + j;
+		
+		// TODO optimize with vector math
+		//#pragma omp parallel for schedule(auto)
+		for(unsigned int k=0;k<grad.ysize();k++)
+		  grad(k, gindex) = grad_beta[j];
+	      }
+	      
+	      index += grad_beta.size();
+
+	      assert(grad_beta.size() == b[l].size());
+	    }
+	  }
+
+	  if(has_layer_norm == false){
+	    // bias vector gradient
+#pragma omp parallel for schedule(auto)
+	    for(unsigned int j=0;j<b[l].size();j++){
+	      const unsigned int bindex = index + j;
+	      
+	      // TODO optimize with vector math
+	      //#pragma omp parallel for schedule(auto)
+	      for(unsigned int k=0;k<grad.ysize();k++)
+		grad(k, bindex) = T(0.0f);
+	    }
+	  
+	    index += b[l].size();
+	  }
+	}
+	
+
+	index -= W[l].ysize()*W[l].xsize() + b[l].size() + 2*b[l].size(); // adds LayerNorm parameters
       }
 
       lgrad_prev[2] = lgrad_prev[1];
@@ -2677,6 +2788,23 @@ namespace whiteice
 	    lgrad(j,i) = temp(j,i)*Df;
 	  }
 	}
+
+	if(getLayerNorm()){
+	  if(layerNorm[l-1]){
+	    math::matrix<T> Jlayer_norm;
+	    
+	    if(jacobianLayerNorm(Jlayer_norm,
+				 ln[l-1],
+				 ln_gamma[l-1],
+				 ln_beta[l-1],
+				 grad_gamma,
+				 grad_beta)){
+	      
+	      lgrad *= Jlayer_norm;
+	    }
+	    
+	  }
+	}
       }
       else{
 	auto temp = lgrad * W[l];
@@ -2691,6 +2819,22 @@ namespace whiteice
 	    lgrad(j,i) = temp(j,i)*Df;
 	  }
 	}
+
+	if(getLayerNorm()){
+	  if(layerNorm[l-1]){
+	    math::matrix<T> Jlayer_norm;
+
+	    jacobianLayerNorm(Jlayer_norm,
+			      ln[l-1],
+			      ln_gamma[l-1],
+			      ln_beta[l-1],
+			      grad_gamma,
+			      grad_beta);
+
+	    lgrad *= Jlayer_norm;
+	    
+	  }
+	}
 	
       }
       
@@ -2702,7 +2846,7 @@ namespace whiteice
       
       // calculates gradient
       {
-	index -= W[0].ysize()*W[0].xsize() + b[0].size();
+	index -= W[0].ysize()*W[0].xsize() + b[0].size() + 2*b[0].size(); // adds LayerNorm parameters
 
 	// weight matrix gradient
 #pragma omp parallel for schedule(auto)
@@ -2733,7 +2877,88 @@ namespace whiteice
 
 	index += b[0].size();
 
-	index -= W[0].ysize()*W[0].xsize() + b[0].size();
+		// grad_gamma vector gradient
+	{
+	  bool has_layer_norm = false;
+	  
+	  if(getLayerNorm()){
+	    if(layerNorm[l]){
+	      has_layer_norm = true;
+	      
+#pragma omp parallel for schedule(auto)
+	      for(unsigned int j=0;j<grad_gamma.size();j++){
+		const unsigned int gindex = index + j;
+		
+		// TODO optimize with vector math
+		//#pragma omp parallel for schedule(auto)
+		for(unsigned int k=0;k<grad.ysize();k++)
+		  grad(k, gindex) = grad_gamma[j]; // lgrad(k,j)*grad_gamma[j];
+	      }
+	      
+	      index += grad_gamma.size();
+
+	      assert(grad_gamma.size() == b[l].size());
+	    }
+	  }
+
+	  if(has_layer_norm == false){
+	    // bias vector gradient
+#pragma omp parallel for schedule(auto)
+	    for(unsigned int j=0;j<b[l].size();j++){
+	      const unsigned int bindex = index + j;
+	      
+	      // TODO optimize with vector math
+	      //#pragma omp parallel for schedule(auto)
+	      for(unsigned int k=0;k<grad.ysize();k++)
+		grad(k, bindex) = T(0.0f);
+	    }
+	  
+	    index += b[l].size();	    
+	  }
+	}
+
+
+	// grad_beta vector gradient
+	{
+	  bool has_layer_norm = false;
+	  
+	  if(getLayerNorm()){
+	    if(layerNorm[l]){
+	      has_layer_norm = true;
+	      
+#pragma omp parallel for schedule(auto)
+	      for(unsigned int j=0;j<grad_beta.size();j++){
+		const unsigned int gindex = index + j;
+		
+		// TODO optimize with vector math
+		//#pragma omp parallel for schedule(auto)
+		for(unsigned int k=0;k<grad.ysize();k++)
+		  grad(k, gindex) = grad_beta[j];
+	      }
+	      
+	      index += grad_beta.size();
+
+	      assert(grad_beta.size() == b[l].size());
+	    }
+	  }
+
+	  if(has_layer_norm == false){
+	    // bias vector gradient
+#pragma omp parallel for schedule(auto)
+	    for(unsigned int j=0;j<b[l].size();j++){
+	      const unsigned int bindex = index + j;
+	      
+	      // TODO optimize with vector math
+	      //#pragma omp parallel for schedule(auto)
+	      for(unsigned int k=0;k<grad.ysize();k++)
+		grad(k, bindex) = T(0.0f);
+	    }
+	  
+	    index += b[l].size();
+	  }
+	}
+
+	index -= W[0].ysize()*W[0].xsize() + b[0].size() + 2*b[0].size(); // adds LayerNorm parameters
       }
       
     }
@@ -7214,22 +7439,21 @@ namespace whiteice
 
     // printf("DlayerNorm(): grad_gamma, grad_beta = %d %d\n", (int)grad_gamma.size(), (int)grad_beta.size());
 
+    const T sigma1 = T(1.0f)/whiteice::math::sqrt(sigma2 + eps);
+
     for(unsigned int j=0;j<J.ysize();j++){
       for(unsigned int i=0;i<J.xsize();i++){
 	if(i != j) J(j,i) = - T(1.0f/((float)x.size()));
 	else{
-	  J(j,i) = scaling - T(1.0f/((float)x.size()));
+	  J(j,i) = T(1.0f) - T(1.0f/((float)x.size()));
 	}
 
 	J(j,i) -= ((x[i]-mu)*(x[j]-mu))/T(T(x.size())*(sigma2 + eps));
-      }
-    }
 
-    for(unsigned int j=0;j<J.ysize();j++){
-      for(unsigned int i=0;i<J.xsize();i++){
-	J(j,i) *= ln_gamma[i];
+	J(j,i) *= ln_gamma[j]/sigma1;
       }
     }
+    
 
     return true;
   }
@@ -7264,24 +7488,22 @@ namespace whiteice
     sigma2 = whiteice::math::abs(sigma2);
 
     const T scaling = T(1.0f)/whiteice::math::sqrt(sigma2 + eps);
+    const T sigma1 = whiteice::math::sqrt(sigma2 + eps);
 
     for(unsigned int j=0;j<J.ysize();j++){
       for(unsigned int i=0;i<J.xsize();i++){
 	if(i != j) J(j,i) = - T(1.0f/((float)x.size()));
 	else{
-	  J(j,i) = scaling - T(1.0f/((float)x.size()));
+	  J(j,i) = T(1.0f) - T(1.0f/((float)x.size()));
 	}
 
 	J(j,i) -= ((x[i]-mu)*(x[j]-mu))/T(T(x.size())*(sigma2 + eps));
+
+	J(j,i) *= ln_gamma[j]/sigma1;
       }
     }
 
-    for(unsigned int j=0;j<J.ysize();j++){
-      for(unsigned int i=0;i<J.xsize();i++){
-	J(j,i) *= ln_gamma[i];
-      }
-    }
-
+    
     for(unsigned int i=0;i<x.size();i++){
       x[i] = ln_gamma[i]*(x[i]-mu)*scaling + ln_beta[i];
     }

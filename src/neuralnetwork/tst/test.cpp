@@ -200,9 +200,9 @@ int main()
   try{
     // nn_layer_norm_gradient_value_test();
 
-    // nn_layer_norm_test();
+    nn_layer_norm_test();
 
-    nn_save_load_test();
+    // nn_save_load_test();
     
     return 0;
 
@@ -445,7 +445,7 @@ void nn_layer_norm_gradient_value_test()
     whiteice::math::vertex< whiteice::math::blas_real<double> > y(dimOutput);
     whiteice::math::matrix< whiteice::math::blas_real<double> > GRAD_x;
     whiteice::math::vertex< whiteice::math::blas_real<double> > grad_x;
-    whiteice::math::blas_real<double> alpha = 0.1f; // 0.0001f
+    whiteice::math::blas_real<double> alpha = 0.01f; // 0.0001f
 
     x.zero();
     rng.normal(x);
@@ -467,7 +467,7 @@ void nn_layer_norm_gradient_value_test()
       x += alpha*grad_x;
 
       nn.calculate(x, y);
-
+      
       // std::cout << i << "/1000: " << y << std::endl;
     }
 
@@ -505,7 +505,7 @@ void nn_layer_norm_test()
 
   arch.push_back(1);
   arch.push_back(10);
-  arch.push_back(10);
+  arch.push_back(9);
   arch.push_back(1);
 
   whiteice::nnetwork<> nn(arch);
@@ -539,7 +539,8 @@ void nn_layer_norm_test()
   while(counter < 100000){
 
     whiteice::math::blas_real<float> lrate = 0.01f;    
-    math::vertex<> grad, g, p, err;
+    math::vertex<> grad, p;
+    
     
     grad.resize(nn.gradient_size());
     grad.zero();
@@ -547,24 +548,42 @@ void nn_layer_norm_test()
     evalue = 0.0f;
 
     // calculates error and calculates gradient
-    for(unsigned int i=0;i<input.size();i++){
+#pragma omp parallel
+    {
+      math::vertex<> pgrad;
+      pgrad.resize(nn.gradient_size());
+      pgrad.zero();
 
-      std::vector< math::vertex<> > bpdata;
-      std::vector< math::vertex<> > lndata;
+      math::vertex<> g, err;
 
-      nn.calculate(input[i], err, bpdata, lndata);
-      err -= output[i];
-    
-      nn.mse_gradient(err, bpdata, lndata, g);
+#pragma omp parallel for
+      for(unsigned int i=0;i<input.size();i++){
+	
+	std::vector< math::vertex<> > bpdata;
+	std::vector< math::vertex<> > lndata;
+	
+	nn.calculate(input[i], err, bpdata, lndata);
+	err -= output[i];
+	
+	// nn.mse_gradient(err, bpdata, lndata, g);
+	
+	// calculates jacobian matrix and from there gradient..
+	math::matrix<> J;
+	nn.jacobian(input[i], J);
+	g = err*J;
+	//auto deltavalue = (g - g2).norm();
+	//std::cout << "gradient-difference: " << deltavalue << std::endl;
+	
+	evalue += (err*err)[0]/N;
 
-      // calculates jacobian matrix and from there gradient..
-      //math::matrix<> J;
-      //nn.jacobian(input[i], J);
-      //g = err*J;
+	pgrad += g/N;
+      }
 
-      evalue += (err*err)[0]/N;
-
-      grad += g/N;
+#pragma omp critical
+      {
+	grad += pgrad;
+      }
+	
     }
 
     std::cout << "NN error: " << evalue << std::endl;
