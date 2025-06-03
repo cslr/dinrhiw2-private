@@ -150,6 +150,22 @@ namespace whiteice
       return use_smart_weights;
     }
 
+    
+    bool setQTau(const T tau){
+      if(tau <= T(0.0) || tau >= T(1.0)) return false;
+      this->tau = tau;
+      return true;
+    }
+    
+    T getQTau() const { return this->tau; }
+
+    bool setPolicyTau(const T tau){
+      if(tau <= T(0.0) || tau >= T(1.0)) return false;
+      this->tau_policy = tau;
+      return true;
+    }
+
+    T getPolicyTau() const { return this->tau_policy; }
 
     int getLearningDatasetSize() const{
       return SAMPLESIZE;
@@ -205,9 +221,12 @@ namespace whiteice
     whiteice::dataset<T> policy_preprocess;
     mutable std::mutex policy_mutex;
 
+    T tau = T(0.001), tau_policy = T(0.005);
+
     // database
     std::vector< rifl2_datapoint<T> > database;
     std::vector< std::vector< rifl2_datapoint<T> > > episodes;
+    
     
     mutable std::mutex database_mutex;
 

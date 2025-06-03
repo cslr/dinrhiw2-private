@@ -420,8 +420,11 @@ namespace whiteice
 	      
 	      policy_preprocess.preprocess(0, input);
 	      
-	      if(lagged_policy.calculate(input, u, 1, 0) == false)
+	      if(lagged_policy.calculate(input, u, 1, 0) == false){
+		printf("ERROR: lagged_policy input dim: %d, input dim: %d\n",
+		       lagged_policy.inputSize(), input.size());
 		assert(0);
+	      }
 	      
 	      policy_preprocess.invpreprocess(1, u); // does nothing..
 
