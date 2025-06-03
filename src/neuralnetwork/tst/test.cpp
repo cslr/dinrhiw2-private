@@ -548,7 +548,7 @@ void nn_layer_norm_test()
     evalue = 0.0f;
 
     // calculates error and calculates gradient
-#pragma omp parallel
+//#pragma omp parallel
     {
       math::vertex<> pgrad;
       pgrad.resize(nn.gradient_size());
@@ -556,7 +556,7 @@ void nn_layer_norm_test()
 
       math::vertex<> g, err;
 
-#pragma omp parallel for
+//#pragma omp parallel for
       for(unsigned int i=0;i<input.size();i++){
 	
 	std::vector< math::vertex<> > bpdata;
@@ -565,21 +565,21 @@ void nn_layer_norm_test()
 	nn.calculate(input[i], err, bpdata, lndata);
 	err -= output[i];
 	
-	// nn.mse_gradient(err, bpdata, lndata, g);
+	nn.mse_gradient(err, bpdata, lndata, g);
 	
 	// calculates jacobian matrix and from there gradient..
 	math::matrix<> J;
 	nn.jacobian(input[i], J);
-	g = err*J;
-	//auto deltavalue = (g - g2).norm();
-	//std::cout << "gradient-difference: " << deltavalue << std::endl;
+	auto g2 = err*J;
+	auto deltavalue = (g - g2).norm();
+	std::cout << "gradient-difference: " << deltavalue << std::endl;
 	
 	evalue += (err*err)[0]/N;
 
 	pgrad += g/N;
       }
 
-#pragma omp critical
+//#pragma omp critical
       {
 	grad += pgrad;
       }

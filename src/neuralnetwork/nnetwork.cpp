@@ -2199,7 +2199,7 @@ namespace whiteice
 			     grad_gamma,
 			     grad_beta)){
 
-	  lgrad *= Jlayer_norm;
+	  // lgrad *= Jlayer_norm;
 	  
 	}
       }
@@ -2371,7 +2371,7 @@ namespace whiteice
 				 grad_gamma,
 				 grad_beta)){
 	      
-	      lgrad *= Jlayer_norm;
+	      // lgrad *= Jlayer_norm;
 	    }
 	    
 	  }
@@ -2405,7 +2405,7 @@ namespace whiteice
 			      grad_gamma,
 			      grad_beta);
 
-	    lgrad *= Jlayer_norm;
+	    // lgrad *= Jlayer_norm;
 	    
 	  }
 	}
