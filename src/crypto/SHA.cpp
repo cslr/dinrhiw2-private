@@ -26,12 +26,12 @@ namespace whiteice
       {
 	whiteice::uint32 i = 1;
 	
-	if(i & 1) this->LITTLE_ENDIAN = true;
+	if(i & 1) this->LITTLE_ENDIAN_ = true;
 	else{
 	  std::cout << "WARNING: SHA class might not work correctly on bigendian machines"
 		    << std::endl;
 	  
-	  this->LITTLE_ENDIAN = false;
+	  this->LITTLE_ENDIAN_ = false;
 	}
       }
       
@@ -198,7 +198,7 @@ namespace whiteice
 	  
 	  memcpy( M, &(W[(i*16)]), 16*4 );
 	  
-	  if(LITTLE_ENDIAN){
+	  if(LITTLE_ENDIAN_){
 	    for(unsigned int t=0;t<16;t++){
 	      change_endianess(M[t]);
 	    }
@@ -232,7 +232,7 @@ namespace whiteice
 	
 	// changes endianess to small endian
 	// (so disk writes etc. write in same order on small/big endian)
-	if(LITTLE_ENDIAN)
+	if(LITTLE_ENDIAN_)
 	  for(unsigned int t=0;t<5;t++)
 	    change_endianess(HASH[t]);
 	
@@ -273,7 +273,7 @@ namespace whiteice
 	  
 	  memcpy( M, &(W[(i*16)]), 16*4 );
 	  
-	  if(LITTLE_ENDIAN){
+	  if(LITTLE_ENDIAN_){
 	    for(unsigned int t=0;t<16;t++){
 	      change_endianess(M[t]);
 	    }
@@ -313,7 +313,7 @@ namespace whiteice
 	
 	// changes endianess to small endian
 	// (so disk writes etc. write in same order on small/big endian)
-	if(LITTLE_ENDIAN)
+	if(LITTLE_ENDIAN_)
 	  for(unsigned int t=0;t<8;t++)
 	    change_endianess(HASH[t]);
 	
@@ -353,7 +353,7 @@ namespace whiteice
 	  
 	  memcpy( M, &(W[(i*16)]), 16*8 );
 	  
-	  if(LITTLE_ENDIAN){
+	  if(LITTLE_ENDIAN_){
 	    for(unsigned int t=0;t<16;t++){
 	      change_endianess(M[t]);
 	    }
@@ -392,7 +392,7 @@ namespace whiteice
 	
 	// changes endianess to small endian
 	// (so disk writes etc. write in same order on small/big endian)
-	if(LITTLE_ENDIAN)
+	if(LITTLE_ENDIAN_)
 	  for(unsigned int t=0;t<8;t++)
 	    change_endianess(HASH[t]);
 	
@@ -436,7 +436,7 @@ namespace whiteice
 	  
 	  memcpy( M, &(W[(i*16)]), 16*8 );
 	  
-	  if(LITTLE_ENDIAN){
+	  if(LITTLE_ENDIAN_){
 	    for(unsigned int t=0;t<16;t++){
 	      change_endianess(M[t]);
 	    }
@@ -475,7 +475,7 @@ namespace whiteice
 	
 	// changes endianess to small endian
 	// (so disk writes etc. write in same order on small/big endian)
-	if(LITTLE_ENDIAN)
+	if(LITTLE_ENDIAN_)
 	  for(unsigned int t=0;t<8;t++)
 	    change_endianess(HASH[t]);
 	

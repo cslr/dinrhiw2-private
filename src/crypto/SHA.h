@@ -155,7 +155,7 @@ namespace whiteice
       // length in bits
       unsigned int shalen;
       
-      bool LITTLE_ENDIAN;
+      bool LITTLE_ENDIAN_;
       
       
       // SHA CONSTANTS
