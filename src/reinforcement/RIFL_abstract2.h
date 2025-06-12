@@ -150,8 +150,8 @@ namespace whiteice
       return use_smart_weights;
     }
 
-    
-    bool setQTau(const T tau){
+   
+     bool setQTau(const T tau){
       if(tau <= T(0.0) || tau >= T(1.0)) return false;
       this->tau = tau;
       return true;

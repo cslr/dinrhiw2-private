@@ -167,7 +167,7 @@ namespace whiteice
 	  
 	  nn.randomize(2, T(0.9)); // was 1.0
 	  nn.setResidual(true);
-	  nn.setBatchNorm(false);
+	  nn.setBatchNorm(true);
 	  
 	  policy.importNetwork(nn);
 	  lagged_policy.importNetwork(nn);
@@ -310,7 +310,7 @@ namespace whiteice
 	  
 	  nn.randomize(2, T(0.9)); // was 1.0
 	  nn.setResidual(true);
-	  nn.setBatchNorm(false);
+	  nn.setBatchNorm(true);
 	  
 	  policy.importNetwork(nn);
 
@@ -1992,8 +1992,7 @@ namespace whiteice
       
       // 5. update/optimize Q(state, action) network
       // activates batch learning if it is not running
-      if(database.size() >= MINIMUM_DATASIZE &&
-	 episodes.size() > MINIMUM_EPISODE_SIZE)
+      if(database.size() >= MINIMUM_DATASIZE)
       {
 	
 	// skip if other optimization step (policy network)
@@ -2267,8 +2266,7 @@ namespace whiteice
     q2_optimization:
 
 
-      if(database.size() >= MINIMUM_DATASIZE &&
-	 episodes.size() > MINIMUM_EPISODE_SIZE)
+      if(database.size() >= MINIMUM_DATASIZE)
       {
 	
 	// skip if other optimization step (policy network)
@@ -2538,8 +2536,7 @@ namespace whiteice
       // 6. update/optimize policy(state) network
       // activates batch learning if it is not running
       
-      if(database.size() >= MINIMUM_DATASIZE &&
-	 episodes.size() > MINIMUM_EPISODE_SIZE)
+      if(database.size() >= MINIMUM_DATASIZE)
       {
 	
 	// skip if other optimization step is behind us

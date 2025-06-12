@@ -1706,8 +1706,8 @@ namespace whiteice
     const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 50, 5, 50
     
     // tau = 1.0 => no lagged neural networks [don't work]
-    const T tau = T(0.001); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
-    const T tau_policy = T(0.005); // was: 1.0*
+    // const T tau = T(0.001); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
+    // const T tau_policy = T(0.005); // was: 1.0*
     
     std::vector< rifl4_datapoint<T> > episode;
 
@@ -2209,8 +2209,7 @@ namespace whiteice
       
       // 5. update/optimize Q(state, action) network
       // activates batch learning if it is not running
-      if(database.size() >= MINIMUM_DATASIZE &&
-	 episodes.size() > MINIMUM_EPISODE_SIZE)
+      if(database.size() >= MINIMUM_DATASIZE)
       {
 	
 	if(epoch[0] > epoch[1])
@@ -2494,8 +2493,7 @@ namespace whiteice
 
       // 5. update/optimize Q2(state, action) network
       // activates batch learning if it is not running
-      if(database.size() >= MINIMUM_DATASIZE &&
-	 episodes.size() > MINIMUM_EPISODE_SIZE)
+      if(database.size() >= MINIMUM_DATASIZE)
       {
 
 	// skip if other optimization step (policy network)
@@ -2772,9 +2770,8 @@ namespace whiteice
       // 6. update/optimize policy(state) network
       // activates batch learning if it is not running
       
-      if(database.size() >= MINIMUM_DATASIZE &&
-	 episodes.size() > MINIMUM_EPISODE_SIZE)
-	{
+      if(database.size() >= MINIMUM_DATASIZE)
+      {
 	
 	// skip if other optimization step is behind us
 	// we only start calculating policy after Q() has been optimized..
