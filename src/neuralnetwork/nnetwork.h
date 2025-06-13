@@ -4,7 +4,9 @@
  * Use rectifier non-linearity in all other layers except output
  * layer which should be linear.
  * 
- * TODO
+ * TODO:
+ * LayerNorm is broken, do NOT use it.
+ *
  * FIXME jacobian() don't correctly work with LayerNorm!!! (must be computed differently),
  * jacobian() also don't work with dropout???
  * 
