@@ -1576,7 +1576,7 @@ namespace whiteice
       episodes_load.clear();
       episodes_weights_load.clear();
 
-      for(unsigned int e=0;e<db.size(8);e++){
+      for(unsigned int e=0;e<db.size(10);e++){
 
 	std::vector< whiteice::rifl4_datapoint<T> > epi;
 	
