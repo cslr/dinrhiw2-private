@@ -191,7 +191,7 @@ namespace whiteice
       return AFTER_EFFECT_DELAY_MS;
     }
 
-    void setAfterEffectsDelayMS(unsigned long long delay_ms = 3000){
+    void setAfterEffectsDelayMS(unsigned long long delay_ms = 1500){
       AFTER_EFFECT_DELAY_MS = delay_ms; // zero disables after effect
     }
 
@@ -224,7 +224,7 @@ namespace whiteice
 			       bool& endFlag) = 0;
 
     // return re-inforcement value for (pre_state and after_state)
-    // this is used by after effect code, define this
+    // this is used by after effect code, implement this
     // if AFTER_EFFECT_DELAY_MS is set to be non-zero (after effects enabled)
     virtual T getReinforcement(const whiteice::math::vertex<T>& pre_state,
 			       const whiteice::math::vertex<T>& after_state){
