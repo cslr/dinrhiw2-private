@@ -27,6 +27,7 @@
 #include <thread>
 #include <vector>
 #include <atomic>
+#include <map>
 
 #include "dinrhiw_blas.h"
 #include "vertex.h"
@@ -48,8 +49,15 @@ namespace whiteice
   {
     whiteice::math::vertex<T> state, newstate;
     whiteice::math::vertex<T> action;
-    T reinforcement;
+
+    T distance;
     
+    T reinforcement,
+      reinforcement_pure; // pure is reinforcement wihtout after effect,
+                          // if after effect is disabled
+                          // reinforcement == reinforcement_pure
+
+    bool random;   // true if action was random
     bool lastStep; // true if was the last step of the simulation
   };
   
@@ -179,6 +187,14 @@ namespace whiteice
       return true;
     }
 
+    unsigned long long getAfterEffectsDelayMS() const{
+      return AFTER_EFFECT_DELAY_MS;
+    }
+
+    void setAfterEffectsDelayMS(unsigned long long delay_ms = 3000){
+      AFTER_EFFECT_DELAY_MS = delay_ms; // zero disables after effect
+    }
+
     // clear reinforcement statistics
     bool clearStatistics();
 
@@ -207,6 +223,14 @@ namespace whiteice
 			       T& distance,
 			       bool& endFlag) = 0;
 
+    // return re-inforcement value for (pre_state and after_state)
+    // this is used by after effect code, define this
+    // if AFTER_EFFECT_DELAY_MS is set to be non-zero (after effects enabled)
+    virtual T getReinforcement(const whiteice::math::vertex<T>& pre_state,
+			       const whiteice::math::vertex<T>& after_state){
+      return T(0.0f);
+    }
+
     void onehot_prob_select(const whiteice::math::vertex<T>& action,
 			    whiteice::math::vertex<T>& new_action,
 			    const T temperature = T(1.0f));
@@ -222,6 +246,11 @@ namespace whiteice
     mutable std::mutex policy_mutex;
 
     T tau = T(0.001), tau_policy = T(0.005);
+
+    // zero means disabled as the default
+    unsigned long long AFTER_EFFECT_DELAY_MS = 0;
+
+    std::multimap<unsigned long long, rifl2_datapoint<T> > after_effects_buffer;
 
     // database
     std::vector< rifl2_datapoint<T> > database;

@@ -980,6 +980,22 @@ namespace whiteice
       else
 	db.createCluster("last_step", 1);
 
+      if(database.size() > 0)
+	db.createCluster("random", 1);
+      else
+	db.createCluster("random", 1);
+
+      if(database.size() > 0)
+	db.createCluster("reinforcement_pure", 1);
+      else
+	db.createCluster("reinforcement_pure", 1);
+
+      if(database.size() > 0)
+	db.createCluster("distance", 1);
+      else
+	db.createCluster("distance", 1);
+      
+
       for(unsigned int i=0;i<database.size();i++){
 	db.add(0, database[i].state);
 	db.add(1, database[i].newstate);
@@ -988,7 +1004,6 @@ namespace whiteice
 	whiteice::math::vertex<T> v;
 	v.resize(1);
 	v[0] = database[i].reinforcement;
-
 	db.add(3, v);
 
 	if(database[i].lastStep)
@@ -997,6 +1012,19 @@ namespace whiteice
 	  v[0] = T(0.0f);
 
 	db.add(4, v);
+
+	if(database[i].random)
+	  v[0] = T(1.0f);
+	else
+	  v[0] = T(0.0f);
+
+	db.add(5, v);
+
+	v[0] = database[i].reinforcement_pure;
+	db.add(6, v);
+
+	v[0] = database[i].distance;
+	db.add(7, v);
       }
 
       if(db.save(buffer) == false){
@@ -1038,11 +1066,25 @@ namespace whiteice
       else
 	db.createCluster("last_step", 1);
 
+      if(database.size() > 0)
+	db.createCluster("random", 1);
+      else
+	db.createCluster("random", 1);
+
+      if(database.size() > 0)
+	db.createCluster("reinforcement_pure", 1);
+      else
+	db.createCluster("reinforcement_pure", 1);
+
+      if(database.size() > 0)
+	db.createCluster("distance", 1);
+      else
+	db.createCluster("distance", 1);
+
       db.createCluster("episodes-range", 2);
       
 
       for(unsigned int e=0;e<episodes.size();e++){
-
 	const unsigned int start = db.size(0);
 	
 	for(unsigned int i=0;i<episodes[e].size();i++){
@@ -1063,6 +1105,21 @@ namespace whiteice
 	    v[0] = T(0.0f);
 	  
 	  db.add(4, v);
+
+	  if(episodes[e][i].random)
+	    v[0] = T(1.0f);
+	  else
+	    v[0] = T(0.0f);
+	  
+	  db.add(5, v);
+	  
+	  v[0] = episodes[e][i].reinforcement_pure;
+	  
+	  db.add(6, v);
+
+	  v[0] = episodes[e][i].distance;
+	  
+	  db.add(7, v);
 	}
 
 	const unsigned int end = db.size(0);
@@ -1073,7 +1130,7 @@ namespace whiteice
 	v[0] = T(start);
 	v[1] = T(end);
 
-	db.add(5, v);
+	db.add(8, v);
       }
 
 
@@ -1271,7 +1328,7 @@ namespace whiteice
 	return false;
       }
 
-      if(db.getNumberOfClusters() != 5){
+      if(db.getNumberOfClusters() != 8){
 	logging.error("RIFL_abstract2::load() database wrong number of clusters");
 	return false;
       }
@@ -1329,6 +1386,16 @@ namespace whiteice
 	v = db.access(4, i);
 	if(v[0] > T(0.5)) p.lastStep = true;
 	else p.lastStep = false;
+
+	v = db.access(5, i);
+	if(v[0] > T(0.5)) p.random = true;
+	else p.random = false;
+	
+	v = db.access(6, i);
+	p.reinforcement_pure = v[0];
+
+	v = db.access(7, i);
+	p.distance = v[0];
 	
 	database_load.push_back(p);
       }
@@ -1348,17 +1415,17 @@ namespace whiteice
 	return false;
       }
 
-      if(db.getNumberOfClusters() != 6){
+      if(db.getNumberOfClusters() != 9){
 	logging.error("RIFL_abstract2::load() episodes database wrong number of clusters");
 	return false;
       }
 
       if(db.dimension(0) != db.dimension(1) ||
-	 db.dimension(3) != 1 || db.dimension(4) != 1 || db.dimension(5) != 2){
+	 db.dimension(3) != 1 || db.dimension(4) != 1 || db.dimension(8) != 2){
 	char buf[128];
 	snprintf(buf, 128, "RIFL_abstract2::load() database wrong dimensions %d %d %d %d %d %d",
 		 db.dimension(0), db.dimension(1), db.dimension(3), db.dimension(3),
-		 db.dimension(4), db.dimension(5));
+		 db.dimension(4), db.dimension(8));
 	logging.error(buf);
 	return false;
       }
@@ -1380,7 +1447,7 @@ namespace whiteice
 	return false;
       }
 
-      if(db.dimension(5) != 2){
+      if(db.dimension(8) != 2){
 	char buf[128];
 	snprintf(buf, 128, "RIFL_abstract2::load() database wrong dimensions %d %d (4)",
 		 db.dimension(5), 2);
@@ -1403,14 +1470,14 @@ namespace whiteice
       
       episodes_load.clear();
 
-      for(unsigned int e=0;e<db.size(5);e++){
+      for(unsigned int e=0;e<db.size(8);e++){
 
 	std::vector< whiteice::rifl2_datapoint<T> > epi;
 	
 	whiteice::rifl2_datapoint<T> p;
 	whiteice::math::vertex<T> v;
 
-	v = db.access(5, e);
+	v = db.access(8, e);
 
 	unsigned int START = 0;
 	unsigned int END = 0;
@@ -1432,6 +1499,16 @@ namespace whiteice
 	  v = db.access(4, i);
 	  if(v[0] > T(0.5)) p.lastStep = true;
 	  else p.lastStep = false;
+
+	  v = db.access(5, i);
+	  if(v[0] > T(0.5)) p.random = true;
+	  else p.random = false;
+
+	  v = db.access(6, i);
+	  p.reinforcement_pure = v[0];
+
+	  v = db.access(7, i);
+	  p.distance = v[0];
 	  
 	  epi.push_back(p);
 	}
@@ -1609,6 +1686,8 @@ namespace whiteice
       distances.clear();
       distances_random.clear();
     }
+
+    after_effects_buffer.clear();
 
     bool random = false;
 
@@ -1859,97 +1938,167 @@ namespace whiteice
 	
       }
 
-      
-      // 4. updates database (of actions and responses)
-      if(performActionFailed == 0){ // successful action..
-	struct rifl2_datapoint<T> datum;
+      // 4. update after effects_buffer
+      if(AFTER_EFFECT_DELAY_MS == 0){ // after effect is disabled
+	if(performActionFailed == 0){ // successful action
+	  auto now = std::chrono::high_resolution_clock::now();	
+	  const unsigned long long now_ms = 
+	    std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 
-	datum.state = state;
-	datum.action = action;
-	datum.newstate = newstate;
-	datum.reinforcement = reinforcement;
-	datum.lastStep = endFlag;
+	  struct rifl2_datapoint<T> datum;
+	  
+	  datum.state = state;
+	  datum.action = action;
+	  datum.newstate = newstate;
+	  datum.distance = distance;
+	  datum.random = random;
+	  datum.reinforcement_pure = reinforcement; // without after effects
+	  datum.reinforcement = reinforcement; // with after effects
+	  datum.lastStep = endFlag;
 
-	{
-	  std::lock_guard<std::mutex> lockr(reinforcements_mutex);
+	  after_effects_buffer.insert(std::pair<unsigned long long, rifl2_datapoint<T> >(now_ms, datum));
+	}
+      }
+      else{
+	if(performActionFailed == 0){ // successful action
+	  auto now = std::chrono::high_resolution_clock::now();	
+	  const unsigned long long now_ms = 
+	    std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() + AFTER_EFFECT_DELAY_MS;
 
-	  if(random){
-	    reinforcements_random.push_back(reinforcement);
-	    distances_random.push_back(distance);
+	  struct rifl2_datapoint<T> datum;
+	  
+	  datum.state = state;
+	  datum.action = action;
+	  datum.newstate = newstate;
+	  datum.distance = distance;
+	  datum.random = random;
+	  datum.reinforcement_pure = reinforcement; // without after effects
+	  datum.reinforcement = T(0.0f); // with after effects [calculated later]
+	  datum.lastStep = endFlag;
+
+	  after_effects_buffer.insert(std::pair<unsigned long long, rifl2_datapoint<T> >(now_ms, datum));
+	}
+	
+      }
+
+      // 5. updates database (of actions and responses)
+      {
+	auto now = std::chrono::high_resolution_clock::now();	
+	const unsigned long long now_ms = 
+	  std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+	
+	const auto last_iter = after_effects_buffer.upper_bound(now_ms);
+	
+	for(auto it=after_effects_buffer.begin();it != last_iter; it++){
+
+	  struct rifl2_datapoint<T> datum = it->second;
+	  whiteice::math::vertex<T> after_state;
+	  
+	  if(getState(after_state)){
+	    // measure after effect
+	    if(AFTER_EFFECT_DELAY_MS){
+	      const T r = getReinforcement(datum.state, after_state);
+	      const T w1 = T(0.50f)/T(1.50f);
+	      const T w2 = T(1.00f)/T(1.50f);
+	      
+	      datum.reinforcement = w1*datum.reinforcement_pure + w2*r;
+	    }
+	    else{ // after effects is disabled
+	      datum.reinforcement = datum.reinforcement_pure;
+	    }
+	      
+	    
 	  }
 	  else{
-	    reinforcements.push_back(reinforcement);
-	    distances.push_back(distance);
-	  }
-	}
-
-	// for synchronizing access to database datastructure
-	// (also used by CreateRIFL2dataset class/thread)
-	std::lock_guard<std::mutex> lock(database_mutex);
-
-	episode.push_back(datum);
-
-	if(datum.lastStep){
-
-	  T total_reward = T(0.0f);
-
-	  for(const auto& e : episode)
-	    total_reward += e.reinforcement;
-
-	  total_reward /= T(episode.size());
-
-	  {
-	    char buffer[80];
-
-	    std::lock_guard<std::mutex> lockh(has_model_mutex);
-	    
-	    snprintf(buffer, 80, "Episode %d avg reward: %f (%d moves) [%d %d models]",
-		     (int)episodes_counter, total_reward.c[0], (int)episode.size(),
-		     hasModel[0], hasModel[1]);
-
-	    whiteice::logging.info(buffer);
+	    datum.reinforcement = datum.reinforcement_pure;
 	  }
 
-
-	  fprintf(episodesFile, "%f\n", total_reward.c[0]);
-	  fflush(episodesFile);
-
-	  latestError = (float)total_reward.c[0];
-
+	  
 	  {
+	    std::lock_guard<std::mutex> lockr(reinforcements_mutex);
 	    
-	    if(episodes.size() >= EPISODES_MAX_SIZE){
-	      const unsigned long index = (episodes_counter % EPISODES_MAX_SIZE);
-	      episodes[index] = episode;
+	    if(datum.random){
+	      reinforcements_random.push_back(datum.reinforcement);
+	      distances_random.push_back(datum.distance);
 	    }
 	    else{
-	      episodes.push_back(episode);
+	      reinforcements.push_back(datum.reinforcement);
+	      distances.push_back(datum.distance);
+	    }
+	  }
+	  
+	  // for synchronizing access to database datastructure
+	  // (also used by CreateRIFL2dataset class/thread)
+	  std::lock_guard<std::mutex> lock(database_mutex);
+	  
+	  episode.push_back(datum);
+	  
+	  if(datum.lastStep){
+	    
+	    T total_reward = T(0.0f);
+	    
+	    for(const auto& e : episode)
+	      total_reward += e.reinforcement_pure;
+	    
+	    total_reward /= T(episode.size());
+	    
+	    {
+	      char buffer[80];
+	      
+	      std::lock_guard<std::mutex> lockh(has_model_mutex);
+	      
+	      snprintf(buffer, 80, "Episode %d avg reward: %f (%d moves) [%d %d models]",
+		       (int)episodes_counter, total_reward.c[0], (int)episode.size(),
+		       hasModel[0], hasModel[1]);
+	      
+	      whiteice::logging.info(buffer);
+	    }
+	    
+	    
+	    fprintf(episodesFile, "%f\n", total_reward.c[0]);
+	    fflush(episodesFile);
+	    
+	    latestError = (float)total_reward.c[0];
+
+	    { 
+	      if(episodes.size() >= EPISODES_MAX_SIZE){
+		const unsigned long index = (episodes_counter % EPISODES_MAX_SIZE);
+		episodes[index] = episode;
+	      }
+	      else{
+		episodes.push_back(episode);
+	      }
+	      
+	    }
+	    
+	    episode.clear();
+	    episodes_counter++;
+	  }
+
+	  if(database_counter >= DATASIZE)
+	    database_counter = database_counter % database.size();
+	  
+	  {
+	    if(database.size() >= DATASIZE){
+	      const unsigned int index = rng.rand() % database.size();
+	      
+	      database[index] = datum;
+	    }
+	    else{
+	      database.push_back(datum);
 	    }
 	    
 	  }
 
-	  episode.clear();
-	  episodes_counter++;
-	}
-
-	if(database_counter >= DATASIZE)
-	  database_counter = database_counter % database.size();
-
-	{
-	  if(database.size() >= DATASIZE){
-	    const unsigned int index = rng.rand() % database.size();
-
-	    database[index] = datum;
-	  }
-	  else{
-	    database.push_back(datum);
-	  }
+	  database_counter++;
 	  
 	}
 
-	database_counter++;
-      }
+	// removes processed values from after_effects_buffer
 
+	after_effects_buffer.erase(after_effects_buffer.begin(), last_iter);
+      }
+      
       
     optimization_step:
 
@@ -1990,7 +2139,7 @@ namespace whiteice
 	     (int)episodes.size(), (int)MINIMUM_EPISODE_SIZE);
       */
       
-      // 5. update/optimize Q(state, action) network
+      // 6. update/optimize Q(state, action) network
       // activates batch learning if it is not running
       if(database.size() >= MINIMUM_DATASIZE)
       {
