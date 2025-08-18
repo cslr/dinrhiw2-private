@@ -641,10 +641,10 @@ namespace whiteice
     
     while((dtrain.size(0) == 0 || dtest.size(0)  == 0) && counter < 10){
       dtrain.clearData(0);
-      //dtrain.clearData(1);
+      dtrain.clearData(1);
       
       dtest.clearData(0);
-      //dtest.clearData(1);
+      dtest.clearData(1);
       
       for(unsigned int i=0;i<data.size(1);i++){
 
@@ -705,7 +705,10 @@ namespace whiteice
     //dtrain = data;
     //dtest  = data;
 
+    logging.info("Policy4GradAscent::optimizer_loop() dataset diagnostics (dtrain,dtest,data)");
     dtrain.diagnostics();
+    dtest.diagnostics();
+    data.diagnostics();
 
     {
       std::lock_guard<std::mutex> lock(thread_is_running_mutex);

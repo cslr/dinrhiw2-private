@@ -253,7 +253,8 @@ namespace whiteice
 	const unsigned int end = data.size(0);
 
 	{
-	  whiteice::math::vertex<T> range(2);
+	  whiteice::math::vertex<T> range;
+	  range.resize(2);
 	  
 	  range[0] = start;
 	  range[1] = end;
