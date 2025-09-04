@@ -48,6 +48,7 @@
 
 #include "VAE.h"
 #include "TSNE.h"
+#include "TSNE_BH.h"
 
 #include "globaloptimum.h"
 

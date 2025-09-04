@@ -43,6 +43,7 @@
 
 #include "VAE.h"
 #include "TSNE.h"
+#include "TSNE_BH.h"
 
 #include "globaloptimum.h"
 
@@ -2290,9 +2291,9 @@ void simple_tsne_test()
     // we generate HIGHDIM dimensional gaussian balls N(mean,I) in random locations
     // in hypercube [-10,10]^HIGHDIM. mean = random([-10,10]^HIGHDIM)
 
-    const unsigned int NUM_DATA = 5000;
+    const unsigned int NUM_DATA = 10000;
 
-    const unsigned int HIGHDIM = 20;
+    const unsigned int HIGHDIM = 50;
     const unsigned int CLUSTERS = 10; // number of clusters
     const unsigned int N = NUM_DATA/CLUSTERS; // number of samples per cluster (total of 1000 datapoints)
 
@@ -2322,7 +2323,7 @@ void simple_tsne_test()
     }
 
     // calculate dimension reduction
-    whiteice::TSNE<> tsne(false);
+    whiteice::TSNE_BH<> tsne(false);
     std::vector< whiteice::math::vertex<> > ydata;
 
     if(tsne.calculate(data, 3, ydata, true) == false){
