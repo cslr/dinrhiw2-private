@@ -200,7 +200,9 @@ int main()
   try{
     // nn_layer_norm_gradient_value_test();
 
-    nn_layer_norm_test();
+    simple_tsne_test(); // FIXME: has bugs
+
+    // nn_layer_norm_test();
 
     // nn_save_load_test();
     
@@ -2288,9 +2290,11 @@ void simple_tsne_test()
     // we generate HIGHDIM dimensional gaussian balls N(mean,I) in random locations
     // in hypercube [-10,10]^HIGHDIM. mean = random([-10,10]^HIGHDIM)
 
+    const unsigned int NUM_DATA = 5000;
+
     const unsigned int HIGHDIM = 20;
     const unsigned int CLUSTERS = 10; // number of clusters
-    const unsigned int N = 10; // number of samples per cluster (total of 1000 datapoints)
+    const unsigned int N = NUM_DATA/CLUSTERS; // number of samples per cluster (total of 1000 datapoints)
 
     whiteice::RNG<> rng;
 
@@ -2321,13 +2325,23 @@ void simple_tsne_test()
     whiteice::TSNE<> tsne(false);
     std::vector< whiteice::math::vertex<> > ydata;
 
-    if(tsne.calculate(data, 2, ydata, true) == false){
+    if(tsne.calculate(data, 3, ydata, true) == false){
       printf("ERROR: calculating t-SNE dimension reduction FAILED.\n");
     }
     else{
       printf("GOOD: t-SNE computation proceeded without errors.\n");
     }
 
+    
+    printf("Saving reduced points to 'tsne_points.csv'.\n");
+
+    whiteice::dataset<> ds;
+
+    ds.createCluster("reduced_dim", 3);
+    ds.add(ydata);
+    ds.exportAscii("tsne_points.csv");
+    
+    
     fflush(stdout);
   }
 }
