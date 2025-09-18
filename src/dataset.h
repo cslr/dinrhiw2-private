@@ -139,6 +139,14 @@ namespace whiteice
        */
       bool load(const std::string& filename) ;
       bool save(const std::string& filename) const ;
+
+
+      /* loads serialized data and parameters to dataset */
+      bool importDataset(const std::vector<float>& v);
+      
+      /* serializes dataset data and parameters to a vector */
+      bool exportDataset(std::vector<float>& v) const;
+      
       
       /*
        * exports dataset values as ascii data without preprocessing (specified cluster)

@@ -1473,6 +1473,751 @@ namespace whiteice
     
     return true;
   }
+
+
+  void pushBack(std::vector<float>& v, const unsigned int& value){
+    const unsigned char * ptr = (const unsigned char*)&value;
+
+    v.push_back((float)*ptr); ptr++;
+    v.push_back((float)*ptr); ptr++;
+    v.push_back((float)*ptr); ptr++;
+    v.push_back((float)*ptr);
+  }
+
+
+  void pushBack(std::vector<float>& v, const float& value){
+    v.push_back(value);
+  }
+
+  void pushBack(std::vector<float>& v, const double& value){
+    v.push_back((float)value);
+  }
+
+
+  bool popIndex(const std::vector<float>& v, unsigned int& index, unsigned int& value){
+    if(v.size() <= index+3) return false;
+    
+    value = ((unsigned int)v[index]) | (((unsigned int)(v[index+1]))<<8) |
+      (((unsigned int)(v[index+2]))<<16) | (((unsigned int)v[index+3])<<24);
+  
+    index += 4;
+    
+    return true;
+  }
+
+  bool popIndex(const std::vector<float>& v, unsigned int& index, float& value){
+    if(v.size() <= index) return false;
+
+    value = v[index];
+    index++;
+
+    return true;
+  }
+
+  bool popIndex(const std::vector<float>& v, unsigned int& index, double& value){
+    if(v.size() <= index) return false;
+
+    value = (float)v[index];
+    index++;
+
+    return true;
+  }
+
+
+  template <typename T>
+  bool dataset<T>::importDataset(const std::vector<float>& v)
+  {
+    // loads datasets which have been saved in
+    // dataset format = 1 (older dataset format 0 is not supported)
+    //
+    //  FILEID_STRING : char[]
+    //  version : INT
+    //  cnum    : INT  number of clusters
+    //  namelen : INT  length of names section in bytes (includes padding)
+    //  names   : [list of NULL terminated strings] (cnum names)
+    //  padding : (=> address dividable by 4)
+    //  clusters: [list of CLUSTER]
+    //
+    // CLUSTER:
+    //  datasize: INT  number of data vectors
+    //  dimen.  : INT
+    //  NORMFLAG: INT  normalization flags
+    //  softmax : float
+    //  [mean]  : float[DIM]
+    //  [var]   : float[DIM]
+    //  [Rxx]   : float[DIM]x[DIM]
+    //  [ICA]   : float[DIM]x[DIM]
+    //  data    : float[datasize]x[DIM]
+    
+    unsigned int index = 0;
+
+    unsigned int NUMBER_SIZE = 1;
+    
+    {
+      T value = T(0.0f);
+      NUMBER_SIZE = value.size();
+    }
+
+    if(v.size() == 0){
+      // assert(0);
+      return false;
+    }
+    
+    
+    // printf("L: %d\n", (int)ftell(fp));
+    
+    unsigned int version = 0xFFFFFFFF;
+    unsigned int cnum = 0;
+    
+    // checks file id string
+    {
+      char line[128] = "";
+
+      // printf("F: %d\n", (int)strlen(FILEID_STRING)+1);
+      const size_t s = strlen(FILEID_STRING)+1;
+
+      for(unsigned int i=0;i<s;i++){
+	if(v.size() <= i+index) return false;
+	line[i] = (char)v[i+index];
+      }
+      
+      if(strcmp(line, FILEID_STRING) != 0){
+	// assert(0);
+	return false;
+      }
+
+      index += s;
+    }
+
+    // printf("L: %d\n", (int)ftell(fp));
+
+    if(popIndex(v, index, version) == false){
+      // assert(0);
+      return false;
+    }
+    
+    if(popIndex(v, index, cnum) == false){
+      // assert(0);
+      return false;
+    }
+
+    if(cnum > 1000000){ // only supports up to 1.000.000 clusters
+      // assert(0);
+      return false;
+    }
+
+    // we only support version 2, superreso adds extra version id number 
+    
+    if(typeid(T) == typeid(whiteice::math::superresolution< whiteice::math::blas_real<float>, whiteice::math::modular<unsigned int> >) ||
+       typeid(T) == typeid(whiteice::math::superresolution< whiteice::math::blas_real<double>, whiteice::math::modular<unsigned int> >)){
+      
+      if(version != (2 + 0xBEEF0000)) // v3.8 datafile (3.8 adds superresolutional numbers which add 1 to version number) (3.7 adds batch norm data)
+      {
+	// assert(0);
+	return false;
+      }
+    }
+    else{
+      
+      if(version != 2){
+	// assert(0);
+	return false;
+      }
+      
+    }
+    
+    
+    clusters.resize(cnum);
+
+    // reads names
+    if(cnum > 0){
+      // gets names section length
+      
+      unsigned int namesSectionSize = 0;
+
+      popIndex(v, index, namesSectionSize);
+
+      if(namesSectionSize > 10000000){ // only supports 10 million characters
+	clusters.resize(0);
+	// assert(0);
+	return false;
+      }
+      
+      char* names = (char*)malloc(namesSectionSize);
+      if(names == 0){
+	clusters.resize(0);
+	// assert(0);
+	return false;
+      }
+
+      for(unsigned int i=0;i<namesSectionSize;i++){
+	names[i] = (char)v[index];
+	index++;
+      }
+      
+      
+      char *ptr, *endptr;
+      ptr = names;
+      endptr = &(names[namesSectionSize]);
+      
+      unsigned int cindex = 0;
+      while(ptr < endptr && cindex <clusters.size()){
+	char* begin = ptr;
+	
+	while(ptr < endptr && *ptr != '\0') ptr++;
+	
+	// found null
+	if(*ptr == '\0'){
+	  clusters[cindex].cname = begin; // copies string
+	  cindex++;
+	}
+	
+	ptr++;
+      }
+      
+      free(names);
+      
+      if(cindex != clusters.size()){
+	clusters.resize(0);
+	// assert(0);
+	return false;
+      }
+      
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    // reads in each cluster
+    
+    for(unsigned int i=0;i<clusters.size();i++){
+      unsigned int datasize = 0;
+      unsigned int data_dimension = 0;
+      unsigned int flags = 0;
+      float d32_softmax = 0.0f;
+
+      
+      // reads basic cluster information
+
+      if(popIndex(v, index, datasize) == false){
+	clusters.resize(0);
+	// assert(0);
+	return false;
+      }
+
+      if(popIndex(v, index, data_dimension) == false){
+	clusters.resize(0);
+	// assert(0);
+	return false;
+      }
+      
+      if(popIndex(v, index, flags) == false){
+	clusters.resize(0);
+	// assert(0);
+	return false;
+      }
+
+      if(popIndex(v, index, d32_softmax) == false){
+	clusters.resize(0);
+	// assert(0);
+	return false;
+      }
+      
+      
+      clusters[i].data_dimension = data_dimension;
+      clusters[i].softmax_parameter = T(d32_softmax);
+      
+      clusters[i].preprocessings.clear();
+      
+      if(flags & 0x02)
+	clusters[i].preprocessings.push_back(dnSoftMax);
+      if(flags & 0x01)
+	clusters[i].preprocessings.push_back(dnMeanVarianceNormalization);
+      if(flags & 0x04)
+	clusters[i].preprocessings.push_back(dnCorrelationRemoval);
+      if(flags & 0x08)
+	clusters[i].preprocessings.push_back(dnLinearICA);	
+      
+      
+      
+      //////////////////////////////////////////////////////////////////////
+      // reads cluster statistics
+
+      float* buffer = (float*)calloc(2*clusters[i].data_dimension*NUMBER_SIZE, 4);
+      
+      if(flags & 0x01){
+	clusters[i].mean.resize(clusters[i].data_dimension);
+	clusters[i].variance.resize(clusters[i].data_dimension);
+
+	for(unsigned int ii=0;ii<2*clusters[i].mean.size()*NUMBER_SIZE;ii++){
+	  if(popIndex(v, index, buffer[ii]) == false){
+	    clusters.resize(0);
+	    free(buffer);
+	    // assert(0);
+	    return false;
+	  }
+	}
+	
+	for(unsigned int j=0;j<clusters[i].mean.size();j++){
+	  for(unsigned int k=0;k<NUMBER_SIZE;k++){
+	    if(sizeof(abs(T(0.0f))) == sizeof(T(0.0f))){ // single value per number (real)
+	      whiteice::math::convert(clusters[i].mean[j][k], buffer[2*j*NUMBER_SIZE+k]);
+	    }
+	    else{ // complex number (two values per number)
+	      auto value = whiteice::math::blas_complex<double>(buffer[2*j*NUMBER_SIZE+k],
+								buffer[2*j*NUMBER_SIZE+k+1]);
+	      whiteice::math::convert(clusters[i].mean[j][k], value);
+	    }
+	  }
+	}
+	
+	for(unsigned int ii=0;ii<2*clusters[i].variance.size()*NUMBER_SIZE;ii++){
+	  if(popIndex(v, index, buffer[ii]) == false){
+	    clusters.resize(0);
+	    free(buffer);
+	    // assert(0);
+	    return false;
+	  }
+	}
+	
+	for(unsigned int j=0;j<clusters[i].variance.size();j++){
+	  for(unsigned int k=0;k<NUMBER_SIZE;k++){
+	    if(sizeof(abs(T(0.0f))) == sizeof(T(0.0f))){ // single value per number (real)
+	      whiteice::math::convert(clusters[i].variance[j][k], buffer[2*j*NUMBER_SIZE+k]);
+	    }
+	    else{ // complex number (two values per number)
+	      auto value = whiteice::math::blas_complex<double>(buffer[2*j*NUMBER_SIZE+k],
+								buffer[2*j*NUMBER_SIZE+k+1]);
+	      whiteice::math::convert(clusters[i].variance[j][k], value);
+	    }
+	  }
+	}
+      }
+      
+      if(flags & 0x04){
+	clusters[i].Rxx.resize(clusters[i].data_dimension,
+			       clusters[i].data_dimension);
+	
+	for(unsigned int a=0;a<data_dimension;a++){
+	  
+	  for(unsigned int ii=0;ii<2*data_dimension*NUMBER_SIZE;ii++){
+	    if(popIndex(v, index, buffer[ii]) == false){
+	      clusters.resize(0);
+	      free(buffer);
+	      // assert(0);
+	      return false;
+	    }
+	  } 
+	  
+	  for(unsigned int b=0;b<data_dimension;b++){
+	    for(unsigned int k=0;k<NUMBER_SIZE;k++){
+	      if(sizeof(abs(T(0.0f))) == sizeof(T(0.0f))){ // single value per number (real)
+		whiteice::math::convert(clusters[i].Rxx(a,b)[k], buffer[2*b*NUMBER_SIZE+k]);
+	      }
+	      else{ // complex number (two values per number)
+		auto value = whiteice::math::blas_complex<double>(buffer[2*b*NUMBER_SIZE+k],
+								  buffer[2*b*NUMBER_SIZE+k+1]);
+		whiteice::math::convert(clusters[i].Rxx(a,b)[k], value);
+	      }
+	    }
+	  }
+	}
+	
+	
+	// recalculates Wx and invWx vectors
+	math::matrix<T> D(clusters[i].Rxx);
+	math::matrix<T> V, Vh, invD;
+	
+	if(symmetric_eig(D, V) == false){
+	  clusters.resize(0);
+	  free(buffer);
+	  // assert(0);
+	  return false;
+	}
+	
+	invD = D;
+	
+	for(unsigned int j=0;j<D.ysize();j++){
+	  T d = abs(invD(j,j));
+
+	  auto epsilon = abs(T(1e-8f));
+
+	  if(d > epsilon){
+	      invD(j,j) = whiteice::math::sqrt(T(1.0)/d);
+	      D(j,j)    = whiteice::math::sqrt(d);
+	  }
+	  else{
+	    invD(j,j) = T(0.0f);
+	    D(j,j)    = T(0.0f);
+	  }
+	  
+	}
+	
+	Vh = V;
+	Vh.hermite();
+	
+	clusters[i].Wxx = V * invD * Vh;
+	clusters[i].invWxx = V * D * Vh;
+	
+      }
+
+
+      if(flags & 0x08){
+	clusters[i].ICA.resize(clusters[i].data_dimension,
+			       clusters[i].data_dimension);
+	
+	for(unsigned int a=0;a<data_dimension;a++){
+
+	  for(unsigned int ii=0;ii<2*data_dimension*NUMBER_SIZE;ii++){
+	    if(popIndex(v, index, buffer[ii]) == false){
+	      clusters.resize(0);
+	      free(buffer);
+	      // assert(0);
+	      return false;
+	    }
+	  } 
+	  
+	  for(unsigned int b=0;b<data_dimension;b++){
+	    for(unsigned int k=0;k<NUMBER_SIZE;k++){
+	      if(sizeof(abs(T(0.0f))) == sizeof(T(0.0f))){ // single value per number (real)
+		whiteice::math::convert(clusters[i].ICA(a,b)[k], buffer[2*b*NUMBER_SIZE+k]);
+	      }
+	      else{ // complex number (two values per number)
+		auto value = whiteice::math::blas_complex<double>(buffer[2*b*NUMBER_SIZE+k],
+								  buffer[2*b*NUMBER_SIZE+k+1]);
+		whiteice::math::convert(clusters[i].ICA(a,b)[k], value);
+	      }
+	    }
+	  }
+	}
+
+	clusters[i].invICA = clusters[i].ICA;
+	if(clusters[i].invICA.inv() == false){
+	  clusters.resize(0);
+	  free(buffer);
+	  // assert(0);
+	  return false; // calculating inverse of ICA failed.
+	}
+      }      
+
+      //////////////////////////////////////////////////////////////////////
+      // reads cluster data
+      
+      clusters[i].data.resize(datasize);
+      
+      for(unsigned int a=0;a<clusters[i].data.size();a++){
+
+	for(unsigned int ii=0;ii<2*data_dimension*NUMBER_SIZE;ii++){
+	  if(popIndex(v, index, buffer[ii]) == false){
+	    clusters.resize(0);
+	    free(buffer);
+	    // assert(0);
+	    return false;
+	  }
+	} 
+	
+	clusters[i].data[a].resize(data_dimension);
+	for(unsigned int b=0;b<data_dimension;b++){
+	  for(unsigned int k=0;k<NUMBER_SIZE;k++){
+	    if(sizeof(abs(T(0.0f))) == sizeof(T(0.0f))){ // single value per number (real)
+	      whiteice::math::convert(clusters[i].data[a][b][k], buffer[2*b*NUMBER_SIZE+k]);
+	    }
+	    else{ // complex number (two values per number)
+	      auto value = whiteice::math::blas_complex<double>(buffer[2*b*NUMBER_SIZE+k],
+								buffer[2*b*NUMBER_SIZE+k+1]);
+	      whiteice::math::convert(clusters[i].data[a][b][k], value);
+	    }
+	  }
+	}
+      }
+      
+      
+      free(buffer);
+    }
+    
+        
+    // sets up rest of data structures
+    namemapping.clear();
+    
+    for(unsigned int i=0;i<clusters.size();i++){
+      clusters[i].cindex = i;
+      namemapping[clusters[i].cname] = i;
+    }
+    
+    
+    return true;
+  }
+
+
+  template <typename T>
+  bool dataset<T>::exportDataset(std::vector<float>& v) const 
+  {
+    // dataset is saved as binary file in following format.
+    // all data is either 32bit unsigned integers or 32bit floats
+    // 
+    //  FILEID_STRING : char[]
+    //  version : INT
+    //  cnum    : INT  number of clusters
+    //  namelen : INT  length of names list in bytes (incl. padding)
+    //  names   : [list of NULL terminated strings] (cnum names)
+    //  padding : (address divisable by 4)
+    //  clusters: [list of CLUSTER]
+    //
+    // CLUSTER:
+    //  datasize: INT  number of data vectors
+    //  dimen.  : INT
+    //  NORMFLAG: INT  normalization flags
+    //  softmax : float
+    //  [mean]  : float[DIM] (two values per element)
+    //  [var]   : float[DIM] (two values per element)
+    //  [Rxx]   : float[DIM]x[DIM] (two values per element)
+    //  [ICA]   : float[DIM]x[DIM] (two values per element)
+    //  data    : float[datasize]x[DIM] (two values per element)
+
+    try{
+      v.clear();
+      
+      // version 0 was initial version number for previous
+      // version 1 did not support complex numbers
+      // version 2 saves/loads values to disk as complex numbers
+      unsigned int version = 2;
+      
+      if(typeid(T) == typeid(whiteice::math::superresolution< whiteice::math::blas_real<float>, whiteice::math::modular<unsigned int> >) ||
+	 typeid(T) == typeid(whiteice::math::superresolution< whiteice::math::blas_real<double>, whiteice::math::modular<unsigned int> >)){
+	// superreso use extended version number
+	version += 0xBEEF0000;
+      }
+      
+      
+      // dataset fileformat (not supported)
+      const unsigned int cnum    = clusters.size();
+
+      // printf("A"); fflush(stdout);
+      
+      
+      for(unsigned int i=0;i<strlen(FILEID_STRING)+1;i++){
+	v.push_back(FILEID_STRING[i]);
+      }
+
+      //printf("A"); fflush(stdout);
+      
+      pushBack(v, version);
+      pushBack(v, cnum);
+
+      //printf("A"); fflush(stdout);
+      
+      
+      // writes names list
+      if(clusters.size() > 0){
+	unsigned int namesSectionSize = 0;
+	
+	for(unsigned int i=0;i<clusters.size();i++)
+	  namesSectionSize += (clusters[i].cname.length() + 1);
+	
+	// adds padding
+	namesSectionSize = ((namesSectionSize+3)/4)*4;
+	
+	pushBack(v, namesSectionSize);
+	
+	char* names = (char*)calloc(1, namesSectionSize);
+	if(names == 0){	
+	  return false;
+	}
+	
+	char *ptr;
+	ptr = names;
+	
+	for(unsigned int i=0;i<clusters.size();i++){
+	  for(unsigned int j=0;j<(clusters[i].cname.length()+1);j++, ptr++){
+	    *ptr = clusters[i].cname[j];
+	  }
+	}
+	
+	for(unsigned int i=0;i<namesSectionSize;i++){
+	  v.push_back((float)names[i]);
+	}
+	
+	free(names);
+      }
+
+      // printf("B"); fflush(stdout);
+      
+      
+      //////////////////////////////////////////////////////////////////////
+      // writes each cluster
+      
+      for(unsigned int i=0;i<clusters.size();i++){
+	const unsigned int datasize = clusters[i].data.size();
+	const unsigned int data_dimension = clusters[i].data_dimension;
+	
+	unsigned int flags = 0;
+	// flags are (order is always same):
+	// bit 0 = dnMeanVarianceNormalization
+	// bit 1 = dnSoftMax
+	// bit 2 = dnCorrelationRemoval
+	// bit 3 = dnLinearICA
+	
+	for(unsigned int j=0;j<clusters[i].preprocessings.size();j++){
+	  if(clusters[i].preprocessings[j] == dnMeanVarianceNormalization)
+	    flags |= 0x01;
+	  else if(clusters[i].preprocessings[j] == dnSoftMax)
+	    flags |= 0x02;
+	  else if(clusters[i].preprocessings[j] == dnCorrelationRemoval)
+	    flags |= 0x04;
+	  else if(clusters[i].preprocessings[j] == dnLinearICA)
+	    flags |= 0x08;
+	}
+	
+	float d32_softmax = 0.0f;
+	math::convert(d32_softmax, clusters[i].softmax_parameter);
+	
+	// writes basic cluster information
+	
+	pushBack(v, datasize);
+	pushBack(v, data_dimension);
+	pushBack(v, flags);
+	pushBack(v, d32_softmax);
+
+	// printf("B"); fflush(stdout);
+	
+	
+	//////////////////////////////////////////////////////////////////////
+	// writes cluster statistics
+	
+	unsigned int NUMBER_SIZE = 1;
+	
+	{
+	  T value = T(0.0f);
+	  NUMBER_SIZE = value.size();
+	}
+	
+	float* buffer = (float*)calloc(4, 2*clusters[i].data_dimension*NUMBER_SIZE);
+	
+	if(buffer == 0){
+	  return false;
+	}
+
+	// printf("B"); fflush(stdout);
+	
+	
+	if(flags & 0x01){
+	  for(unsigned int j=0;j<clusters[i].mean.size();j++){
+	    for(unsigned int k=0;k<NUMBER_SIZE;k++){
+	      auto realpart = math::real(clusters[i].mean[j][k]);
+	      auto imagpart = math::imag(clusters[i].mean[j][k]);
+	      
+	      math::convert(buffer[2*j*NUMBER_SIZE+k+0], realpart);
+	      math::convert(buffer[2*j*NUMBER_SIZE+k+1], imagpart);
+	    }
+	  }
+	  
+	  for(unsigned int ii=0;ii<2*clusters[i].mean.size()*NUMBER_SIZE;ii++){
+	    pushBack(v, buffer[ii]);
+	  }
+
+	  // printf("B-"); fflush(stdout);
+	  
+	
+	  for(unsigned int j=0;j<clusters[i].variance.size();j++){
+	    for(unsigned int k=0;k<NUMBER_SIZE;k++){
+	      auto realpart = math::real(clusters[i].variance[j][k]);
+	      auto imagpart = math::imag(clusters[i].variance[j][k]);
+	      
+	      math::convert(buffer[2*j*NUMBER_SIZE+k+0], realpart);
+	      math::convert(buffer[2*j*NUMBER_SIZE+k+1], imagpart);
+	    }
+	  }
+	  
+	  for(unsigned int ii=0;ii<2*clusters[i].variance.size()*NUMBER_SIZE;ii++){
+	    pushBack(v, buffer[ii]);
+	  }	
+	}
+
+	// printf("B"); fflush(stdout);
+	
+	
+	if(flags & 0x04){
+	  for(unsigned int a=0;a<data_dimension;a++){
+	    
+	    for(unsigned int b=0;b<data_dimension;b++){
+	      for(unsigned int k=0;k<NUMBER_SIZE;k++){
+		auto realpart = math::real(clusters[i].Rxx(a,b)[k]);
+		auto imagpart = math::imag(clusters[i].Rxx(a,b)[k]);
+		
+		math::convert(buffer[2*b*NUMBER_SIZE+k+0], realpart);
+		math::convert(buffer[2*b*NUMBER_SIZE+k+1], imagpart);
+	      }
+	    }
+	    
+	    for(unsigned int ii=0;ii<2*data_dimension*NUMBER_SIZE;ii++){
+	      pushBack(v, buffer[ii]);
+	    }
+	  }
+	}
+
+	// printf("B"); fflush(stdout);
+	
+	
+	if(flags & 0x08){
+	  for(unsigned int a=0;a<data_dimension;a++){
+	    
+	    for(unsigned int b=0;b<data_dimension;b++){
+	      for(unsigned int k=0;k<NUMBER_SIZE;k++){
+		auto realpart = math::real(clusters[i].ICA(a,b)[k]);
+		auto imagpart = math::imag(clusters[i].ICA(a,b)[k]);
+		
+		math::convert(buffer[2*b*NUMBER_SIZE+k+0], realpart);
+		math::convert(buffer[2*b*NUMBER_SIZE+k+1], imagpart);
+	      }
+	    }
+	    
+	    for(unsigned int ii=0;ii<2*data_dimension*NUMBER_SIZE;ii++){
+	      pushBack(v, buffer[ii]);
+	    }
+	  }
+
+	  // printf("B+"); fflush(stdout);
+	}
+
+	// printf("C"); fflush(stdout);
+	
+	
+	//////////////////////////////////////////////////////////////////////
+	// writes cluster data
+	
+	for(unsigned int a=0;a<clusters[i].data.size();a++){
+	  
+	  for(unsigned int b=0;b<data_dimension;b++){
+	    for(unsigned int k=0;k<NUMBER_SIZE;k++){
+	      auto realpart = math::real(clusters[i].data[a][b][k]);
+	      auto imagpart = math::imag(clusters[i].data[a][b][k]);
+	      
+	      math::convert(buffer[2*b*NUMBER_SIZE+k+0], realpart);
+	      math::convert(buffer[2*b*NUMBER_SIZE+k+1], imagpart);
+	    }
+	  }
+	  
+	  for(unsigned int ii=0;ii<2*data_dimension*NUMBER_SIZE;ii++){
+	    pushBack(v, buffer[ii]);
+	  }
+	}
+
+	// printf("D"); fflush(stdout);
+	
+	free(buffer);
+
+	// printf("E"); fflush(stdout);
+	
+      }
+
+    }
+    catch(const std::bad_alloc& e){
+      return false;
+    }
+        
+    return true;
+  }
+  
+
+  
   
 
   template <typename T>
