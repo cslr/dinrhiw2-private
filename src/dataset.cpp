@@ -1475,26 +1475,26 @@ namespace whiteice
   }
 
 
-  void pushBack(std::vector<float>& v, const unsigned int& value){
+  void pushBack(std::vector<double>& v, const unsigned int& value){
     const unsigned char * ptr = (const unsigned char*)&value;
 
-    v.push_back((float)*ptr); ptr++;
-    v.push_back((float)*ptr); ptr++;
-    v.push_back((float)*ptr); ptr++;
-    v.push_back((float)*ptr);
+    v.push_back((double)*ptr); ptr++;
+    v.push_back((double)*ptr); ptr++;
+    v.push_back((double)*ptr); ptr++;
+    v.push_back((double)*ptr);
   }
 
 
-  void pushBack(std::vector<float>& v, const float& value){
+  void pushBack(std::vector<double>& v, const float& value){
     v.push_back(value);
   }
 
-  void pushBack(std::vector<float>& v, const double& value){
-    v.push_back((float)value);
+  void pushBack(std::vector<double>& v, const double& value){
+    v.push_back((double)value);
   }
 
 
-  bool popIndex(const std::vector<float>& v, unsigned int& index, unsigned int& value){
+  bool popIndex(const std::vector<double>& v, unsigned int& index, unsigned int& value){
     if(v.size() <= index+3) return false;
     
     value = ((unsigned int)v[index]) | (((unsigned int)(v[index+1]))<<8) |
@@ -1505,16 +1505,7 @@ namespace whiteice
     return true;
   }
 
-  bool popIndex(const std::vector<float>& v, unsigned int& index, float& value){
-    if(v.size() <= index) return false;
-
-    value = v[index];
-    index++;
-
-    return true;
-  }
-
-  bool popIndex(const std::vector<float>& v, unsigned int& index, double& value){
+  bool popIndex(const std::vector<double>& v, unsigned int& index, float& value){
     if(v.size() <= index) return false;
 
     value = (float)v[index];
@@ -1523,9 +1514,18 @@ namespace whiteice
     return true;
   }
 
+  bool popIndex(const std::vector<double>& v, unsigned int& index, double& value){
+    if(v.size() <= index) return false;
+
+    value = (double)v[index];
+    index++;
+
+    return true;
+  }
+
 
   template <typename T>
-  bool dataset<T>::importDataset(const std::vector<float>& v)
+  bool dataset<T>::importDataset(const std::vector<double>& v)
   {
     // loads datasets which have been saved in
     // dataset format = 1 (older dataset format 0 is not supported)
@@ -1948,7 +1948,7 @@ namespace whiteice
 
 
   template <typename T>
-  bool dataset<T>::exportDataset(std::vector<float>& v) const 
+  bool dataset<T>::exportDataset(std::vector<double>& v) const 
   {
     // dataset is saved as binary file in following format.
     // all data is either 32bit unsigned integers or 32bit floats

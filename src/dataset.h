@@ -142,10 +142,10 @@ namespace whiteice
 
 
       /* loads serialized data and parameters to dataset */
-      bool importDataset(const std::vector<float>& v);
+      bool importDataset(const std::vector<double>& v);
       
       /* serializes dataset data and parameters to a vector */
-      bool exportDataset(std::vector<float>& v) const;
+      bool exportDataset(std::vector<double>& v) const;
       
       
       /*

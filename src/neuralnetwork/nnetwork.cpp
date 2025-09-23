@@ -6469,7 +6469,7 @@ namespace whiteice
 
   /* loads serialized data and parameters to dataset [for file saving] */
   template <typename T>
-  bool nnetwork<T>::importNNetwork(const std::vector<float>& v)
+  bool nnetwork<T>::importNNetwork(const std::vector<double>& v)
   {
     try{ 
       whiteice::dataset<T> conf;
@@ -6495,7 +6495,7 @@ namespace whiteice
   
   /* serializes dataset data and parameters to a vector [for file saving] */
   template <typename T>
-  bool nnetwork<T>::exportNNetwork(std::vector<float>& v) const
+  bool nnetwork<T>::exportNNetwork(std::vector<double>& v) const
   {
     try{ 
       whiteice::dataset<T> conf;

@@ -1383,7 +1383,7 @@ namespace whiteice
 
   /* loads serialized data and parameters to dataset [for file saving] */
   template <typename T>
-  bool bayesian_nnetwork<T>::importBNNetwork(const std::vector<float>& v)
+  bool bayesian_nnetwork<T>::importBNNetwork(const std::vector<double>& v)
   {
     try{ 
       whiteice::dataset<T> conf;
@@ -1409,7 +1409,7 @@ namespace whiteice
   
   /* serializes dataset data and parameters to a vector [for file saving] */
   template <typename T>
-  bool bayesian_nnetwork<T>::exportBNNetwork(std::vector<float>& v) const
+  bool bayesian_nnetwork<T>::exportBNNetwork(std::vector<double>& v) const
   {
     try{ 
       whiteice::dataset<T> conf;

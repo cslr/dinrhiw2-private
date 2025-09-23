@@ -114,10 +114,10 @@ namespace whiteice
       bool save(const std::string& filename) const ;
       
       /* loads serialized data and parameters to dataset [for file saving] */
-      bool importBNNetwork(const std::vector<float>& v);
+      bool importBNNetwork(const std::vector<double>& v);
       
       /* serializes dataset data and parameters to a vector [for file saving] */
-      bool exportBNNetwork(std::vector<float>& v) const;
+      bool exportBNNetwork(std::vector<double>& v) const;
       
     private:
       

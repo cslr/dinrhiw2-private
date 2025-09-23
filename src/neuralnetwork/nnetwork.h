@@ -295,10 +295,10 @@ namespace whiteice
     ////////////////////////////////////////////////////////////
 
     /* loads serialized data and parameters to dataset [for file saving] */
-    bool importNNetwork(const std::vector<float>& v);
+    bool importNNetwork(const std::vector<double>& v);
     
     /* serializes dataset data and parameters to a vector [for file saving] */
-    bool exportNNetwork(std::vector<float>& v) const;
+    bool exportNNetwork(std::vector<double>& v) const;
     
     // exports and imports neural network parameters to/from vertex [for math operations: f(v)]
     bool exportdata(math::vertex<T>& v) const ;
