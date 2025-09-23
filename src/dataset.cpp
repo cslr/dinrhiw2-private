@@ -2491,13 +2491,13 @@ namespace whiteice
     if(clusters.size() <= 0){
       std::string error = "dataset::operator[]: cluster zero doesn't exist.";
       printf(error.c_str());
-      assert(0);
+      //assert(0);
       throw std::out_of_range(error);
     }
     
     if(index >= clusters[0].data.size()){
       std::string error = "dataset::operator[]: cluster index out of range";
-      assert(0);
+      //assert(0);
       throw std::out_of_range(error);
     }
     
@@ -2508,12 +2508,12 @@ namespace whiteice
   const math::vertex<T>& dataset<T>::access(unsigned int cluster, unsigned int data) const 
   {
     if(cluster >= clusters.size()){
-      assert(0);
+      //assert(0);
       throw std::out_of_range("dataset::access(): cluster index out of range");
     }
     
     if(data >= clusters[cluster].data.size()){
-      assert(0);
+      //assert(0);
       throw std::out_of_range("dataset::access(): data index out of range");
     }
 
@@ -2524,12 +2524,12 @@ namespace whiteice
   math::vertex<T>& dataset<T>::access(unsigned int cluster, unsigned int data)
   {
     if(cluster >= clusters.size()){
-      assert(0);
+      //assert(0);
       throw std::out_of_range("dataset::access(): cluster index out of range");
     }
     
     if(data >= clusters[cluster].data.size()){
-      assert(0);
+      //assert(0);
       throw std::out_of_range("dataset::access(): data index out of range");
     }
     
@@ -2537,20 +2537,20 @@ namespace whiteice
   }
   
   template <typename T>
-  const math::vertex<T>& dataset<T>::accessName(const std::string& clusterName, unsigned int dataElem) 
+  const math::vertex<T>& dataset<T>::accessName(const std::string& clusterName, unsigned int dataElem) const
   {
     typename std::map<std::string, unsigned int>::const_iterator i;
     i = namemapping.find(clusterName);
     
     if(i == namemapping.end()){
-      assert(0);
+      //assert(0);
       throw std::out_of_range("dataset: cannot find cluster name");
     }
     
     const unsigned int cluster = i->second;
     
     if(dataElem >= clusters[cluster].data.size()){
-      assert(0);
+      //assert(0);
       throw std::out_of_range("data index out of range");
     }
     

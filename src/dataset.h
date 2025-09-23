@@ -184,7 +184,7 @@ namespace whiteice
       
       const math::vertex<T>& access(unsigned int cluster, unsigned int data) const ;
       math::vertex<T>& access(unsigned int cluster, unsigned int data);
-      const math::vertex<T>& accessName(const std::string& clusterName, unsigned int dataElem) ;
+      const math::vertex<T>& accessName(const std::string& clusterName, unsigned int dataElem) const;
       
       // accesses random element from specified cluster
       const math::vertex<T>& random_access(unsigned int index = 0) const ;

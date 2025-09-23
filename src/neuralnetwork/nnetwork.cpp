@@ -5917,10 +5917,66 @@ namespace whiteice
   //////////////////////////////////////////////////////////////////////
 
   template <typename T>
+  bool nnetwork<T>::load(const std::string& filename)
+  {
+    try{
+      whiteice::dataset<T> conf;
+
+      if(conf.load(filename) == false)
+	return false;
+
+      if(this->load(conf) == false)
+	return false;
+      
+      return true;
+    }
+    catch(std::exception& e){
+      std::cout << "Unexpected exception "
+		<< "File: " << __FILE__ << " "
+		<< "Line: " << __LINE__ << " "
+		<< e.what() << std::endl;
+      
+      return false;
+    }
+  }
+
+
+  template <typename T>
   bool nnetwork<T>::save(const std::string& filename) const
   {
     try{
       whiteice::dataset<T> conf;
+
+      if(this->save(conf) == false)
+	return false;
+
+      if(conf.save(filename) == false)
+	return false;
+
+      return true;
+    }
+    catch(std::exception& e){
+      std::cout << "Unexpected exception "
+		<< "File: " << __FILE__ << " "
+		<< "Line: " << __LINE__ << " "
+		<< e.what() << std::endl;
+      
+      
+      return false; 
+    }
+  }
+  
+  
+  //////////////////////////////////////////////////////////////////////
+
+  template <typename T>
+  bool nnetwork<T>::save(whiteice::dataset<T>& conf) const
+  {
+    try{
+      // whiteice::dataset<T> conf;
+
+      conf.clear();
+      
       whiteice::math::vertex<T> data;
 
       // writes version information
@@ -6078,7 +6134,9 @@ namespace whiteice
 
       // don't save dropout or retain probability
       
-      return conf.save(filename);
+      // return conf.save(filename);
+
+      return true;
     }
     catch(std::exception& e){
       std::cout << "Unexpected exception "
@@ -6094,14 +6152,13 @@ namespace whiteice
   
   
   ///////////////////////////////////////////////////////////////////////////
-  
 
   // load neuralnetwork data from file
   template <typename T>
-  bool nnetwork<T>::load(const std::string& filename)
+  bool nnetwork<T>::load(const whiteice::dataset<T>& conf)
   {
     try{
-      whiteice::dataset<T> conf;
+      // whiteice::dataset<T> conf;
       whiteice::math::vertex<T> conf_data;
 
       // loaded parameters of neural network
@@ -6118,7 +6175,7 @@ namespace whiteice
 
       // printf("A\n");
       
-      if(conf.load(filename) == false) return false;
+      // if(conf.load(filename) == false) return false;
 
       // printf("B\n");
 
@@ -6406,6 +6463,65 @@ namespace whiteice
     
   }
 
+  
+  //////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+
+  /* loads serialized data and parameters to dataset [for file saving] */
+  template <typename T>
+  bool nnetwork<T>::importNNetwork(const std::vector<float>& v)
+  {
+    try{ 
+      whiteice::dataset<T> conf;
+
+      if(conf.importDataset(v) == false)
+	return false;
+
+      if(this->load(conf) == false)
+	return false;
+
+      return true;
+    }
+    catch(std::exception& e){
+      std::cout << "Unexpected exception "
+		<< "File: " << __FILE__ << " "
+		<< "Line: " << __LINE__ << " "
+		<< e.what() << std::endl;
+      
+      return false;
+    }
+    
+  }
+  
+  /* serializes dataset data and parameters to a vector [for file saving] */
+  template <typename T>
+  bool nnetwork<T>::exportNNetwork(std::vector<float>& v) const
+  {
+    try{ 
+      whiteice::dataset<T> conf;
+
+      if(this->save(conf) == false)
+	return false;
+
+      v.clear();
+
+      if(conf.exportDataset(v) == false)
+	return false;
+
+      return true;
+    }
+    catch(std::exception& e){
+      std::cout << "Unexpected exception "
+		<< "File: " << __FILE__ << " "
+		<< "Line: " << __LINE__ << " "
+		<< e.what() << std::endl;
+      
+      return false;
+    }
+
+  }
+  
+  
   
   //////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
