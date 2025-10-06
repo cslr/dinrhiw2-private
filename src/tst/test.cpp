@@ -1877,7 +1877,7 @@ void test_dataset_import_export()
 
     // A->preprocess(1); // => this causes data2 check fail (preprocessing not done in data2)
 
-    std::vector<float> Avec;
+    std::vector<double> Avec;
 
     if(A->exportDataset(Avec) == false){
       std::cout << "dataset error: export() failed." << std::endl;
