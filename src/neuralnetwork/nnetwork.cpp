@@ -950,12 +950,6 @@ namespace whiteice
 	}
       }
 
-      for(unsigned int i=0;i<b.size();i++){
-	for(unsigned int h=0;h<arch[i+1];h++){
-	  ln_gamma[i][h] = T(rng.normal());
-	  ln_beta[i][h] = T(rng.normal());
-	}
-      }
       
     }
     else if(type == 1)
@@ -1114,10 +1108,12 @@ namespace whiteice
     }
 
     
-    for(unsigned int i=0;i<ln_gamma.size();i++){
-      for(unsigned int h=0;h<ln_gamma[i].size();h++){
-	ln_gamma[i][h] = T(rng.normal());
-	ln_beta[i][h] = T(rng.normal());
+    if(layerNorm.size() == b.size()){
+      for(unsigned int i=0;i<ln_gamma.size();i++){
+	for(unsigned int h=0;h<ln_gamma[i].size();h++){
+	  ln_gamma[i][h] = T(rng.normal());
+	  ln_beta[i][h] = T(rng.normal());
+	}
       }
     }
     
