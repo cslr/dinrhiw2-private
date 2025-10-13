@@ -707,6 +707,7 @@ namespace whiteice
     return nnets[0]->input().size();
   }
 
+  //////////////////////////////////////////////////////////////////////
 
 #define FNN_VERSION_CFGSTR          "FNN_CONFIG_VERSION"
 #define FNN_NUMWEIGHTS_CFGSTR       "FNN_NUM_WEIGHTS"
@@ -718,15 +719,68 @@ namespace whiteice
 #define FNN_BATCH_NORM_CFGSTR       "FNN_BATCHNORM"
 #define FNN_BN_DATA_CFGSTR          "FNN_BN_DATA"
 #define FNN_LN_DATA_CFGSTR          "FNN_LN_DATA"
+
+  //////////////////////////////////////////////////////////////////////
+
+  template <typename T>
+  bool bayesian_nnetwork<T>::load(const std::string& filename)
+  {
+    try{
+      whiteice::dataset<T> conf;
+      
+      if(conf.load(filename) == false)
+	return false;
+
+      if(this->load(conf) == false)
+	return false;
+      
+      return true;
+    }
+    catch(std::exception& e){
+      std::cout << "Unexpected exception "
+		<< "File: " << __FILE__ << " "
+		<< "Line: " << __LINE__ << " "
+		<< e.what() << std::endl;
+      
+      return false;
+    }
+  }
   
-  // stores and loads bayesian nnetwork to a text file
+
+  template <typename T>
+  bool bayesian_nnetwork<T>::save(const std::string& filename) const
+  {
+    try{
+      whiteice::dataset<T> conf;
+      
+      if(this->save(conf) == false)
+	return false;
+      
+      if(conf.save(filename) == false)
+	return false;
+      
+      return true;
+    }
+    catch(std::exception& e){
+      std::cout << "Unexpected exception "
+		<< "File: " << __FILE__ << " "
+		<< "Line: " << __LINE__ << " "
+		<< e.what() << std::endl;
+      
+      return false; 
+    } 
+  }
+  
+
+  //////////////////////////////////////////////////////////////////////
+  // stores and loads bayesian nnetwork to a dataset file
   // (saves all samples into files)
   template <typename T>
-  bool bayesian_nnetwork<T>::load(const std::string& filename) 
+  bool bayesian_nnetwork<T>::load(const whiteice::dataset<T>& configuration) 
   {
     try{
       // whiteice::conffile configuration;
-      whiteice::dataset<T> configuration;
+      //whiteice::dataset<T> configuration;
       math::vertex<T> data;
       // unsigned int cluster = 0;
       
@@ -736,8 +790,8 @@ namespace whiteice
       bool residual = false;
       bool batchnorm = true;
 
-      if(configuration.load(filename) == false)
-	return false;
+      //if(configuration.load(filename) == false)
+      //return false;
       
       int versionid = 0;
       
@@ -1000,13 +1054,16 @@ namespace whiteice
   
   
   template <typename T>
-  bool bayesian_nnetwork<T>::save(const std::string& filename) const 
+  bool bayesian_nnetwork<T>::save(whiteice::dataset<T>& configuration) const 
   {
     try{
       if(nnets.size() <= 0) return false;
 
       // whiteice::conffile configuration;
-      whiteice::dataset<T> configuration;
+      // whiteice::dataset<T> configuration;
+
+      configuration.clear();
+      
       math::vertex<T> data;
 
       std::vector<int> ints;
@@ -1306,7 +1363,9 @@ namespace whiteice
 	  return false;
       }
       
-      return configuration.save(filename);
+      // return configuration.save(filename);
+
+      return true;
     }
     catch(std::exception& e){
       std::cout << "Unexpected exception "
@@ -1317,6 +1376,63 @@ namespace whiteice
       return false;
     }
     
+  }
+
+  
+    //////////////////////////////////////////////////////////////////////
+
+  /* loads serialized data and parameters to dataset [for file saving] */
+  template <typename T>
+  bool bayesian_nnetwork<T>::importBNNetwork(const std::vector<double>& v)
+  {
+    try{ 
+      whiteice::dataset<T> conf;
+
+      if(conf.importDataset(v) == false)
+	return false;
+
+      if(this->load(conf) == false)
+	return false;
+
+      return true;
+    }
+    catch(std::exception& e){
+      std::cout << "Unexpected exception "
+		<< "File: " << __FILE__ << " "
+		<< "Line: " << __LINE__ << " "
+		<< e.what() << std::endl;
+      
+      return false;
+    }
+    
+  }
+  
+  /* serializes dataset data and parameters to a vector [for file saving] */
+  template <typename T>
+  bool bayesian_nnetwork<T>::exportBNNetwork(std::vector<double>& v) const
+  {
+    try{ 
+      whiteice::dataset<T> conf;
+
+      if(this->save(conf) == false)
+	return false;
+
+      v.clear();
+
+      if(conf.exportDataset(v) == false)
+	return false;
+
+      return true;
+    }
+    catch(std::exception& e){
+      std::cout << "Unexpected exception "
+		<< "File: " << __FILE__ << " "
+		<< "Line: " << __LINE__ << " "
+		<< e.what() << std::endl;
+      
+      return false;
+    }
+
   }
 
   

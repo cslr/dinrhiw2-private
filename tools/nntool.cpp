@@ -393,7 +393,8 @@ int main(int argc, char** argv)
 
     
     whiteice::nnetwork< whiteice::math::blas_real<float> >::nonLinearity nl =
-      whiteice::nnetwork< whiteice::math::blas_real<float> >::reluSinCos; //whiteice::nnetwork< whiteice::math::blas_real<float> >::rectifier;
+      whiteice::nnetwork< whiteice::math::blas_real<float> >::rectifier;
+    // whiteice::nnetwork< whiteice::math::blas_real<float> >::reluSinCos; //whiteice::nnetwork< whiteice::math::blas_real<float> >::rectifier;
 
     if(linearnet) // only make sense when testing optimization
       nl = whiteice::nnetwork< whiteice::math::blas_real<float> >::pureLinear;
@@ -405,7 +406,8 @@ int main(int argc, char** argv)
     }
 
     whiteice::nnetwork< math::superresolution<math::blas_real<float>, math::modular<unsigned int> > >::nonLinearity snl =
-      whiteice::nnetwork< math::superresolution< math::blas_real<float>, math::modular<unsigned int> > >::reluSinCos; // whiteice::nnetwork< math::superresolution< math::blas_real<float>, math::modular<unsigned int> > >::rectifier;
+      whiteice::nnetwork< math::superresolution< math::blas_real<float>, math::modular<unsigned int> > >::rectifier;
+      // whiteice::nnetwork< math::superresolution< math::blas_real<float>, math::modular<unsigned int> > >::reluSinCos; 
 
     if(linearnet) // only make sense when testing optimization
       snl = whiteice::nnetwork< math::superresolution< math::blas_real<float>, math::modular<unsigned int> > >::pureLinear;

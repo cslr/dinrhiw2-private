@@ -139,6 +139,14 @@ namespace whiteice
        */
       bool load(const std::string& filename) ;
       bool save(const std::string& filename) const ;
+
+
+      /* loads serialized data and parameters to dataset */
+      bool importDataset(const std::vector<double>& v);
+      
+      /* serializes dataset data and parameters to a vector */
+      bool exportDataset(std::vector<double>& v) const;
+      
       
       /*
        * exports dataset values as ascii data without preprocessing (specified cluster)
@@ -176,7 +184,7 @@ namespace whiteice
       
       const math::vertex<T>& access(unsigned int cluster, unsigned int data) const ;
       math::vertex<T>& access(unsigned int cluster, unsigned int data);
-      const math::vertex<T>& accessName(const std::string& clusterName, unsigned int dataElem) ;
+      const math::vertex<T>& accessName(const std::string& clusterName, unsigned int dataElem) const;
       
       // accesses random element from specified cluster
       const math::vertex<T>& random_access(unsigned int index = 0) const ;

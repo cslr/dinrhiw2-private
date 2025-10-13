@@ -279,15 +279,28 @@ namespace whiteice
 					  const math::matrix<T>& grad, // jacobian matrix
 					  math::vertex<T>& entropy_gradient) const;
 
-     ////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////
+
+  private:
+
+    bool load(const whiteice::dataset<T>& ds);
+    bool save(whiteice::dataset<T>& ds) const;
+
+  public:
     
     // load & saves neuralnetwork data from file
     bool load(const std::string& filename) ;
     bool save(const std::string& filename) const ;
 
     ////////////////////////////////////////////////////////////
+
+    /* loads serialized data and parameters to dataset [for file saving] */
+    bool importNNetwork(const std::vector<double>& v);
     
-    // exports and imports neural network parameters to/from vertex
+    /* serializes dataset data and parameters to a vector [for file saving] */
+    bool exportNNetwork(std::vector<double>& v) const;
+    
+    // exports and imports neural network parameters to/from vertex [for math operations: f(v)]
     bool exportdata(math::vertex<T>& v) const ;
     bool importdata(const math::vertex<T>& v) ;
     

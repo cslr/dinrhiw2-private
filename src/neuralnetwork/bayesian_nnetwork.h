@@ -17,103 +17,112 @@ namespace whiteice
     class bayesian_nnetwork
     {
     public:
-
-    bayesian_nnetwork();
-    bayesian_nnetwork(const bayesian_nnetwork<T>& bnet);
-    virtual ~bayesian_nnetwork();
-
-    bayesian_nnetwork<T>& operator=(const bayesian_nnetwork<T>& bnet);
-
-    void printInfo() const; // mostly for debugging.. prints NN information/data.
-
-    void diagnosticsInfo() const ;
-
-    /*
-     * imports and exports samples of p(w) to and from nnetwork
-     */
-    unsigned int getNumberOfSamples() const ; // number of samples in BNN
-
-    bool importSamples(const whiteice::nnetwork<T>& nn,
-		       const std::vector< math::vertex<T> >& weights);
-
-    bool importSamples(const whiteice::nnetwork<T>& nn,
-		       const std::vector< math::vertex<T> >& weights,
-		       const std::vector< math::vertex<T> >& bndatas);
       
-    bool importNetwork(const nnetwork<T>& net);
-
-    bool exportSamples(whiteice::nnetwork<T>& nn, 
-		       std::vector< math::vertex<T> >& weights,
-		       int latestN = 0) const;
-
-    bool exportSamples(whiteice::nnetwork<T>& nn, 
-		       std::vector< math::vertex<T> >& weights,
-		       std::vector< math::vertex<T> >& bndatas,
-		       int latestN = 0) const;
-
-    bool exportNetworks(std::vector< whiteice::nnetwork<T>* >& nnlist,
-			int latestN = 0) const;
-
-    // batch normalization
-    void setBatchNorm(const bool bn = true);
-
-    bool getBatchNorm();
-
-    bool calculateBatchNorm(const std::vector< math::vertex<T> >& data); 
-
+      bayesian_nnetwork();
+      bayesian_nnetwork(const bayesian_nnetwork<T>& bnet);
+      virtual ~bayesian_nnetwork();
       
-    const whiteice::nnetwork<T>& getNetwork() const {
-      assert(nnets.size()>0); return (*(nnets[0]));
-    }
-
-    const whiteice::nnetwork<T>& getNetwork(unsigned int index) const {
-      assert(index<nnets.size());
-      return (*nnets[index]);
-    }
-    
-    bool getArchitecture(std::vector<unsigned int>& arch) const;
-
-    // alters architecture to target and keeps initial unchanged layers (unaltered arch) if possible
-    bool editArchitecture(std::vector<unsigned int>& arch,
-			  typename nnetwork<T>::nonLinearity nl);
-
-    // creates and injects subnets starting from n:th layer
-    bayesian_nnetwork<T>* createSubnet(const unsigned int fromLayer);
-    bool injectSubnet(const unsigned int fromLayer, bayesian_nnetwork<T>* nn);
-    
-    bool setNonlinearity(typename nnetwork<T>::nonLinearity nl);
-    void getNonlinearity(std::vector< typename nnetwork<T>::nonLinearity >& nl);
-    
-    /*
-     * downsamples number of neural networks down to N neural networks
-     * or if N > number of neural networks/samples does nothing
-     */
-    bool downsample(unsigned int N);
-
+      bayesian_nnetwork<T>& operator=(const bayesian_nnetwork<T>& bnet);
+      
+      void printInfo() const; // mostly for debugging.. prints NN information/data.
+      
+      void diagnosticsInfo() const ;
+      
+      /*
+       * imports and exports samples of p(w) to and from nnetwork
+       */
+      unsigned int getNumberOfSamples() const ; // number of samples in BNN
+      
+      bool importSamples(const whiteice::nnetwork<T>& nn,
+			 const std::vector< math::vertex<T> >& weights);
+      
+      bool importSamples(const whiteice::nnetwork<T>& nn,
+			 const std::vector< math::vertex<T> >& weights,
+			 const std::vector< math::vertex<T> >& bndatas);
+      
+      bool importNetwork(const nnetwork<T>& net);
+      
+      bool exportSamples(whiteice::nnetwork<T>& nn, 
+			 std::vector< math::vertex<T> >& weights,
+			 int latestN = 0) const;
+      
+      bool exportSamples(whiteice::nnetwork<T>& nn, 
+			 std::vector< math::vertex<T> >& weights,
+			 std::vector< math::vertex<T> >& bndatas,
+			 int latestN = 0) const;
+      
+      bool exportNetworks(std::vector< whiteice::nnetwork<T>* >& nnlist,
+			  int latestN = 0) const;
+      
+      // batch normalization
+      void setBatchNorm(const bool bn = true);
+      
+      bool getBatchNorm();
+      
+      bool calculateBatchNorm(const std::vector< math::vertex<T> >& data); 
+      
+      
+      const whiteice::nnetwork<T>& getNetwork() const {
+	assert(nnets.size()>0); return (*(nnets[0]));
+      }
+      
+      const whiteice::nnetwork<T>& getNetwork(unsigned int index) const {
+	assert(index<nnets.size());
+	return (*nnets[index]);
+      }
+      
+      bool getArchitecture(std::vector<unsigned int>& arch) const;
+      
+      // alters architecture to target and keeps initial unchanged layers (unaltered arch) if possible
+      bool editArchitecture(std::vector<unsigned int>& arch,
+			    typename nnetwork<T>::nonLinearity nl);
+      
+      // creates and injects subnets starting from n:th layer
+      bayesian_nnetwork<T>* createSubnet(const unsigned int fromLayer);
+      bool injectSubnet(const unsigned int fromLayer, bayesian_nnetwork<T>* nn);
+      
+      bool setNonlinearity(typename nnetwork<T>::nonLinearity nl);
+      void getNonlinearity(std::vector< typename nnetwork<T>::nonLinearity >& nl);
+      
+      /*
+       * downsamples number of neural networks down to N neural networks
+       * or if N > number of neural networks/samples does nothing
+       */
+      bool downsample(unsigned int N);
+      
 #if 1
-    // calculates E[f(input,w)] = E[y|x] and Var[f(x,w)] = Var[y|x] for given input
-    bool calculate(const math::vertex<T>& input,
-		   math::vertex<T>& mean,
-		   math::matrix<T>& covariance,
-		   unsigned int SIMULATION_DEPTH /* = 1 */, // for recurrent use of nnetworks..
-		   int latestN /*= 0 */) const;
+      // calculates E[f(input,w)] = E[y|x] and Var[f(x,w)] = Var[y|x] for given input
+      bool calculate(const math::vertex<T>& input,
+		     math::vertex<T>& mean,
+		     math::matrix<T>& covariance,
+		     unsigned int SIMULATION_DEPTH /* = 1 */, // for recurrent use of nnetworks..
+		     int latestN /*= 0 */) const;
 #endif
-
-    // don't calculate large covariance matrix (faster)
-    bool calculate(const math::vertex<T>& input,
-		   math::vertex<T>& mean,
-		   unsigned int SIMULATION_DEPTH,
-		   int latestN) const;
-
-    unsigned int outputSize() const ;
-    unsigned int inputSize() const ;
-
-    // stores and loads bayesian nnetwork to a dataset file
-    // (saves all samples into files)
-    bool load(const std::string& filename) ;
-    bool save(const std::string& filename) const ;
-
+      
+      // don't calculate large covariance matrix (faster)
+      bool calculate(const math::vertex<T>& input,
+		     math::vertex<T>& mean,
+		     unsigned int SIMULATION_DEPTH,
+		     int latestN) const;
+      
+      unsigned int outputSize() const ;
+      unsigned int inputSize() const ;
+      
+      // stores and loads bayesian nnetwork to a dataset file
+      // (saves all samples into files)
+      bool load(const std::string& filename) ;
+      bool save(const std::string& filename) const ;
+      
+      /* loads serialized data and parameters to dataset [for file saving] */
+      bool importBNNetwork(const std::vector<double>& v);
+      
+      /* serializes dataset data and parameters to a vector [for file saving] */
+      bool exportBNNetwork(std::vector<double>& v) const;
+      
     private:
+      
+      bool load(const whiteice::dataset<T>& ds);
+      bool save(whiteice::dataset<T>& ds) const;
 
     std::vector< nnetwork<T>* > nnets;
       

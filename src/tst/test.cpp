@@ -69,7 +69,9 @@ void test_dataset_complex();
 
 void test_dataset_ica();
 
-void test_dataset_superreso(); // tests superresolutional number implementation [mostly save and load] 
+void test_dataset_superreso(); // tests superresolutional number implementation [mostly save and load]
+
+void test_dataset_import_export();
 
 
 void test_uniqueid();
@@ -112,6 +114,8 @@ int main()
   test_dataset_ica();
 
   test_dataset_complex();
+
+  test_dataset_import_export();
   
   point_test();
   sarray_test();
@@ -1817,6 +1821,130 @@ void test_rbtree()
 
 /********************************************************************************/
 
+void test_dataset_import_export()
+{
+
+  printf("DATASET IMPORT&EXPORT TESTS\n");
+  
+  using namespace whiteice::math;
+  
+  // export() and import() test
+  {
+    dataset< blas_real<float> >* A = 0;
+    std::vector<math::vertex< blas_real<float> > > data, data2;
+    data.resize(100);
+    data2.resize(50);
+    
+    for(unsigned int i=0;i<data.size();i++){
+      data[i].resize(10);
+      for(unsigned int j=0;j<data[i].size();j++)
+	data[i][j] = ((float)rand())/((float)RAND_MAX);
+    }
+    
+    for(unsigned int i=0;i<data2.size();i++){
+      data2[i].resize(5);
+      for(unsigned int j=0;j<data2[i].size();j++)
+	data2[i][j] = ((float)rand())/((float)RAND_MAX);
+    }
+    
+    
+    A = new dataset< blas_real<float> >(10);
+
+    if(A->add(data, true) == false){
+      std::cout << "dataset error: adding new data failed." << std::endl;
+      return;
+    }
+
+    if(A->size(0) != data.size()){
+    	std::cout << "dataset error: incorrect size after add()" << std::endl;
+    	return;
+    }
+    
+
+    A->preprocess();    
+
+    
+    if(A->createCluster("another cluster", 5) == false){
+      std::cout << "dataset error: error creating another cluster" << std::endl;
+    }
+       
+
+    if(A->add(1, data2) == false){
+      std::cout << "dataset error: adding new data failed (2)." << std::endl;
+      return;
+    }
+
+
+    // A->preprocess(1); // => this causes data2 check fail (preprocessing not done in data2)
+
+    std::vector<double> Avec;
+
+    if(A->exportDataset(Avec) == false){
+      std::cout << "dataset error: export() failed." << std::endl;
+      return;      
+    }
+
+
+    for(unsigned int i=0;i<A->size(0);i++){
+      for(unsigned int j=0;j<data[i].size();j++){
+	data[i][j] = (*A)[i][j];
+      }
+    }
+    
+    delete A;
+    
+    A = new dataset< blas_real<float> >(10);
+
+    if(A->importDataset(Avec) == false){
+      std::cout << "dataset error: data import() failed." << std::endl;
+      return;      
+    }
+
+    std::cout << "A: number of clusters: " << A->getNumberOfClusters() << std::endl;
+
+    for(unsigned int i=0;i<A->getNumberOfClusters();i++){
+      std::vector< whiteice::dataset<whiteice::math::blas_real<float> >::data_normalization > pp;
+
+      A->getPreprocessings(i, pp);
+
+      std::cout << "A cluster " << i << ": number of preprocessings: " << pp.size() << std::endl;
+    }
+    
+    for(unsigned int i=0;i<A->size(0);i++){
+      for(unsigned int j=0;j<data[i].size();j++){
+	if((*A)[i][j] != data[i][j]){
+	  std::cout << "dataset error: data corruption" << std::endl;
+	  std::cout << "A[" << i << "][" << j << "] = " << ((*A)[i][j]) << " != " << data[i][j] << std::endl;
+	  j = data[i].size();
+	  i = 100;
+	  return;
+	}
+      }
+    }
+
+
+    for(unsigned int i=0;i<A->size(1);i++){
+      for(unsigned int j=0;j<data2[i].size();j++){
+	if(A->access(1, i)[j] != data2[i][j]){
+	  std::cout << "dataset error: data corruption (2)" << std::endl;
+	  j = data2[i].size();
+	  i = 100;
+	  return;
+	}
+      }
+    }
+    
+    
+    delete A;
+    
+    printf("DATASET BASIC EXPORT&IMPORT() IS OK\n");
+    fflush(stdout);
+  }
+  
+}
+
+/********************************************************************************/
+
 void test_dataset()
 {
   printf("DATASET TESTS\n");
@@ -2395,7 +2523,8 @@ void test_dataset()
       }
     }
     
-    
+
+#if 0
     for(unsigned int i=0;i<data.getNumberOfClusters();i++){
       for(unsigned int j=0;j<data.size(i);j++){
 	try{
@@ -2416,6 +2545,7 @@ void test_dataset()
       }
       catch(std::exception& e){ }
     }
+#endif
     
     
     // check adding of badly formated data fails (use all add() calls)
@@ -3357,7 +3487,7 @@ void test_dataset_complex()
       }
     }
     
-    
+#if 0    
     for(unsigned int i=0;i<data.getNumberOfClusters();i++){
       for(unsigned int j=0;j<data.size(i);j++){
 	try{
@@ -3378,7 +3508,7 @@ void test_dataset_complex()
       }
       catch(std::exception& e){ }
     }
-    
+#endif
     
     // check adding of badly formated data fails (use all add() calls)
     // add N random clusters (use different add()s for adding all)

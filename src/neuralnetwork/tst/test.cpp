@@ -201,11 +201,11 @@ int main()
   try{
     // nn_layer_norm_gradient_value_test();
 
-    simple_tsne_test(); // FIXME: has bugs
+    // simple_tsne_test(); // FIXME: has bugs
 
     // nn_layer_norm_test();
 
-    // nn_save_load_test();
+    nn_save_load_test();
     
     return 0;
 
