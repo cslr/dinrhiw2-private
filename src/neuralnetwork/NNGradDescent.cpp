@@ -1173,7 +1173,7 @@ namespace whiteice
 	    }
 
 	    if(real(new_error) <= real(real_besty) || always_update_solution){
-	      if(new_error < this->best_pure_error || always_update_solution){
+	      if(real(new_error) < real(this->best_pure_error) || always_update_solution){
 		this->bestx = x;
 		this->best_error = new_error;
 		this->best_pure_error = new_error;
@@ -1213,12 +1213,13 @@ namespace whiteice
 	      
 	      T r = T(0.0f);
 	      
-	      if(m > T(0.0f))
+	      if(real(m) > T(0.0f))
 		r = s/m;
 	      else
 		r = s;
-	      
-	      if(r[0] <= T(0.005f)[0]){ // convergence: 0.1% st.dev. when compared to mean.
+
+	      // convergence: 0.1% st.dev. when compared to mean.
+	      if(real(r) <= real(T(0.005f))){ 
 		convergence[std::this_thread::get_id()] = true;
 		//solution_converged = true;
 		break;
