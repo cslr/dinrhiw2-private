@@ -949,8 +949,8 @@ namespace whiteice
 	  }
 
 	  real_besty = pure_real_besty;
-
-	  if(best_pure_error > pure_real_besty || always_update_solution){
+	  
+	  if(real(best_pure_error) > real(pure_real_besty) || always_update_solution){
 	    std::lock_guard<std::mutex> lock(solution_lock);
 	    
 	    this->best_error = pure_real_besty;
@@ -1168,11 +1168,11 @@ namespace whiteice
 	  {
 	    std::lock_guard<std::mutex> lock(solution_lock);
 	    
-	    if(new_error >= real_besty){
+	    if(real(new_error) >= real(real_besty)){
 	      no_improve_iterations++;
 	    }
 
-	    if(new_error <= real_besty || always_update_solution){
+	    if(real(new_error) <= real(real_besty) || always_update_solution){
 	      if(new_error < this->best_pure_error || always_update_solution){
 		this->bestx = x;
 		this->best_error = new_error;
