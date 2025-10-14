@@ -6305,7 +6305,8 @@ namespace whiteice
 
 	conf_retain = conf_data[0];
 
-	if(abs(conf_retain) < abs(T(0.0)) || abs(conf_retain) > abs(T(1.0)))
+	if(abs(real(conf_retain)) < abs(real(T(0.0))) ||
+	   abs(real(conf_retain)) > abs(real(T(1.0))))
 	  return false; // correct interval for data
       }
 
@@ -6342,8 +6343,8 @@ namespace whiteice
 
 	if(conf_data.size() != 1) return false;
 
-	if(conf_data[0] < T(0.50f)) conf_batchnorm = false;
-	else if(conf_data[0] >= T(0.50f)) conf_batchnorm = true;
+	if(real(conf_data[0]) < real(T(0.50f))) conf_batchnorm = false;
+	else if(real(conf_data[0]) >= real(T(0.50f))) conf_batchnorm = true;
 	else return false;
       }
 
@@ -6416,7 +6417,7 @@ namespace whiteice
 	  this->lndata.resize(0);
 
 	  for(unsigned int i=0;i<layerNorm.size();i++){
-	    if(conf_ln_data[i] > T(0.5f)){
+	    if(real(conf_ln_data[i]) > real(T(0.5f))){
 	      layerNorm[i] = true;
 	    }
 	    else{
