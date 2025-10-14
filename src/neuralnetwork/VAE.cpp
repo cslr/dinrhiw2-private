@@ -966,8 +966,18 @@ namespace whiteice
     const bool verbose = false;
     unsigned int MINIBATCHSIZE = 0; // number of samples used to estimate gradient
 
-    if(xsamples.size() <= 0) return false;
-    if(xsamples[0].size() != encoder.input_size()) return false;
+    if(xsamples.size() <= 0){
+      printf("VAE::calculateGradient(): xsamples.size() == 0!\n"); fflush(stdout);
+      return false;
+    }
+    
+    if(xsamples[0].size() != encoder.input_size()){
+      printf("VAE::calculateGradient(): %d != %d\n",
+	     (int)xsamples[0].size(),
+	     (int)encoder.input_size());
+      fflush(stdout);
+      return false;
+    }
 
     // data variance term c, this allows errors to be made in reconstruction (0.05: was c = Dx (x.size()), c = Dz/Dx
     // const float c = 0.05f*0.05f;
@@ -1026,6 +1036,7 @@ namespace whiteice
 	if(failure) continue; // do nothing after first failure
 	if(running){
 	  if(*running == false){
+	    printf("ERROR: *running == false\n"); fflush(stdout);
 	    failure = true;
 	    continue; // do nothing if computation has been stopped
 	  }
@@ -1059,16 +1070,19 @@ namespace whiteice
 	
 	
 	if(encoder.calculate(x, output, encoder_dropout) == false){
+	  printf("ERROR: encoder.calculate(x,output,encoder_dropout) == false\n"); fflush(stdout);
 	  failure = true;
 	  continue;
 	}
 	
 	if(output.subvertex(zmean, 0, zmean.size()) == false){
+	  printf("ERROR: output.subvertex(zmean, 0, zmean.size()) == false\n"); fflush(stdout);
 	  failure = true;
 	  continue;
 	}
 	
 	if(output.subvertex(zstdev, zmean.size(), zstdev.size()) == false){
+	  printf("ERROR: output.subvertex(zstdev, zmean.size(), zstdev.size()) == false\n"); fflush(stdout);
 	  failure = true;
 	  continue;
 	}
@@ -1088,6 +1102,7 @@ namespace whiteice
 	// gradient of encoder
 	
 	if(encoder.jacobian(x, J, encoder_dropout) == false){
+	  printf("ERROR: encoder.jacobian(x,J,encoder_dropout) == false\n"); fflush(stdout);
 	  failure = true;
 	  continue;
 	}
@@ -1099,6 +1114,7 @@ namespace whiteice
 		       0, 0,
 		       encoder.gradient_size(), zmean.size()) == false)
 	{
+	  printf("ERROR: J.submatrix(1) == false\n"); fflush(stdout);
 	  failure = true;
 	  continue;
 	}
@@ -1108,6 +1124,7 @@ namespace whiteice
 		       0, zmean.size(),
 		       encoder.gradient_size(), zstdev.size()) == false)
 	{
+	  printf("ERROR: J.submatrix(2) == false\n"); fflush(stdout);
 	  failure = true;
 	  continue;
 	}
@@ -1146,11 +1163,13 @@ namespace whiteice
 
 	  xmean = x;
 	  if(decoder.calculate(zi, xmean, decoder_dropout) == false){
+	    printf("ERROR: decoder.calculate() == false\n"); fflush(stdout);
 	    failure = true;
 	    continue;
 	  }
 	  
 	  if(decoder.jacobian(zi, grad_meanx, decoder_dropout) == false){
+	    printf("ERROR: decoder.jacobian() == false\n"); fflush(stdout);
 	    failure = true;
 	    continue;
 	  }
@@ -1158,6 +1177,7 @@ namespace whiteice
 	  decoder_gradient += (x - xmean)*grad_meanx;
 	  
 	  if(decoder.gradient_value(zi, J_meanx_value, decoder_dropout) == false){
+	    printf("ERROR: decoder.gradient_value() == false\n"); fflush(stdout);
 	    failure = true;
 	    continue;
 	  }
@@ -1186,6 +1206,7 @@ namespace whiteice
 	pg.zero();
 	
 	if(pg.write_subvertex(g1, 0) == false){
+	  printf("ERROR: pg.write_subvertex() == false\n"); fflush(stdout);
 	  failure = true;
 	  continue;
 	}
@@ -1200,11 +1221,13 @@ namespace whiteice
 	
 	pg.zero();
 	if(pg.write_subvertex(encoder_gradient, 0) == false){
+	  printf("ERROR: pg.write_subvertex(2) == false\n"); fflush(stdout);
 	  failure = true;
 	  continue;
 	}
 	
 	if(pg.write_subvertex(decoder_gradient, encoder_gradient.size()) == false){
+	  printf("ERROR: pg.write_subvertex(3) == false\n"); fflush(stdout);
 	  failure = true;
 	  continue;
 	}
@@ -1220,7 +1243,10 @@ namespace whiteice
 
     }
 
-    if(failure) return false;
+    if(failure){
+      printf("VAE::calculateGradient() FAILURE!\n"); fflush(stdout);
+      return false;
+    }
 
     if(xsamples.size() > 0)
       pgradient /= T(MINIBATCHSIZE);

@@ -5217,8 +5217,11 @@ namespace whiteice
 				   math::matrix<T>& grad,
 				   const std::vector< std::vector<bool> >& dropout) const
   {
-    printf("nnetwork::gradient_value(dropout) called (%d %d)\n", input.size(), input_size());
-    fflush(stdout);
+    if(dropout.size() == 0) return false;
+    
+    //printf("nnetwork::gradient_value(dropout) called (%d %d %d %d)\n",
+    //	   input.size(), input_size(), (int)dropout.size(), (int)dropout[0].size());
+    //fflush(stdout);
     
     if(input.size() != input_size()) return false;
     if(dropout.size() != getLayers()) return false;
@@ -5345,6 +5348,12 @@ namespace whiteice
       if(residual && (l % 2) == 0 && l != 0)
 	skipValue = x;
       
+    }
+
+    if(hgrad.xsize() != grad.ysize()){
+      printf("hgrad.size() = (%d,%d) grad.size() = (%d,%d)\n",
+	     (int)hgrad.ysize(), (int)hgrad.xsize(), (int)grad.ysize(), (int)grad.xsize());
+      fflush(stdout);       
     }
 
     grad = hgrad*grad;
