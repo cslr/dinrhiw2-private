@@ -554,7 +554,8 @@ namespace whiteice
 	  
 	  if(perp_min > perplexity){
 	    if(verbose){
-	      printf("Could not find minimum perplexity.\n");
+	      printf("Could not find minimum perplexity (%f %f %f %f).\n",
+		     perp_min.c[0], perplexity.c[0], sigma2_min.c[0], MIN_SIGMA2.c[0]);
 	      fflush(stdout);
 	    }
 	    error = true;
@@ -574,7 +575,8 @@ namespace whiteice
 	  
 	  if(perp_max < perplexity){
 	    if(verbose){
-	      printf("Could not find maximum perplexity.\n");
+	      printf("Could not find maximum perplexity (%f %f %f %f).\n",
+		     perp_max.c[0], perplexity.c[0], sigma2_max.c[0], TOTAL_SIGMA2.c[0]);
 	      fflush(stdout);
 	    }
 	    error = true;
