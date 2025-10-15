@@ -519,7 +519,7 @@ namespace whiteice
       for(unsigned int i=0;i<Cxx.xsize();i++)
         total_var += Cxx(i,i);
 
-      total_var /= T(x[0].size());
+      // total_var /= T(x[0].size()); // TODO: DOES COMMENTING THIS FIX THINGS????
     }
 
     const T TOTAL_SIGMA2 = total_var;  // total variance in data
