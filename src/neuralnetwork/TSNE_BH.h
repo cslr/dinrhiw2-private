@@ -35,6 +35,9 @@
 #include "VisualizationInterface.h"
 
 #include <vector>
+#include <thread>
+#include <atomic>
+#include <functional>
 
 namespace whiteice
 {
@@ -58,6 +61,37 @@ namespace whiteice
 		     LoggingInterface* const messages = NULL,
 		     VisualizationInterface* const gui = NULL,
 		     unsigned int* running_flag = NULL);
+
+
+      // starts thread to run calculations in background
+      bool calculate_start(const std::vector< math::vertex<T> >& samples,
+			   const unsigned int DIM,
+			   const bool verbose = false,
+			   LoggingInterface* const messages = NULL,
+			   VisualizationInterface* const gui = NULL);
+
+      bool calculate_finished() const;
+
+      bool calculate_end();
+
+      bool calculate_get_results(std::vector< math::vertex<T> >& samples,
+				 std::vector< math::vertex<T> >& results);
+
+    private:
+
+      void calculate_loop();
+
+      std::thread* calculate_thread = nullptr;
+      std::atomic<bool> calculate_is_running = false;
+      mutable std::mutex calculate_mutex;
+      
+      std::vector< math::vertex<T> > calculate_samples;
+      std::vector< math::vertex<T> > calculate_results;
+      unsigned int calculate_DIM = 3;
+      bool calculate_verbose = false;
+      LoggingInterface* calculate_messages = NULL;
+      VisualizationInterface* calculate_gui = NULL;
+
       
     private:
       

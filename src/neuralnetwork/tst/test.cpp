@@ -201,8 +201,10 @@ int main()
   try{
     // nn_layer_norm_gradient_value_test();
 
-    // simple_tsne_test(); // FIXME: has bugs
-
+    simple_tsne_test();
+      
+    // nn_layer_norm_test();
+    
     // nn_layer_norm_test();
 
     nn_save_load_test();
@@ -2284,7 +2286,7 @@ void simple_tsne_test()
   std::cout << "t-SNE dimension reducer test" << std::endl;
 
   // testcase 1: test that computations happen correctly
-  {
+  if(0){
     std::cout << "TESTCASE 1" << std::endl;
     std::cout << std::flush;
 
@@ -2343,6 +2345,108 @@ void simple_tsne_test()
     ds.exportAscii("tsne_points.csv");
     
     
+    fflush(stdout);
+  }
+
+
+  
+  // testcase 2: test that background computations happen correctly
+  {
+    std::cout << "TESTCASE 2" << std::endl;
+    std::cout << std::flush;
+
+    // we generate HIGHDIM dimensional gaussian balls N(mean,I) in random locations
+    // in hypercube [-10,10]^HIGHDIM. mean = random([-10,10]^HIGHDIM)
+
+    const unsigned int HIGHDIM = 20;
+    const unsigned int CLUSTERS = 10; // number of clusters
+    const unsigned int N = 10; // number of samples per cluster (total of 1000 datapoints)
+
+    whiteice::RNG<> rng;
+
+    // generate training data
+    std::vector< whiteice::math::vertex<> > data;
+    whiteice::math::vertex<> x;
+    whiteice::math::vertex<> mean;
+
+    mean.resize(HIGHDIM);
+    x.resize(HIGHDIM);
+
+    for(unsigned int c=0;c<CLUSTERS;c++){
+      rng.uniform(mean);
+      for(unsigned int i=0;i<HIGHDIM;i++){
+	whiteice::math::blas_real<float> v1 = 20.0f;
+	whiteice::math::blas_real<float> v2 = 10.0f;
+	mean[i] = v1*mean[i] - v2;
+      }
+
+      for(unsigned int n=0;n<N;n++){
+	rng.normal(x);
+	x += mean;
+	data.push_back(x);
+      }
+    }
+
+    printf("DATA GENERATED\n");
+    fflush(stdout);
+
+    // calculate dimension reduction
+    whiteice::TSNE_BH<> tsne(false);
+    std::vector< whiteice::math::vertex<> > ydata;
+
+    if(tsne.calculate_finished() == true){
+      printf("TSNE::calcualte_finished() returns true without computations\n");
+      return;
+    }
+
+    if(tsne.calculate_end() == true){
+      printf("TSNE::calcualte_end() returns true without computations\n");
+      return;
+    }
+
+    auto data2 = data;
+    data2.clear();
+
+    if(tsne.calculate_get_results(data2, ydata) == true){
+      printf("TSNE::calculate_get_results() returns true without computations\n");
+      return;
+    }
+
+
+    if(tsne.calculate_start(data, 2, true) == false){
+      printf("ERROR: calculating t-SNE dimension reduction FAILED.\n");
+      return;
+    }   
+
+
+    while(tsne.calculate_finished() == false)
+      sleep(1);
+
+    data2.clear();
+    ydata.clear();
+
+    if(tsne.calculate_get_results(data2, ydata) != true){
+      printf("ERROR: t-SNE get results after computations!.\n");
+      return;
+    }
+
+
+    if(data2.size() != ydata.size()){
+      printf("TSNE return data BAD after computations\n");
+      return;
+    }
+
+    if(data.size() != data2.size()){
+      printf("TSNE return data BAD after computations (2)\n");
+      return;
+    }
+
+    if(ydata[0].size() != 2){
+      printf("TSNE return data BAD after computations (3)\n");
+      return;
+    }
+
+    printf("GOOD: t-SNE computation proceeded without errors.\n");
     fflush(stdout);
   }
 }
