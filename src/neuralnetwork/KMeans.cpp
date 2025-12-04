@@ -501,7 +501,7 @@ namespace whiteice
   
   // returns current solution error
   template <typename T>
-  double KMeans<T>::getSolutionError()
+  double KMeans<T>::getSolutionError() const
   {
     std::lock_guard<std::mutex> lock(solution_mutex);
     return this->best_error;

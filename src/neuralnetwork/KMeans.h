@@ -63,7 +63,7 @@ namespace whiteice
     bool isRunning();
 
     // returns current solution error
-    double getSolutionError();
+    double getSolutionError() const;
 
     // stops training K-means clustering
     bool stopTrain();
