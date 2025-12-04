@@ -74,7 +74,7 @@ namespace whiteice
     }
     
     std::set<unsigned int> selected; // don't pick same element twice
-    unsigned int first_one = 0;
+    // unsigned int first_one = 0;
 
     for(unsigned int k=0;k<kmeans.size();k++){
       unsigned int index = 0;
@@ -84,7 +84,7 @@ namespace whiteice
       }
       while(selected.find(index) != selected.end());
 
-      if(k == 0) first_one = index;
+      // if(k == 0) first_one = index;
 
       kmeans[k].resize(data[index].size());
 
@@ -95,6 +95,7 @@ namespace whiteice
       selected.insert(index);
     }
 
+#if 0
     selected.clear();
     selected.insert(first_one);
 
@@ -133,6 +134,7 @@ namespace whiteice
 
       selected.insert(found);
     }
+#endif
   }
   
   
@@ -154,7 +156,7 @@ namespace whiteice
     }
 
     std::set<unsigned int> selected; // don't pick same element twice
-    unsigned int first_one = 0;
+    // unsigned int first_one = 0;
     
     for(unsigned int k=0;k<kmeans.size();k++){
       unsigned int index = 0;
@@ -164,7 +166,7 @@ namespace whiteice
       }
       while(selected.find(index) != selected.end());
 
-      if(k == 0) first_one = index;
+      // if(k == 0) first_one = index;
 
       kmeans[k].resize(data[index].size());
 
@@ -175,7 +177,8 @@ namespace whiteice
       selected.insert(index);
 
     }
-    
+
+#if 0
     selected.clear();
     selected.insert(first_one);
     
@@ -213,6 +216,7 @@ namespace whiteice
 
       selected.insert(found);
     }
+#endif
     
   }
 
@@ -601,20 +605,21 @@ namespace whiteice
 	// bool change = means_changed(kmeans_sum, best_kmeans_current);
 	best_kmeans_current = kmeans_sum;
 
-	
-	if(err < best_error){
+	{
 	  std::lock_guard<std::mutex> lock(solution_mutex);
-	  
-	  whiteice::math::convert(best_error, err);
-	  best_kmeans = kmeans_sum;
-
-	  noimprove = 0;
-	}
-	else{ // checked earlier too that k-means has changed.. [DISABLED]
-	  noimprove++;
-
-	  if(noimprove > 10)
-	    break;
+	
+	  if(err < best_error){
+	    whiteice::math::convert(best_error, err);
+	    best_kmeans = kmeans_sum;
+	    
+	    noimprove = 0;
+	  }
+	  else{ // checked earlier too that k-means has changed.. [DISABLED]
+	    noimprove++;
+	    
+	    if(noimprove > 10)
+	      break;
+	  }
 	}
 	
       }
@@ -669,6 +674,8 @@ namespace whiteice
   unsigned int KMeans<T>::getClusterIndex(const whiteice::math::vertex<T>& x) const
     
   {
+    std::lock_guard<std::mutex> lock(solution_mutex);
+    
     if(kmeans.size() <= 0)
       throw std::logic_error("KMeans: No clustering available");
 
@@ -699,6 +706,8 @@ namespace whiteice
   unsigned int KMeans<T>::getClusterIndex(const std::vector<T>& x) const
     
   {
+    std::lock_guard<std::mutex> lock(solution_mutex);
+    
     if(kmeans.size() <= 0)
       throw std::logic_error("KMeans: No clustering available");
 
@@ -727,6 +736,8 @@ namespace whiteice
   T KMeans<T>::calc_distance(const std::vector<T>& u,
 			     const std::vector<T>& v) const
   {
+    assert(u.size() == v.size());
+    
     unsigned int i;
     const unsigned int max = u.size();
     T e, error = T(0.0);
@@ -744,6 +755,8 @@ namespace whiteice
   T KMeans<T>::calc_distance(const std::vector<T>& u,
 			     const whiteice::math::vertex<T>& v) const
   {
+    assert(u.size() == v.size());
+    
     unsigned int i;
     const unsigned int max = u.size();
     T e, error = T(0.0);
@@ -761,6 +774,8 @@ namespace whiteice
   T KMeans<T>::calc_distance(const whiteice::math::vertex<T>& u,
 			     const whiteice::math::vertex<T>& v) const
   {
+    assert(u.size() == v.size());
+    
     auto delta = (u - v);
     return delta.norm();
   }
@@ -769,6 +784,8 @@ namespace whiteice
   template <typename T>
   bool KMeans<T>::save(const std::string& filename) 
   {
+    std::lock_guard<std::mutex> lock(solution_mutex);
+    
     whiteice::conffile configuration;
     std::vector<int> ints;
     std::vector<float> floats;
@@ -818,6 +835,8 @@ namespace whiteice
   template <typename T>
   bool KMeans<T>::load(const std::string& filename) 
   {
+    std::lock_guard<std::mutex> lock(solution_mutex);
+    
     whiteice::conffile configuration;
     std::vector<int> ints;
     std::vector<float> floats;
@@ -879,6 +898,8 @@ namespace whiteice
   template <typename T>    
   T KMeans<T>::second_half_error(const std::vector< std::vector<T> >& data) const
   {
+    std::lock_guard<std::mutex> lock(solution_mutex);
+    
     T e, error = T(0.0);
     
     if(data.size() <= 1000){
@@ -925,6 +946,8 @@ namespace whiteice
   template <typename T>    
   T KMeans<T>::second_half_error(const std::vector< whiteice::math::vertex<T> >& data) const
   {
+    std::lock_guard<std::mutex> lock(solution_mutex);
+    
     T e, error = T(0.0);
     
     if(data.size() <= 1000){
