@@ -28,6 +28,135 @@ namespace whiteice
   {
     this->kl_absolute_value = tsne.kl_absolute_value;
   }
+
+  
+  template <typename T>
+  bool TSNE<T>::calculate_start(const std::vector< math::vertex<T> >& samples,
+				   const unsigned int DIM,
+				   const bool verbose,
+				   LoggingInterface* const messages,
+				   VisualizationInterface* const gui)
+  {
+    std::lock_guard<std::mutex> lock(calculate_mutex);
+
+    if(calculate_thread != nullptr) return false;
+
+    if(samples.size() <= 10) return false;
+    if(DIM == 0) return false;
+    
+    calculate_is_running = true;
+
+    calculate_samples = samples;
+    calculate_results.clear();
+    calculate_DIM = DIM;
+    calculate_verbose = verbose;
+    calculate_messages = messages;
+    calculate_gui = gui;
+
+    if(calculate_thread) delete calculate_thread;
+    calculate_thread = nullptr;
+
+    try{
+      calculate_thread = new std::thread(std::bind(&TSNE<T>::calculate_loop, this));
+    }
+    catch(std::exception& e){
+      calculate_is_running = false;
+      return false;
+    }
+
+    if(calculate_thread == nullptr){
+      calculate_is_running = false;
+      return false;
+    }
+
+    return true;    
+  }
+
+
+  template <typename T>
+  bool TSNE<T>::calculate_finished() const
+  {
+    std::lock_guard<std::mutex> lock(calculate_mutex);
+
+    if(calculate_thread == nullptr) return false;
+    if(calculate_is_running == false) return true;
+
+    return false;
+  }
+
+
+  template <typename T>
+  bool TSNE<T>::calculate_end()
+  {
+    std::lock_guard<std::mutex> lock(calculate_mutex);
+    
+    calculate_is_running = false;
+    
+    if(calculate_thread != nullptr){
+      if(calculate_thread->joinable())
+	calculate_thread->join();
+      
+      delete calculate_thread;
+
+      return true;
+    }
+    else return false;
+
+    return true;
+  }
+
+
+  template <typename T>
+  bool TSNE<T>::calculate_get_results(std::vector< math::vertex<T> >& samples,
+					 std::vector< math::vertex<T> >& results)
+  {
+    std::lock_guard<std::mutex> lock(calculate_mutex);
+
+    if(calculate_thread == nullptr) return false;
+    
+    samples = calculate_samples;
+    results = calculate_results;
+
+    return true;
+  }
+
+  
+  template <typename T>
+  void TSNE<T>::calculate_loop()
+  {
+    if(calculate_is_running == false) return;
+
+
+    std::vector< math::vertex<T> > samples;
+    unsigned int DIM;
+    std::vector< math::vertex<T> > results;
+    bool verbose = false;
+    LoggingInterface* messages = NULL;
+    VisualizationInterface* gui = NULL;
+    unsigned int* running_flag = NULL;
+
+
+    {
+      std::lock_guard<std::mutex> lock(calculate_mutex);
+      
+      samples = calculate_samples;
+      results = calculate_results;
+      DIM = calculate_DIM;
+      verbose = calculate_verbose;
+      messages = calculate_messages;
+      gui = calculate_gui;
+    }
+      
+    if(this->calculate(samples, DIM, results, verbose, messages, gui, running_flag)){
+      std::lock_guard<std::mutex> lock(calculate_mutex);
+      this->calculate_results = results;
+    }
+
+
+    calculate_is_running = false;
+  }
+
+  
   
   // dimension reduces samples to DIM dimensional vectors using t-SNE algorithm
   template <typename T>
