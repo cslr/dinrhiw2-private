@@ -32,7 +32,6 @@ namespace whiteice
     this->kl_absolute_value = tsne.kl_absolute_value;
   }
 
-
   template <typename T>
   bool TSNE<T>::calculate_start(const std::vector< math::vertex<T> >& samples,
 				const unsigned int DIM,
@@ -92,7 +91,7 @@ namespace whiteice
   bool TSNE<T>::calculate_end()
   {
     std::lock_guard<std::mutex> lock(calculate_mutex);
-
+    
     calculate_is_running = false;
     
     if(calculate_thread != nullptr){
