@@ -12,6 +12,9 @@
 #include "fastpca.h"
 #include "ica.h"
 
+#include <functional>
+
+
 namespace whiteice
 {
 
@@ -28,6 +31,135 @@ namespace whiteice
   {
     this->kl_absolute_value = tsne.kl_absolute_value;
   }
+
+
+  template <typename T>
+  bool TSNE<T>::calculate_start(const std::vector< math::vertex<T> >& samples,
+				const unsigned int DIM,
+				const bool verbose,
+				LoggingInterface* const messages,
+				VisualizationInterface* const gui)
+  {
+    std::lock_guard<std::mutex> lock(calculate_mutex);
+
+    if(calculate_thread != nullptr) return false;
+
+    if(samples.size() <= 10) return false;
+    if(DIM == 0) return false;
+    
+    calculate_is_running = true;
+
+    calculate_samples = samples;
+    calculate_results.clear();
+    calculate_DIM = DIM;
+    calculate_verbose = verbose;
+    calculate_messages = messages;
+    calculate_gui = gui;
+
+    if(calculate_thread) delete calculate_thread;
+    calculate_thread = nullptr;
+
+    try{
+      calculate_thread = new std::thread(std::bind(&TSNE<T>::calculate_loop, this));
+    }
+    catch(std::exception& e){
+      calculate_is_running = false;
+      return false;
+    }
+
+    if(calculate_thread == nullptr){
+      calculate_is_running = false;
+      return false;
+    }
+
+    return true;    
+  }
+
+
+  template <typename T>
+  bool TSNE<T>::calculate_finished() const
+  {
+    std::lock_guard<std::mutex> lock(calculate_mutex);
+
+    if(calculate_thread == nullptr) return false;
+    if(calculate_is_running == false) return true;
+
+    return false;
+  }
+
+
+  template <typename T>
+  bool TSNE<T>::calculate_end()
+  {
+    std::lock_guard<std::mutex> lock(calculate_mutex);
+
+    calculate_is_running = false;
+    
+    if(calculate_thread != nullptr){
+      if(calculate_thread->joinable())
+	calculate_thread->join();
+      
+      delete calculate_thread;
+
+      return true;
+    }
+    else return false;
+
+    return true;
+  }
+
+
+  template <typename T>
+  bool TSNE<T>::calculate_get_results(std::vector< math::vertex<T> >& samples,
+				      std::vector< math::vertex<T> >& results)
+  {
+    std::lock_guard<std::mutex> lock(calculate_mutex);
+
+    if(calculate_thread == nullptr) return false;
+    if(calculate_results.size() == 0) return false;
+    
+    samples = calculate_samples;
+    results = calculate_results;
+
+    return true;
+  }
+
+  
+  template <typename T>
+  void TSNE<T>::calculate_loop()
+  {
+    if(calculate_is_running == false) return;
+
+
+    std::vector< math::vertex<T> > samples;
+    unsigned int DIM;
+    std::vector< math::vertex<T> > results;
+    bool verbose = false;
+    LoggingInterface* messages = NULL;
+    VisualizationInterface* gui = NULL;
+    unsigned int* running_flag = NULL;
+
+
+    {
+      std::lock_guard<std::mutex> lock(calculate_mutex);
+      
+      samples = calculate_samples;
+      results = calculate_results;
+      DIM = calculate_DIM;
+      verbose = calculate_verbose;
+      messages = calculate_messages;
+      gui = calculate_gui;
+    }
+      
+    if(this->calculate(samples, DIM, results, verbose, messages, gui, running_flag)){
+      std::lock_guard<std::mutex> lock(calculate_mutex);
+      this->calculate_results = results;
+    }
+
+
+    calculate_is_running = false;
+  }
+  
   
   // dimension reduces samples to DIM dimensional vectors using t-SNE algorithm
   template <typename T>
@@ -401,7 +533,63 @@ namespace whiteice
 
     // too small values cause SFE: arithemtic exception
     const T SIGMA2 = sigma2 < T(1e-30f) ? T(1e-30f) : sigma2;
+
+#if 0
+    whiteice::math::vertex<T> stdev;
+    whiteice::math::vertex<T> mean;
     
+    mean.resize(x[0].size());
+    stdev.resize(x[0].size());
+    
+    mean.zero();
+    stdev.zero();
+    
+    unsigned int Nstdev = 0;
+    
+#pragma omp parallel // shared(rsum)
+    {
+      whiteice::math::vertex<T> local_stdev;
+      whiteice::math::vertex<T> local_mean;
+      
+      local_mean.resize(x[0].size());
+      local_stdev.resize(x[0].size());
+      
+      local_mean.zero();
+      local_stdev.zero();
+      
+      unsigned int Nlstdev = 0;
+      
+#pragma omp for nowait schedule(auto)
+      for(unsigned int k=0;k<x.size();k++){
+	if(index == k) continue;
+	auto delta = x[k] - x[index];
+
+	for(unsigned int d=0;d<delta.size();d++){
+	  const T nrm2 = (delta[d]*delta[d]);
+	  const T distance = whiteice::math::sqrt(nrm2);
+	  local_mean[d] += distance;
+	  local_stdev[d] += nrm2;
+	}
+	
+	Nlstdev++;
+      }
+
+#pragma omp critical
+      {
+	mean  += local_mean;
+	stdev += local_stdev;
+	Nstdev += Nlstdev;
+      }
+
+    }
+
+    mean /= Nstdev;
+    stdev /= Nstdev;
+
+    for(unsigned int d=0;d<stdev.size();d++){
+      stdev[d] = whiteice::math::sqrt(whiteice::math::abs(stdev[d] - mean[d]*mean[d]));
+    }
+#endif
     
 #pragma omp parallel // shared(rsum)
     {
@@ -410,11 +598,17 @@ namespace whiteice
       math::vertex<T> delta;
       delta.resize(x[0].size());
       delta.zero();
-
+      
 #pragma omp for nowait schedule(auto)
       for(unsigned int k=0;k<x.size();k++){
 	if(index == k) continue;
 	delta = x[k] - x[index];
+
+#if 0
+	for(unsigned int d=0;d<delta.size();d++){
+	  delta[d] /= stdev[d]; // mean if x delta should be zero?????
+	}
+#endif
 
 	const T nrm2 = (delta*delta)[0];
 	const T v = -nrm2/SIGMA2;

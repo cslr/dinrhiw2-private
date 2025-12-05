@@ -116,6 +116,7 @@ namespace whiteice
     std::lock_guard<std::mutex> lock(calculate_mutex);
 
     if(calculate_thread == nullptr) return false;
+    if(calculate_results.size() == 0) return false;
     
     samples = calculate_samples;
     results = calculate_results;
@@ -1140,7 +1141,7 @@ namespace whiteice
           // split leaf: move existing point to a child
           unsigned int old_idx = (unsigned int)node.point_index;
           node.point_index = -1;
-          if ((int)node.child.size() == 0) node.child.assign((y[0].size()==2)?4:8, -1);
+          if ((int)node.child.size() == 0) node.child.assign(1<<D, -1);
 
           // create children if needed
           auto create_child = [&](int cid)->int{
