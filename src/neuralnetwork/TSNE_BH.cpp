@@ -241,7 +241,7 @@ namespace whiteice
 
       T original_var, reduced_var;
       const bool regularize = true;
-      const bool unit_variance_normalization = false;
+      const bool unit_variance_normalization = true;
 
       if(whiteice::math::pca_p(samples, 0.95f, PCA, m,
 			       original_var, reduced_var,
@@ -262,6 +262,16 @@ namespace whiteice
 	for(const auto& s : samples){
 	  xsamples.push_back(PCA*(s - m));
 	}
+
+	
+	whiteice::math::matrix<T> ICA;
+	
+	if(whiteice::math::ica(xsamples, ICA, false) == true){
+	  for(auto& v : xsamples){
+	    v = ICA*v;
+	  }	  
+	}
+	
       }
     }
     else{

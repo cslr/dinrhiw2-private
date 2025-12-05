@@ -240,12 +240,13 @@ namespace whiteice
 
       T original_var, reduced_var;
       const bool regularize = true;
-      const bool unit_variance_normalization = false;
+      const bool unit_variance_normalization = true;
 
       if(whiteice::math::pca_p(samples, 0.95f, PCA, m,
 			       original_var, reduced_var,
 			       regularize, unit_variance_normalization) == false){
 	printf("ERROR: TSNE::calculate(): pca_p() failed with input data.\n");
+	logging.error("ERROR: TSNE::calculate(): pca_p() failed with input data.");
 	return false;
       }
       else{
@@ -261,6 +262,15 @@ namespace whiteice
 	for(const auto& s : samples){
 	  xsamples.push_back(PCA*(s - m));
 	}
+
+	whiteice::math::matrix<T> ICA;
+	
+	if(whiteice::math::ica(xsamples, ICA, false) == true){
+	  for(auto& v : xsamples){
+	    v = ICA*v;
+	  }	  
+	}
+	
       }
     }
     else{
@@ -276,6 +286,7 @@ namespace whiteice
     if(calculate_pvalues(xsamples, PERPLEXITY, pij) == false){
       if(verbose){
 	printf("Estimating p-values FAILED.\n");
+	logging.error("ERROR: Estimating p-values FAILED.");
 	fflush(stdout);
       }
       return false;
@@ -334,6 +345,7 @@ namespace whiteice
 	// calculates qij values
 	if(calculate_qvalues(yvalues, qij, qsum) == false){
 	  printf("Calculating q-values FAILED.\n");
+	  logging.error("ERROR: Calculating q-values FAILED.");
 	  fflush(stdout);
 	  return false;
 	}
@@ -344,6 +356,7 @@ namespace whiteice
 	  
 	  if(kl_divergence(pij, qij, klvalue) == false){
 	    printf("Calculating KL-divergence FAILED.\n");
+	    logging.error("ERROR: Calculating KL-divergence FAILED.");
 	    fflush(stdout);
 	    return false;
 	  }
@@ -408,6 +421,8 @@ namespace whiteice
 	    fflush(stdout);
 	  }
 
+	  logging.info(buffer);
+
 	  if(messages != NULL){
 	    messages->printMessage(buffer);
 	  }
@@ -463,6 +478,7 @@ namespace whiteice
 	if(kl_gradient(pij, qij, qsum, yvalues, ygrad) == false){
 	  if(verbose){
 	    printf("Calculating KL gradient FAILED.\n");
+	    logging.error("ERROR: Calculating KL gradient FAILED.");
 	    fflush(stdout);
 	  }
 	  return false;
