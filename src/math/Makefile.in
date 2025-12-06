@@ -6,14 +6,14 @@ CXX = @CXX@
 
 OPTIMIZE_FLAGS=@optimization_flags@
 
-CFLAGS = @CFLAGS@ -Wall -g  -I. -I.. -I../.. -I../neuralnetwork -I../crypto \
+CFLAGS = @CFLAGS@ -Wall -g  -I. -I.. -I../.. -I../neuralnetwork -I../crypto -I../neuralnetwork/neuro-diffeqs \
 	$(OPTIMIZE_FLAGS) -Wno-deprecated -Wno-strict-aliasing -Wno-attributes -Wno-deprecated -Wno-class-memaccess @EXTRA_INCLUDEPATHS@
 
 
 CXXFLAGS = $(CFLAGS)
 
 OBJECTS = blade_math.o ownexception.o outerproduct.o \
-	superresolution.o \
+	superresolution.o MCMC.o MCMC_gaussian.o \
 	vertex.o quaternion.o matrix.o real.o \
 	matrix_rotations.o linear_equations.o linear_algebra.o \
 	hermite.o bezier.o bezier_surface.o bezier_density.o \
@@ -26,7 +26,7 @@ OBJECTS = blade_math.o ownexception.o outerproduct.o \
 
 
 SOURCES = blade_math.cpp ownexception.cpp outerproduct.cpp \
-	vertex.cpp quaternion.cpp matrix.cpp real.cpp \
+	vertex.cpp quaternion.cpp matrix.cpp real.cpp MCMC.cpp MCMC_gaussian.cpp \
 	matrix_rotations.cpp linear_equations.cpp linear_algebra.cpp \
 	hermite.cpp bezier.cpp bezier_surface.cpp bezier_density.cpp \
 	pdftree.cpp simplex.cpp BFGS.cpp LBFGS.cpp SGD.cpp gcd.cpp integer.cpp modular.cpp \
