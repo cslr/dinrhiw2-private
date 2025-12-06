@@ -120,6 +120,7 @@ makelib:
 	$(CP) src/math/*.h lib/
 	$(CP) src/crypto/*.h lib/
 	$(CP) src/neuralnetwork/*.h lib/
+	$(CP) src/neuralnetwork/neuro-diffeqs/*.h lib/
 	$(CP) src/hmm/*.h lib/
 	$(CP) src/reinforcement/*.h lib/
 	$(CP) src/datamining/*.h lib/

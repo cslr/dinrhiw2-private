@@ -216,6 +216,9 @@
 #include "DiffEQ_HMC.h"
 #include "rUHMC.h"
 
+#include "diffeqs.h"
+¤include "HMC_diffeq.h"
+
 // in development [experimental]
 // these do not really work well enough (yet)
 #include "rbf.h"  
