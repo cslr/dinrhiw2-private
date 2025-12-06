@@ -19,7 +19,8 @@ namespace whiteice
     template <typename T>
     T MCMC_gaussian<T>::U(const whiteice::math::vertex<T>& q) const
     {
-      return T(0.5)*((q * q)[0]); // log(N(0,I)) and remove scaling because we divide p1/p2
+      if(q.size() == 0) return T(0.0);
+      else return T(0.5)*((q * q)[0]); // log(N(0,I)) and remove scaling because we divide p1/p2
     }
     
     

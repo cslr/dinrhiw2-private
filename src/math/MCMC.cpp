@@ -22,21 +22,25 @@ namespace whiteice
       
       running = false;
     }
-
+    
+    
     template <typename T>
     MCMC<T>::~MCMC()
     {
       std::lock_guard<std::mutex> lock(thread_mutex);
       std::lock_guard<std::mutex> lock2(solution_mutex);
 
-      if(running){
-	running = false;
+      running = false;
+    
+      if(sampling_thread == nullptr)
+	return;
+    
+      sampling_thread->join();
 
-	if(sampling_thread) sampling_thread->join();
-	delete sampling_thread;
-	sampling_thread = nullptr;
-      }
+      delete sampling_thread;
+      sampling_thread = nullptr;
     }
+    
 
     template <typename T>
     bool MCMC<T>::startSampler(whiteice::math::vertex<T>& starting_point)
@@ -88,6 +92,7 @@ namespace whiteice
     bool MCMC<T>::stopSampler()
     {
       std::lock_guard<std::mutex> lock(thread_mutex);
+      std::lock_guard<std::mutex> lock2(solution_mutex);
     
       if(!running || sampling_thread == nullptr)
 	return false;
@@ -103,13 +108,13 @@ namespace whiteice
     }
 
     template <typename T>
-    unsigned int MCMC<T>::getSamples(std::vector< whiteice::math::vertex<T> >& samples) const
+    unsigned int MCMC<T>::getSamples(std::vector< whiteice::math::vertex<T> >& samples_) const
     {
       std::lock_guard<std::mutex> lock(solution_mutex);
 
-      samples = this->samples;
+      samples_ = this->samples;
 
-      return samples.size();
+      return samples_.size();
     }
 
     template <typename T>
@@ -160,6 +165,8 @@ namespace whiteice
     {
       whiteice::math::vertex<T> q = this->starting_point; // current sample
       whiteice::math::vertex<T> r = this->starting_point; // proposal point
+      r.zero();
+      
       whiteice::RNG<T> rng;
 
       while(running){
@@ -179,13 +186,13 @@ namespace whiteice
 	  std::lock_guard<std::mutex> lock(solution_mutex);
 	  
 	  samples.push_back(q);
-	  
+
 	  sum_mean += q;
 	  sum_N++;
 	}
 	
       }
-      
+
     }
 
 

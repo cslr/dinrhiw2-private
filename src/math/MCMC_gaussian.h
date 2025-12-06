@@ -14,7 +14,7 @@ namespace whiteice
   {
 
     template <typename T = whiteice::math::blas_real<float> >
-    class MCMC_gaussian
+    class MCMC_gaussian : public MCMC<T>
     {
     public:
       MCMC_gaussian();

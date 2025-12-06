@@ -44,6 +44,11 @@
 #include "real.h"
 #include "eig.h"
 
+#include "MCMC.h"
+#include "MCMC_gaussian.h"
+
+#include "dataset.h"
+
 #include "gmatrix.h"
 #include "gvertex.h"
 
@@ -57,6 +62,8 @@ void own_terminate();
 void own_unexpected();
 
 void rng_test();
+
+void mcmc_test();
 
 void vertex_test();
 void outerproduct_test();
@@ -275,6 +282,8 @@ int main()
 
   try{
 
+    mcmc_test();
+
     std::cout << "FFT TEST" << std::endl;
     fft_test();
     
@@ -355,6 +364,48 @@ int main()
   return true;
 }
 
+
+
+void mcmc_test()
+{
+  std::cout << "MCMC sampler test" << std::endl;
+  
+  MCMC_gaussian<> gauss;
+
+  math::vertex<> starting_point;
+  starting_point.resize(2);
+  starting_point.zero();
+
+  if(gauss.startSampler(starting_point) == false){
+    std::cout << "MCMC::startSampler() FAILED." << std::endl;
+    return;
+  }
+
+  while(gauss.getNumberOfSamples() < 1000){
+    sleep(1);
+    std::cout << "mean probability: " << gauss.getMeanProbability(50) << std::endl;
+  }
+
+  // gauss.stopSampler();
+  
+  std::vector< whiteice::math::vertex<> > samples;
+
+  if(gauss.getSamples(samples) == false){
+    std::cout << "MCMC::getSamples() FAILED." << std::endl;
+  }
+
+  // store samples to CSV format to file for inspection (is the distribution normal?)
+  {
+    whiteice::dataset<> ds;
+
+    ds.createCluster("samples", 2);
+    ds.add(0, samples);
+
+    ds.exportAscii("mcmc_gauss.csv", 0, false, true);    
+  }
+
+  
+}
 
 
 
