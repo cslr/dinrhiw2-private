@@ -208,6 +208,7 @@
 #include "gaussian.h"
 
 #include "MCMC.h"
+#include "MCMC_diffeq.h"
 
 #include "HMC.h"
 #include "UHMC.h"

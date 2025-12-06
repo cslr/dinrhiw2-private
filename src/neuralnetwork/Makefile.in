@@ -25,6 +25,7 @@ SOURCES = tst/test.cpp tst/pso_main.cpp tst/somtest.cpp tst/gene_main.cpp tst/st
 	LinearKCluster.cpp rUHMC.cpp \
 	GeneralKCluster.cpp GlobalOptimizer.cpp \
 	DiffEQ_HMC.cpp neuro-diffeqs/diffeqs.cpp neuro-diffeqs/HMC_diffeq.cpp \
+	neuro-diffeqs/MCMC_diffeq.cpp \
 	../math/fastpca.cpp ../math/vertex.cpp ../math/matrix.cpp ../dataset.cpp \
 	../math/modular.cpp ../math/superresolution.cpp ../math/quaternion.cpp \
 	../math/RNG.cpp ../math/LBFGS.cpp ../math/SGD.cpp ../math/pocketfft/pocketfft.c
@@ -47,10 +48,12 @@ OBJECTS= activation_function.o odd_sigmoid.o identity_activation.o multidimensio
 	globaloptimum.o KMBoosting.o WeightingOptimizer.o \
 	LinearKCluster.o rUHMC.o \
 	GeneralKCluster.o GlobalOptimizer.o \
-	DiffEQ_HMC.o neuro-diffeqs/diffeqs.o neuro-diffeqs/HMC_diffeq.o
+	DiffEQ_HMC.o neuro-diffeqs/diffeqs.o neuro-diffeqs/HMC_diffeq.o \
+	neuro-diffeqs/MCMC_diffeq.o
 
 EXTRA_OBJECTS = ../math/vertex.o ../math/matrix.o ../math/ownexception.o ../math/integer.o \
 	../math/matrix_rotations.o ../math/eig.o ../math/correlation.o ../math/blade_math.o \
+	../math/MCMC.o \
 	../math/real.o 	../dataset.o ../conffile.o ../linear_ETA.o \
 	../dynamic_bitset.o ../math/ica.o ../math/BFGS.o ../math/LBFGS.o ../math/linear_algebra.o \
 	../math/correlation.o ../math/ica.o ../math/linear_equations.o ../math/norms.o ../math/RNG.o \
