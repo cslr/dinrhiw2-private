@@ -207,6 +207,8 @@
 #include "multidimensional_gaussian.h"
 #include "gaussian.h"
 
+#include "MCMC.h"
+
 #include "HMC.h"
 #include "UHMC.h"
 #include "PTHMC.h"
