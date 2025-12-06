@@ -386,7 +386,7 @@ void mcmc_test()
     std::cout << "mean probability: " << gauss.getMeanProbability(50) << std::endl;
   }
 
-  // gauss.stopSampler();
+  gauss.stopSampler(); // MUST be done to stop threads or crash!
   
   std::vector< whiteice::math::vertex<> > samples;
 

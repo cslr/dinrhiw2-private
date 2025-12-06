@@ -28,14 +28,15 @@ namespace whiteice
     MCMC<T>::~MCMC()
     {
       std::lock_guard<std::mutex> lock(thread_mutex);
-      std::lock_guard<std::mutex> lock2(solution_mutex);
+      // std::lock_guard<std::mutex> lock2(solution_mutex);
 
       running = false;
     
       if(sampling_thread == nullptr)
 	return;
-    
-      sampling_thread->join();
+
+      if(sampling_thread->joinable())
+	sampling_thread->join();
 
       delete sampling_thread;
       sampling_thread = nullptr;
@@ -79,9 +80,11 @@ namespace whiteice
 	running = false;
 
 	if(sampling_thread){
-	  sampling_thread->join();
+	  // sampling_thread->join();
 	  delete sampling_thread;
 	}
+
+	sampling_thread = nullptr;
 
 	return false;
       }
@@ -92,14 +95,15 @@ namespace whiteice
     bool MCMC<T>::stopSampler()
     {
       std::lock_guard<std::mutex> lock(thread_mutex);
-      std::lock_guard<std::mutex> lock2(solution_mutex);
+      //std::lock_guard<std::mutex> lock2(solution_mutex);
     
       if(!running || sampling_thread == nullptr)
 	return false;
     
       running = false;
 
-      sampling_thread->join();
+      if(sampling_thread->joinable())
+	sampling_thread->join();
 
       delete sampling_thread;
       sampling_thread = nullptr;

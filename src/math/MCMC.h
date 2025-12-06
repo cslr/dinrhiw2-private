@@ -28,7 +28,7 @@ namespace whiteice
     {
     public:
       MCMC();
-      virtual ~MCMC();
+      ~MCMC();
 
       // probability functions MCMC sampling from
       // P(q) ~ exp(-U(q)) distribution
