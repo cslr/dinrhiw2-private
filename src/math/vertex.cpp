@@ -75,7 +75,7 @@ namespace whiteice
       this->data = new T[1];
       if(this->data == nullptr) throw std::bad_alloc();
       
-      //memset(this->data, 0, sizeof(T));
+      memset(this->data, 0, sizeof(T));
 #endif
       
       this->dataSize = 1;      
@@ -125,7 +125,7 @@ namespace whiteice
 	  throw std::bad_alloc();
 	
 	
-	//memset(this->data, 0, i*sizeof(T));
+	memset(this->data, 0, i*sizeof(T));
       }
 
 #endif
@@ -273,7 +273,7 @@ namespace whiteice
       this->dataSize = v.dataSize;
     }
     
-    
+#if 0    
     // makes direct copy of temporal value
     template <typename T>
     vertex<T>::vertex(vertex<T>&& t)
@@ -284,6 +284,7 @@ namespace whiteice
       std::swap(this->data, t.data);
       std::swap(this->dataSize, t.dataSize);
     }
+#endif
     
     
     // vertex ctor - makes copy of v
@@ -570,8 +571,9 @@ namespace whiteice
 	  //new_area = (T*)malloc(sizeof(T)*d);
 	  new_area = new T[d];
 
-	  if(new_area == 0)
+	  if(new_area == 0){
 	    return dataSize; // mem. alloc failure
+	  }
 #if 0
 	}
 #endif
@@ -2093,7 +2095,7 @@ namespace whiteice
       }
       
 #else
-      if(this != &v){ // no self-assignment
+      if(this != &v){ // no self-assignment	
 	memcpy(this->data, v.data, sizeof(T)*v.dataSize);
       }
 #endif

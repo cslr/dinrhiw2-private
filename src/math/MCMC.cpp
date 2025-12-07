@@ -1,5 +1,6 @@
 /*
- * simple MCMC sampler
+ * simple MCMC sampler, this for optimization tasks,
+ * doesn't converge to target distribution
  *
  */
 
@@ -173,17 +174,54 @@ namespace whiteice
       
       whiteice::RNG<T> rng;
 
+      T jump_stdev = T(1.0f);
+
+      whiteice::math::vertex<T> mean;
+      whiteice::math::vertex<T> cov;
+
+      mean.resize(q.size());
+      cov.resize(q.size());
+
+      mean.zero();
+      for(unsigned int d=0;d<cov.size();d++) cov[d] = T(1.0f);
+
       while(running){
 	
-	rng.normal(r); // r ~ N(q, I)
+	rng.normal(r); // r ~ N(q, I*jump_stdev^2)*cov)
+
+	for(unsigned int d=0;d<cov.size();d++)
+	  r[d] *= jump_stdev*whiteice::math::sqrt(cov[d]);
+
+	// samples only in one dimension axis (more like Gibbs sampler)
+	if(0){
+	  const unsigned int D = rng.rand() % q.size();
+	  
+	  for(unsigned int d=0;d<r.size();d++){
+	    if(d != D) r[d] = T(0.0);
+	  }
+	}
+	
 	r += q;
 
 	// p(r)/p(q) = exp(-U(r))/exp(-U(q)) = exp(U(q)-U(r))
 
 	T logP = U(q) - U(r);
+
+	if(logP > T(10.0)) logP = T(10.0);
+
+	const T log_alpha_target = whiteice::math::log(0.234);
+
+	if(adapt_stdev){
+	  if(logP > log_alpha_target){
+	    jump_stdev = jump_stdev * (T(1.0) + T(0.05));
+	  }
+	  else if(logP < log_alpha_target){
+	    jump_stdev = jump_stdev * (T(1.0) - T(0.05));
+	  }
+	}
 	
 	if(whiteice::math::log(rng.uniform()+T(1e-20)) < logP){
-	  printf("ACCEPT MCMC JUMP!\n"); fflush(stdout);
+	  // printf("ACCEPT MCMC JUMP!\n"); fflush(stdout);
 	  q = r;
 	}
 	
@@ -194,6 +232,25 @@ namespace whiteice
 
 	  sum_mean += q;
 	  sum_N++;
+
+	  if(samples.size() > 100){
+	    mean.zero();
+	    cov.zero();
+
+	    for(unsigned int s=samples.size()-100;s<samples.size();s++){
+	      for(unsigned int d=0;d<mean.size();d++){
+		mean[d] += samples[s][d];
+		cov[d] += samples[s][d]*samples[s][d];		  
+	      }
+	    }
+	    
+	    mean /= T(100.0f);
+	    cov /= T(100.0f);
+
+	    for(unsigned int d=0;d<mean.size();d++){
+	      cov[d] = whiteice::math::abs(cov[d]-mean[d]*mean[d])+T(1e-4);
+	    }
+	  }
 	}
 	
       }

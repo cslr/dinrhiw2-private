@@ -52,7 +52,7 @@ namespace whiteice
       }
     }
 
-    E /= ds.size(0)*xdata[0].size();    
+    // E /= ds.size(0)*xdata[0].size();    // no scaling
     
     return (E);    
   }

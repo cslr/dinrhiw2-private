@@ -1,5 +1,7 @@
 /*
  * simple Monte Carlo Markov Chain sampler class
+ *
+ * this for optimization tasks, doesn't converge to target distribution!
  */
 
 #ifndef __whiteice_MCMC_h
@@ -51,6 +53,8 @@ namespace whiteice
       whiteice::math::vertex<T> starting_point;
 
     private:
+
+      bool adapt_stdev = true; // adapt gaussian sampling step length
 
       std::vector< math::vertex<T> > samples;
       unsigned int sum_N = 0;

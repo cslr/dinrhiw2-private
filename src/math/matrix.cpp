@@ -204,7 +204,8 @@ namespace whiteice
       
 #endif
     }
-    
+
+#if 0
     template <typename T>
     matrix<T>::matrix(matrix<T>&& t)
     {
@@ -216,6 +217,7 @@ namespace whiteice
       std::swap(this->numRows, t.numRows);
       std::swap(this->numCols, t.numCols);
     }
+#endif
     
     template <typename T>
     matrix<T>::matrix(const vertex<T>& diagonal)

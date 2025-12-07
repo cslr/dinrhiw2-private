@@ -73,7 +73,9 @@ namespace whiteice
       matrix(const unsigned int size_y = 4,
 	     const unsigned int size_x = 4);
       matrix(const matrix<T>& M);
+#if 0
       matrix(matrix<T>&& t);
+#endif
       matrix(const vertex<T>& diagonal);
       virtual ~matrix();
       

@@ -104,7 +104,9 @@ namespace whiteice
       vertex();
       explicit vertex(unsigned int i);
       vertex(const vertex<T>& v);
+#if 0
       vertex(vertex<T>&& t);
+#endif
       vertex(const std::vector<T>& v);
       virtual ~vertex();
       
@@ -156,6 +158,7 @@ namespace whiteice
       // template <typename TT, typename UU>
       // friend vertex<TT>& operator=(const vertex<UU>& v) ;
       vertex<T>& operator=(vertex<T>&& t) ;
+
       
       bool operator==(const vertex<T>& v) const ;
       bool operator!=(const vertex<T>& v) const ;
