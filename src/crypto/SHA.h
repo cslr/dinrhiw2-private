@@ -87,31 +87,31 @@ namespace whiteice
 	const  PURE_FUNCTION;
       
       
-      whiteice::uint64 sha512_ch(whiteice::uint64 x,
-				    whiteice::uint64 y,
-				    whiteice::uint64 z)
+      whiteice::_uint64 sha512_ch(whiteice::_uint64 x,
+				    whiteice::_uint64 y,
+				    whiteice::_uint64 z)
 	const  PURE_FUNCTION;
       
       
-      whiteice::uint64 sha512_maj(whiteice::uint64 x,
-				     whiteice::uint64 y,
-				     whiteice::uint64 z)
+      whiteice::_uint64 sha512_maj(whiteice::_uint64 x,
+				     whiteice::_uint64 y,
+				     whiteice::_uint64 z)
 	const  PURE_FUNCTION;
       
       
-      whiteice::uint64 sha512_bsigma0(whiteice::uint64 x)
+      whiteice::_uint64 sha512_bsigma0(whiteice::_uint64 x)
 	const  PURE_FUNCTION;
       
       
-      whiteice::uint64 sha512_bsigma1(whiteice::uint64 x)
+      whiteice::_uint64 sha512_bsigma1(whiteice::_uint64 x)
 	const  PURE_FUNCTION;
       
       
-      whiteice::uint64 sha512_sigma0(whiteice::uint64 x)
+      whiteice::_uint64 sha512_sigma0(whiteice::_uint64 x)
 	const  PURE_FUNCTION;
       
       
-      whiteice::uint64 sha512_sigma1(whiteice::uint64 x)
+      whiteice::_uint64 sha512_sigma1(whiteice::_uint64 x)
 	const  PURE_FUNCTION;
       
       
@@ -131,23 +131,23 @@ namespace whiteice
       whiteice::uint32 SHL (whiteice::uint32 x, unsigned int s)
 	const  PURE_FUNCTION;
       
-      whiteice::uint64 ROTR(whiteice::uint64 x, unsigned int s)
+      whiteice::_uint64 ROTR(whiteice::_uint64 x, unsigned int s)
 	const  PURE_FUNCTION;
       
-      whiteice::uint64 ROTL(whiteice::uint64 x, unsigned int s)
+      whiteice::_uint64 ROTL(whiteice::_uint64 x, unsigned int s)
 	const  PURE_FUNCTION;
       
-      whiteice::uint64 SHR (whiteice::uint64 x, unsigned int s)
+      whiteice::_uint64 SHR (whiteice::_uint64 x, unsigned int s)
 	const  PURE_FUNCTION;
       
-      whiteice::uint64 SHL (whiteice::uint64 x, unsigned int s)
+      whiteice::_uint64 SHL (whiteice::_uint64 x, unsigned int s)
 	const  PURE_FUNCTION;
 			      
       
       // conversion between big endian and small endian values
       
       void change_endianess(whiteice::uint32& x) const ;
-      void change_endianess(whiteice::uint64& x) const ;
+      void change_endianess(whiteice::_uint64& x) const ;
 	
       
       
@@ -162,13 +162,13 @@ namespace whiteice
       
       static const whiteice::uint32 SHA1_TABLE[4];
       static const whiteice::uint32 SHA256_TABLE[64];
-      static const whiteice::uint64 SHA512_TABLE[80];
+      static const whiteice::_uint64 SHA512_TABLE[80];
       
       // initial hash values;
       static const whiteice::uint32 SHA1_IHASH[5];
       static const whiteice::uint32 SHA256_IHASH[8];
-      static const whiteice::uint64 SHA384_IHASH[8];
-      static const whiteice::uint64 SHA512_IHASH[8];
+      static const whiteice::_uint64 SHA384_IHASH[8];
+      static const whiteice::_uint64 SHA512_IHASH[8];
       
       
     };

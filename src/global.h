@@ -63,13 +63,13 @@ typedef signed char schar;
 #ifndef QWORD_DEFINED
 #define QWORD_DEFINED 1
 
-typedef long long int int64;
+typedef long long int _int64;
 typedef long long int short64;
 typedef long long int char64;
 typedef signed long long int sint64;
 typedef signed long long int sshort64;
 typedef signed long long int schar64;
-typedef unsigned long long int uint64;
+typedef unsigned long long int _uint64;
 typedef unsigned long long int ushort64;
 typedef unsigned long long int uchar64;
 typedef unsigned long long int qword;
@@ -82,13 +82,13 @@ typedef unsigned long long int qword;
 #ifndef QWORD_DEFINED
 #define QWORD_DEFINED 1
 
-typedef long int64;
+typedef long _int64;
 typedef long short64;
 typedef long char64;
 typedef signed long sint64;
 typedef signed long sshort64;
 typedef signed long schar64;
-typedef unsigned long uint64;
+typedef unsigned long _uint64;
 typedef unsigned long ushort64;
 typedef unsigned long uchar64;
 typedef unsigned long qword;
@@ -157,13 +157,13 @@ typedef unsigned long byte;
 #ifndef QWORD_DEFINED
 #define QWORD_DEFINED 1
 
-typedef int int64;
+typedef int _int64;
 typedef int short64;
 typedef int char64;
 typedef signed int sint64;
 typedef signed int sshort64;
 typedef signed int schar64;
-typedef unsigned int uint64;
+typedef unsigned int _uint64;
 typedef unsigned int ushort64;
 typedef unsigned int uchar64;
 typedef unsigned int qword;
@@ -231,13 +231,13 @@ typedef unsigned int byte;
 #ifndef QWORD_DEFINED
 #define QWORD_DEFINED 1
 
-typedef short int64;
+typedef short _int64;
 typedef short short64;
 typedef short char64;
 typedef signed short sint64;
 typedef signed short sshort64;
 typedef signed short schar64;
-typedef unsigned short uint64;
+typedef unsigned short _uint64;
 typedef unsigned short ushort64;
 typedef unsigned short uchar64;
 typedef unsigned short qword;
@@ -306,13 +306,13 @@ typedef unsigned short byte;
 #ifndef QWORD_DEFINED
 #define QWORD_DEFINED 1
 
-typedef char int64;
+typedef char _int64;
 typedef char short64;
 typedef char char64;
 typedef signed char sint64;
 typedef signed char sshort64;
 typedef signed char schar64;
-typedef unsigned char uint64;
+typedef unsigned char _uint64;
 typedef unsigned char ushort64;
 typedef unsigned char uchar64;
 

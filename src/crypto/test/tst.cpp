@@ -31,7 +31,7 @@ void dsa_test();
 
 
 void change_endianess(whiteice::uint32& x);
-void change_endianess(whiteice::uint64& x);
+void change_endianess(whiteice::_uint64& x);
 
 ////////////////////////////////////////////////////////////
 
@@ -1466,15 +1466,15 @@ void test_sha()
       message = (unsigned char*)malloc(sizeof(char) * (len+1));
       strcpy((char*)message,"abc");
       
-      ((whiteice::uint64*)xhash)[0] = 0xcb00753f45a35e8bULL;
-      ((whiteice::uint64*)xhash)[1] = 0xb5a03d699ac65007ULL;
-      ((whiteice::uint64*)xhash)[2] = 0x272c32ab0eded163ULL;
-      ((whiteice::uint64*)xhash)[3] = 0x1a8b605a43ff5bedULL;
-      ((whiteice::uint64*)xhash)[4] = 0x8086072ba1e7cc23ULL;
-      ((whiteice::uint64*)xhash)[5] = 0x58baeca134c825a7ULL;
+      ((whiteice::_uint64*)xhash)[0] = 0xcb00753f45a35e8bULL;
+      ((whiteice::_uint64*)xhash)[1] = 0xb5a03d699ac65007ULL;
+      ((whiteice::_uint64*)xhash)[2] = 0x272c32ab0eded163ULL;
+      ((whiteice::_uint64*)xhash)[3] = 0x1a8b605a43ff5bedULL;
+      ((whiteice::_uint64*)xhash)[4] = 0x8086072ba1e7cc23ULL;
+      ((whiteice::_uint64*)xhash)[5] = 0x58baeca134c825a7ULL;
       
       for(unsigned int t=0;t<6;t++)
-	change_endianess( ((whiteice::uint64*)xhash)[t] );
+	change_endianess( ((whiteice::_uint64*)xhash)[t] );
       
       
       if(SHA384.hash(&message, len, (unsigned char*)hash384) == false)
@@ -1493,15 +1493,15 @@ void test_sha()
       for(unsigned int i=0;i<len;i++)
 	message[i] = 'a';
       
-      ((whiteice::uint64*)xhash)[0] = 0x9d0e1809716474cbULL;
-      ((whiteice::uint64*)xhash)[1] = 0x086e834e310a4a1cULL;
-      ((whiteice::uint64*)xhash)[2] = 0xed149e9c00f24852ULL;
-      ((whiteice::uint64*)xhash)[3] = 0x7972cec5704c2a5bULL;
-      ((whiteice::uint64*)xhash)[4] = 0x07b8b3dc38ecc4ebULL;
-      ((whiteice::uint64*)xhash)[5] = 0xae97ddd87f3d8985ULL;
+      ((whiteice::_uint64*)xhash)[0] = 0x9d0e1809716474cbULL;
+      ((whiteice::_uint64*)xhash)[1] = 0x086e834e310a4a1cULL;
+      ((whiteice::_uint64*)xhash)[2] = 0xed149e9c00f24852ULL;
+      ((whiteice::_uint64*)xhash)[3] = 0x7972cec5704c2a5bULL;
+      ((whiteice::_uint64*)xhash)[4] = 0x07b8b3dc38ecc4ebULL;
+      ((whiteice::_uint64*)xhash)[5] = 0xae97ddd87f3d8985ULL;
       
       for(unsigned int t=0;t<6;t++)
-	change_endianess( ((whiteice::uint64*)xhash)[t] );
+	change_endianess( ((whiteice::_uint64*)xhash)[t] );
       
       
       if(SHA384.hash(&message, len, (unsigned char*)hash384) == false)
@@ -1528,17 +1528,17 @@ void test_sha()
       message = (unsigned char*)malloc(sizeof(char) * (len+1));
       strcpy((char*)message,"abc");
       
-      ((whiteice::uint64*)xhash)[0] = 0xddaf35a193617abaULL;
-      ((whiteice::uint64*)xhash)[1] = 0xcc417349ae204131ULL;
-      ((whiteice::uint64*)xhash)[2] = 0x12e6fa4e89a97ea2ULL;
-      ((whiteice::uint64*)xhash)[3] = 0x0a9eeee64b55d39aULL;
-      ((whiteice::uint64*)xhash)[4] = 0x2192992a274fc1a8ULL;
-      ((whiteice::uint64*)xhash)[5] = 0x36ba3c23a3feebbdULL;
-      ((whiteice::uint64*)xhash)[6] = 0x454d4423643ce80eULL;
-      ((whiteice::uint64*)xhash)[7] = 0x2a9ac94fa54ca49fULL;
+      ((whiteice::_uint64*)xhash)[0] = 0xddaf35a193617abaULL;
+      ((whiteice::_uint64*)xhash)[1] = 0xcc417349ae204131ULL;
+      ((whiteice::_uint64*)xhash)[2] = 0x12e6fa4e89a97ea2ULL;
+      ((whiteice::_uint64*)xhash)[3] = 0x0a9eeee64b55d39aULL;
+      ((whiteice::_uint64*)xhash)[4] = 0x2192992a274fc1a8ULL;
+      ((whiteice::_uint64*)xhash)[5] = 0x36ba3c23a3feebbdULL;
+      ((whiteice::_uint64*)xhash)[6] = 0x454d4423643ce80eULL;
+      ((whiteice::_uint64*)xhash)[7] = 0x2a9ac94fa54ca49fULL;
       
       for(unsigned int t=0;t<8;t++)
-	change_endianess( ((whiteice::uint64*)xhash)[t] );
+	change_endianess( ((whiteice::_uint64*)xhash)[t] );
       
       if(SHA512.hash(&message, len, (unsigned char*)hash512) == false)
 	throw test_exception("SHA512 hash() function error.");
@@ -1556,17 +1556,17 @@ void test_sha()
       for(unsigned int i=0;i<len;i++)
 	message[i] = 'a';
       
-      ((whiteice::uint64*)xhash)[0] = 0xe718483d0ce76964ULL;
-      ((whiteice::uint64*)xhash)[1] = 0x4e2e42c7bc15b463ULL;
-      ((whiteice::uint64*)xhash)[2] = 0x8e1f98b13b204428ULL;
-      ((whiteice::uint64*)xhash)[3] = 0x5632a803afa973ebULL;
-      ((whiteice::uint64*)xhash)[4] = 0xde0ff244877ea60aULL;
-      ((whiteice::uint64*)xhash)[5] = 0x4cb0432ce577c31bULL;
-      ((whiteice::uint64*)xhash)[6] = 0xeb009c5c2c49aa2eULL;
-      ((whiteice::uint64*)xhash)[7] = 0x4eadb217ad8cc09bULL;
+      ((whiteice::_uint64*)xhash)[0] = 0xe718483d0ce76964ULL;
+      ((whiteice::_uint64*)xhash)[1] = 0x4e2e42c7bc15b463ULL;
+      ((whiteice::_uint64*)xhash)[2] = 0x8e1f98b13b204428ULL;
+      ((whiteice::_uint64*)xhash)[3] = 0x5632a803afa973ebULL;
+      ((whiteice::_uint64*)xhash)[4] = 0xde0ff244877ea60aULL;
+      ((whiteice::_uint64*)xhash)[5] = 0x4cb0432ce577c31bULL;
+      ((whiteice::_uint64*)xhash)[6] = 0xeb009c5c2c49aa2eULL;
+      ((whiteice::_uint64*)xhash)[7] = 0x4eadb217ad8cc09bULL;
       
       for(unsigned int t=0;t<8;t++)
-	change_endianess( ((whiteice::uint64*)xhash)[t] );
+	change_endianess( ((whiteice::_uint64*)xhash)[t] );
       
       if(SHA512.hash(&message, len, (unsigned char*)hash512) == false)
 	throw test_exception("SHA512 hash() function error.");
@@ -1872,7 +1872,7 @@ void change_endianess(whiteice::uint32& x)
 }
 
 
-void change_endianess(whiteice::uint64& x)
+void change_endianess(whiteice::_uint64& x)
 {
   x = ((x >> 56) | ((x >> 40) & 0xFF00) | ((x >> 24) & 0xFF0000) |
        ((x >> 8) & 0xFF000000) | ((x & 0xFF000000) << 8) |
