@@ -183,6 +183,7 @@ namespace whiteice
 	T logP = U(q) - U(r);
 	
 	if(whiteice::math::log(rng.uniform()+T(1e-20)) < logP){
+	  printf("ACCEPT MCMC JUMP!\n"); fflush(stdout);
 	  q = r;
 	}
 	

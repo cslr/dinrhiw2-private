@@ -142,6 +142,14 @@ namespace whiteice
 	else if(h > h_max) h = h_max;
 
 	// std::cout << "RK: h = " << h << std::endl;
+
+	// handles bad and large values in values
+	for(unsigned int d=0;d<y.size();d++){
+	  if(y[d] < T(-1e30)) y[d] = T(0.0);
+	  else if(y[d] > T(+1e30)) y[d] = T(0.0);
+	  if(isnan(y[d])) y[d] = T(0.0);
+	  if(isinf(y[d])) y[d] = T(0.0);
+	}
 	
 	points.push_back(y);
 	times.push_back(t);

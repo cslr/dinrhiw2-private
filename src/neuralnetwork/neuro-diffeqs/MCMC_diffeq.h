@@ -19,11 +19,13 @@ namespace whiteice
     
     MCMC_diffeq(const whiteice::nnetwork<T>& net,
 		const whiteice::dataset<T>& ds,
-		const std::vector<T>& times)
+		const std::vector<T>& times,
+		const whiteice::math::vertex<T>& diffeq_starting_point)
     {
       this->net = net;
       this->ds = ds;
       this->times = times;
+      this->diffeq_starting_point = diffeq_starting_point;
     }
   
     
@@ -36,12 +38,13 @@ namespace whiteice
     whiteice::nnetwork<T> net;
     whiteice::dataset<T> ds;
     std::vector<T> times; // time-steps for datapoints we use
+    whiteice::math::vertex<T> diffeq_starting_point;
   
   };
 
 
-extern template class MCMC_diffeq< math::blas_real<float> >;
-extern template class MCMC_diffeq< math::blas_real<double> >;
+  extern template class MCMC_diffeq< math::blas_real<float> >;
+  extern template class MCMC_diffeq< math::blas_real<double> >;
   
 };
 

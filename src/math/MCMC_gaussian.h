@@ -14,15 +14,15 @@ namespace whiteice
   {
 
     template <typename T = whiteice::math::blas_real<float> >
-    class MCMC_gaussian : public MCMC<T>
+    class MCMC_gaussian : public whiteice::math::MCMC<T>
     {
     public:
       MCMC_gaussian();
-      virtual ~MCMC_gaussian();
+      ~MCMC_gaussian();
       
       // probability functions MCMC sampling from
       // P(q) ~ exp(-U(q)) distribution
-      virtual T U(const whiteice::math::vertex<T>& q) const;
+      T U(const whiteice::math::vertex<T>& q) const;
     };
 
     

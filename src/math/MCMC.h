@@ -36,7 +36,7 @@ namespace whiteice
       
       
       bool startSampler(whiteice::math::vertex<T>& starting_point);
-      bool stopSampler();
+      bool stopSampler(); // MUST BE CALLED BEFORE OBJECT IS DESTROYED IF START SAMPLER HAS BEEN CALLED! OTHERWISE CODE CRASHES!
       
       unsigned int getSamples(std::vector< whiteice::math::vertex<T> >& samples) const;
       unsigned int getNumberOfSamples() const;
@@ -46,9 +46,11 @@ namespace whiteice
       // calculates mean probability log(P) for the latest N samples, 0 = all samples
       T getMeanProbability(unsigned int latestN = 0) const;
 
-    private:
+    protected:
 
       whiteice::math::vertex<T> starting_point;
+
+    private:
 
       std::vector< math::vertex<T> > samples;
       unsigned int sum_N = 0;

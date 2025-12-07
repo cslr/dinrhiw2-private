@@ -11,22 +11,22 @@ namespace whiteice
   template <typename T>
   T MCMC_diffeq<T>::U(const math::vertex<T>& q) const
   {
-    auto datacp(this->ds);
-  
     std::vector< math::vertex<T> > xdata;
+    
+    whiteice::nnetwork<T> net(this->net);
+    bool ok = net.importdata(q);
+    assert(ok == true);
   
     // now simulate training datapoints
-    simulate_diffeq_model2(this->net,
-			   this->starting_point,
+    simulate_diffeq_model2(net,
+			   this->diffeq_starting_point,
 			   (times[times.size()-1]-times[0]).c[0],
 			   xdata, times);
 
-    datacp.clearData(0);
-    datacp.add(0, xdata);
+    assert(xdata.size() > 0);
+    assert(xdata.size() == ds.size(0));
+    assert(xdata[0].size() == ds.dimension(0));
 
-    whiteice::nnetwork<T> net(this->net);
-    net.importdata(q);
-    
     T E = T(0.0f);
     
     // E = SUM 0.5*e(i)^2
@@ -36,10 +36,9 @@ namespace whiteice
       T e = T(0.0f);
       
 #pragma omp for nowait schedule(auto)
-      for(unsigned int i=0;i<datacp.size(0);i++){
-	net.calculate(datacp.access(0,i), tmp);
-	err = datacp.access(1, i) - tmp;
-	e = e  + T(0.5f)*(err*err)[0];
+      for(unsigned int i=0;i<ds.size(0);i++){
+	err = xdata[i] - ds.access(0, i);
+	e += T(0.5f)*(err*err)[0];
       }
       
 #pragma omp critical (mvjrwerfweghx)
@@ -48,7 +47,7 @@ namespace whiteice
       }
     }
 
-    E /= datacp.size(0);
+    E /= ds.size(0)*xdata[0].size();    
     
     return (E);    
   }

@@ -66,6 +66,8 @@
 
 #include "rUHMC.h"
 
+#include "MCMC_diffeq.h"
+
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
@@ -101,6 +103,8 @@ extern "C" {
 
 
 using namespace whiteice;
+
+void mcmc_diffeq_test();
 
 void nn_layer_norm_gradient_value_test();
 
@@ -201,13 +205,17 @@ int main()
   try{
     // nn_layer_norm_gradient_value_test();
 
-    simple_tsne_test();
+    // kmeans_test();
+
+    mcmc_diffeq_test();
+
+    // simple_tsne_test();
       
     // nn_layer_norm_test();
     
     // nn_layer_norm_test();
 
-    nn_save_load_test();
+    // nn_save_load_test();
     
     return 0;
 
@@ -387,6 +395,79 @@ private:
   char* reason;
   
 };
+
+/**********************************************************************/
+/**********************************************************************/
+
+void mcmc_diffeq_test()
+{
+  std::cout << "MCMC_diffeq learning test." << std::endl;
+
+  const unsigned int DIMENSION = 4;
+  
+  whiteice::nnetwork< whiteice::math::blas_real<double> > net;
+  whiteice::dataset<whiteice::math::blas_real<double> > ds;
+  std::vector< whiteice::math::blas_real<double> > times;
+  whiteice::math::vertex< whiteice::math::blas_real<double> > diffeq_starting_point;
+
+  std::vector<unsigned int> arch;
+  arch.push_back(DIMENSION);
+  arch.push_back(50);
+  arch.push_back(50);
+  arch.push_back(DIMENSION);
+
+  net.setArchitecture(arch,
+		      whiteice::nnetwork< whiteice::math::blas_real<double> >::tanh
+		      );
+  net.randomize(2, 1.0);
+
+  diffeq_starting_point.resize(DIMENSION);
+  whiteice::RNG< whiteice::math::blas_real<double> > rng2;
+  rng2.normal(diffeq_starting_point);
+
+  const unsigned int DATAPOINTS = 15;
+
+  for(unsigned int i=0;i<DATAPOINTS;i++)
+    times.push_back((float)i);
+
+  // generate target diff.eq. simulation trajectories using Runge-Kutta
+  {
+    std::vector< math::vertex< whiteice::math::blas_real<double> > > xdata;
+    
+    simulate_diffeq_model2(net, diffeq_starting_point,
+			   (times[times.size()-1]-times[0]).c[0],
+			   xdata, times);
+
+    ds.createCluster("correct trajectory", DIMENSION);
+    ds.add(0, xdata);
+
+    for(unsigned int i=0;i<xdata.size();i++)
+      std::cout << xdata[i] << std::endl;
+  }
+
+  whiteice::math::vertex< whiteice::math::blas_real<double> > params;
+
+  net.randomize(2, 1.0);
+  net.exportdata(params);
+  
+  whiteice::MCMC_diffeq diffeq(net, ds, times, diffeq_starting_point);
+
+  diffeq.startSampler(params);
+
+  while(diffeq.getNumberOfSamples() < 100000){
+    sleep(1);
+    std::cout << "log-probability: "
+	      << diffeq.getMeanProbability(50)
+	      << " samples: "
+	      << diffeq.getNumberOfSamples()
+	      << std::endl;
+  }
+
+  diffeq.stopSampler();
+  
+  std::cout << "Model log-probability: " << diffeq.getMeanProbability()
+	    << std::endl;
+}
 
 /**********************************************************************/
 /**********************************************************************/
@@ -2391,7 +2472,7 @@ void simple_tsne_test()
     fflush(stdout);
 
     // calculate dimension reduction
-    whiteice::TSNE_BH<> tsne(false);
+    whiteice::TSNE<> tsne(false);
     std::vector< whiteice::math::vertex<> > ydata;
 
     if(tsne.calculate_finished() == true){
