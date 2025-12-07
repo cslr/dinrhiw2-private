@@ -29,7 +29,10 @@ namespace whiteice
       this->times = times;
       this->diffeq_starting_point = diffeq_starting_point;
 
-      this->SEQUENCE_LENGTH = SEQUENCE_LENGTH;
+      if(SEQUENCE_LENGTH > times.size())
+	this->SEQUENCE_LENGTH = times.size();
+      else
+	this->SEQUENCE_LENGTH = SEQUENCE_LENGTH;
     }
   
     

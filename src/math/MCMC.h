@@ -44,9 +44,13 @@ namespace whiteice
       unsigned int getNumberOfSamples() const;
 
       whiteice::math::vertex<T> getMean() const;
+
+      whiteice::math::vertex<T> getBest() const;
       
       // calculates mean probability log(P) for the latest N samples, 0 = all samples
       T getMeanProbability(unsigned int latestN = 0) const;
+
+      bool hasConverged(); // have sampler probabilities converged?
 
     protected:
 
@@ -59,6 +63,10 @@ namespace whiteice
       std::vector< math::vertex<T> > samples;
       unsigned int sum_N = 0;
       whiteice::math::vertex<T> sum_mean;
+      std::vector< T > samplesU;
+
+      T bestU = T(-1e10);
+      whiteice::math::vertex<T> best;
 
       std::atomic<bool> running;
 

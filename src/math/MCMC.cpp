@@ -63,6 +63,10 @@ namespace whiteice
 	sum_mean = starting_point;
 	sum_mean.zero();
 
+	bestU = T(-1e10);
+	best = starting_point;
+
+	samplesU.clear();
 	samples.clear();
       }
     
@@ -144,24 +148,72 @@ namespace whiteice
       return m;
     }
     
+
+    template <typename T>
+    whiteice::math::vertex<T> MCMC<T>::getBest() const
+    {
+      std::lock_guard<std::mutex> lock(solution_mutex);
+
+      return best;
+    }
+    
+
+
     // calculates mean probability log(P) for the latest N samples, 0 = all samples
     template <typename T>
     T MCMC<T>::getMeanProbability(unsigned int latestN) const
     {
       std::lock_guard<std::mutex> lock(solution_mutex);
       
-      if(!latestN) latestN = samples.size();
-      if(latestN > samples.size()) latestN = samples.size();
+      if(!latestN) latestN = samplesU.size();
+      if(latestN > samplesU.size()) latestN = samplesU.size();
       
       T sumLogP = T(0.0f);
       
-      for(unsigned int i=samples.size()-latestN;i<samples.size();i++)
-	sumLogP -= U(samples[i]);
+      for(unsigned int i=samplesU.size()-latestN;i<samplesU.size();i++)
+	sumLogP -= samplesU[i];
       
       if(latestN > 0)
 	sumLogP /= T((float)latestN);
       
       return sumLogP;
+    }
+
+
+    template <typename T>
+    bool MCMC<T>::hasConverged() // have sampler probabilities converged?
+    {
+      std::lock_guard<std::mutex> lock(solution_mutex);
+
+      if(samplesU.size() < 400) return false;
+
+      T m, s;
+
+      m = T(0.0);
+      s = T(0.0);
+
+      for(unsigned int i=0;i<samplesU.size();i++){
+	if(samplesU[i] > T(0.0)){
+	  m += samplesU[i];
+	  s += samplesU[i]*samplesU[i];
+	}
+      }
+
+      m /= samplesU.size();
+      s /= samplesU.size();
+
+      s = whiteice::math::sqrt(whiteice::math::abs(s - m*m)/samplesU.size());
+
+      // test: st.dev of mean / mean value [checks mean value has converged]
+      
+      T test = s/(m + T(1e-6));
+
+      printf("CONVERGENCE TEST: %f\n", (float)test.c[0]);
+
+      if(test < T(0.008))
+	return true;
+      else
+	return false;
     }
     
     
@@ -205,7 +257,10 @@ namespace whiteice
 
 	// p(r)/p(q) = exp(-U(r))/exp(-U(q)) = exp(U(q)-U(r))
 
-	T logP = U(q) - U(r);
+	auto Uq = U(q);
+	auto Ur = U(r);
+
+	T logP = Uq - Ur;
 
 	if(logP > T(10.0)) logP = T(10.0);
 
@@ -223,12 +278,19 @@ namespace whiteice
 	if(whiteice::math::log(rng.uniform()+T(1e-20)) < logP){
 	  // printf("ACCEPT MCMC JUMP!\n"); fflush(stdout);
 	  q = r;
+	  Uq = Ur;
 	}
 	
 	{
 	  std::lock_guard<std::mutex> lock(solution_mutex);
 	  
 	  samples.push_back(q);
+	  samplesU.push_back(Uq);
+
+	  if(Uq > bestU){
+	    best = q;
+	    bestU = Uq;
+	  }
 
 	  sum_mean += q;
 	  sum_N++;
