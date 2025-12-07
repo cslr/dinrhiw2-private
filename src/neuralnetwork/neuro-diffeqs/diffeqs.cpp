@@ -195,6 +195,128 @@ bool simulate_diffeq_model2(const whiteice::nnetwork<T>& diffeq,
 //////////////////////////////////////////////////////////////////////
 
 
+// simulate diff.eq. model in SEQUENCE_LENGTH long periods in parallel (OpenMP)
+template <typename T> 
+bool simulate_diffeq_model3(const whiteice::nnetwork<T>& diffeq,
+			    const whiteice::math::vertex<T>& start,
+			    const float TIME_LENGTH,
+			    std::vector< whiteice::math::vertex<T> >& data,
+			    const std::vector<T>& correct_times,
+			    const whiteice::dataset<T>& correct_data,
+			    const unsigned int SEQUENCE_LENGTH)
+{
+  if(SEQUENCE_LENGTH <= 2) return false;
+  if(correct_times.size() != correct_data.size(0)) return false;
+  
+  const unsigned N = correct_data.size(0)/SEQUENCE_LENGTH;
+  const unsigned DROPPED = correct_data.size(0) - N*SEQUENCE_LENGTH;
+  const float NTIME_LENGTH = ((correct_data.size(0)-DROPPED)/((float)correct_data.size(0)))*TIME_LENGTH;
+
+  data.resize(correct_times.size());
+  bool global_ok = true;
+
+  //printf("A\n");
+
+#pragma omp parallel
+  {
+    std::map<unsigned int, std::vector< whiteice::math::vertex<T> > > results;
+    bool ok = true;
+    
+#pragma omp for nowait
+    for(unsigned int n=0;n<N;n++){
+
+      if(ok == false) continue;
+      
+      std::vector< whiteice::math::vertex<T> > ndata;
+      whiteice::math::vertex<T> nstart_point;
+      std::vector<T> ncorrect_times;
+      
+      const unsigned int nstart = n*SEQUENCE_LENGTH;
+      const unsigned int nend = (n+1)*SEQUENCE_LENGTH;
+
+      //printf("B: %d\n", n);
+      
+      nstart_point = correct_data[nstart];
+      
+      for(unsigned int ni=nstart;ni<nend;ni++){
+	ncorrect_times.push_back(correct_times[ni]);
+      }
+
+      //printf("C: %d\n", n);
+      
+      if(simulate_diffeq_model2(diffeq, nstart_point, NTIME_LENGTH/N,
+				ndata, ncorrect_times) == false){
+	ok = false;
+	continue;
+      }
+      else{
+	//printf("D: %d\n", n);
+	
+	results.insert(std::pair< unsigned int,
+		       std::vector< whiteice::math::vertex<T> > >(n, ndata));
+      }
+    }
+
+#pragma omp critical
+    {
+      if(ok){
+	for(const auto& r : results){
+
+	  //printf("AA: %d\n", r.first);
+	  
+	  for(unsigned int i=0;i<r.second.size();i++){
+	    data[r.first*SEQUENCE_LENGTH+i] = r.second[i];
+	  }
+	}
+      }
+
+      if(ok == false) global_ok = false;
+    }
+
+    //printf("BB\n");
+  }
+
+  // simulates DROPPED elements at the end
+  if(DROPPED > 0 && global_ok){
+    //printf("BBB: %d %d %d\n", N, SEQUENCE_LENGTH, correct_data.size(0));
+    
+    whiteice::math::vertex<T> nstart_point = correct_data[N*SEQUENCE_LENGTH];
+    std::vector< whiteice::math::vertex<T> > ndata;
+    std::vector<T> ncorrect_times;
+      
+    const unsigned int nstart = N*SEQUENCE_LENGTH;
+    const unsigned int nend = correct_data.size(0);
+
+    //printf("CC\n");
+      
+    for(unsigned int ni=nstart;ni<nend;ni++){
+      ncorrect_times.push_back(correct_times[ni]);
+    }
+
+    //printf("DD\n");
+        
+    if(simulate_diffeq_model2(diffeq, nstart_point, (TIME_LENGTH - NTIME_LENGTH),
+			      ndata, ncorrect_times) == false){
+      return false;
+    }
+    else{
+      //printf("EE\n");
+      
+      for(unsigned int i=0;i<ndata.size();i++){
+	data[N*SEQUENCE_LENGTH+i] = ndata[i];
+      }
+    }
+  }
+
+  //printf("FF\n");
+  
+  return global_ok;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+
+
 template <typename T>
 class nnet_gradient_ode : public whiteice::math::odefunction<T>
 {public:
@@ -454,8 +576,10 @@ bool fit_diffeq_to_data_hmc(whiteice::nnetwork<T>& diffeq,
 			    start_point,
 			    delta_time,
 			    xdata,
-			    times) == false)
+			    times) == false){
+    printf("CHECK POINT 2\n");
     return false;
+  }
 
   // setup HMC sampler and samples target number of points
 
@@ -638,6 +762,26 @@ template bool simulate_diffeq_model2< math::blas_real<double> >
  const float TIME_LENGTH,
  std::vector< whiteice::math::vertex< math::blas_real<double> > >& data,
  const std::vector< math::blas_real<double> >& correct_times);
+
+
+template bool simulate_diffeq_model3< math::blas_real<float> >
+(const whiteice::nnetwork< math::blas_real<float> >& diffeq,
+ const whiteice::math::vertex< math::blas_real<float> >& start,
+ const float TIME_LENGTH,
+ std::vector< whiteice::math::vertex< math::blas_real<float> > >& data,
+ const std::vector< math::blas_real<float> >& correct_times,
+ const whiteice::dataset< math::blas_real<float> >& correct_data,
+ const unsigned int SEQUENCE_LENGTH);
+
+template bool simulate_diffeq_model3< math::blas_real<double> >
+(const whiteice::nnetwork< math::blas_real<double> >& diffeq,
+ const whiteice::math::vertex< math::blas_real<double> >& start,
+ const float TIME_LENGTH,
+ std::vector< whiteice::math::vertex< math::blas_real<double> > >& data,
+ const std::vector< math::blas_real<double> >& correct_times,
+ const whiteice::dataset< math::blas_real<double> >& correct_data,
+ const unsigned int SEQUENCE_LENGTH);
+
 
 
 template bool simulate_diffeq_model_nn_gradient

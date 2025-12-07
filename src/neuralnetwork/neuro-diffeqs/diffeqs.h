@@ -33,6 +33,17 @@ template <typename T = math::blas_real<float> >
 			      const std::vector<T>& correct_times);
 
 
+// simulate diff.eq. model in SEQUENCE_LENGTH long periods in parallel (OpenMP)
+template <typename T = math::blas_real<float> > 
+bool simulate_diffeq_model3(const whiteice::nnetwork<T>& diffeq,
+			    const whiteice::math::vertex<T>& start,
+			    const float TIME_LENGTH,
+			    std::vector< whiteice::math::vertex<T> >& data,
+			    const std::vector<T>& correct_times,
+			    const whiteice::dataset<T>& correct_data,
+			    const unsigned int SEQUENCE_LENGTH);
+
+
 template <typename T = math::blas_real<float> > 
 bool simulate_diffeq_model_nn_gradient(const whiteice::nnetwork<T>& diffeq,
 				       const whiteice::math::vertex<T>& start,
@@ -103,6 +114,27 @@ extern template bool simulate_diffeq_model2< math::blas_real<double> >
  const float TIME_LENGTH,
  std::vector< whiteice::math::vertex< math::blas_real<double> > >& data,
  const std::vector< math::blas_real<double> >& correct_times);
+
+
+
+extern template bool simulate_diffeq_model3< math::blas_real<float> >
+(const whiteice::nnetwork< math::blas_real<float> >& diffeq,
+ const whiteice::math::vertex< math::blas_real<float> >& start,
+ const float TIME_LENGTH,
+ std::vector< whiteice::math::vertex< math::blas_real<float> > >& data,
+ const std::vector< math::blas_real<float> >& correct_times,
+ const whiteice::dataset< math::blas_real<float> >& correct_data,
+ const unsigned int SEQUENCE_LENGTH);
+
+extern template bool simulate_diffeq_model3< math::blas_real<double> >
+(const whiteice::nnetwork< math::blas_real<double> >& diffeq,
+ const whiteice::math::vertex< math::blas_real<double> >& start,
+ const float TIME_LENGTH,
+ std::vector< whiteice::math::vertex< math::blas_real<double> > >& data,
+ const std::vector< math::blas_real<double> >& correct_times,
+ const whiteice::dataset< math::blas_real<double> >& correct_data,
+ const unsigned int SEQUENCE_LENGTH);
+
 
 
 extern template bool simulate_diffeq_model_nn_gradient

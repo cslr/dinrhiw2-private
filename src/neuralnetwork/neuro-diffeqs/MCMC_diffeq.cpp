@@ -16,12 +16,17 @@ namespace whiteice
     whiteice::nnetwork<T> net(this->net);
     bool ok = net.importdata(q);
     assert(ok == true);
+
+    // neural network diff.eq. diverge easily so process in small periods.
+    const unsigned int SEQUENCE_LENGTH = 25; 
   
     // now simulate training datapoints
-    simulate_diffeq_model2(net,
+    simulate_diffeq_model3(net,
 			   this->diffeq_starting_point,
 			   (times[times.size()-1]-times[0]).c[0],
-			   xdata, times);
+			   xdata, times,
+			   ds,
+			   SEQUENCE_LENGTH);
 
     assert(xdata.size() > 0);
     assert(xdata.size() == ds.size(0));

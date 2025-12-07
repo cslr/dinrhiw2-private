@@ -425,7 +425,8 @@ void mcmc_diffeq_test()
   whiteice::RNG< whiteice::math::blas_real<double> > rng2;
   rng2.normal(diffeq_starting_point);
 
-  const unsigned int DATAPOINTS = 15;
+  const unsigned int DATAPOINTS = 50;
+  // const unsigned int SEQUENCE_LENGTH = 15;
 
   for(unsigned int i=0;i<DATAPOINTS;i++)
     times.push_back((float)i);
