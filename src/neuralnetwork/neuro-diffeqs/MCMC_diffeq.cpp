@@ -18,7 +18,7 @@ namespace whiteice
     assert(ok == true);
 
     // neural network diff.eq. diverge easily so process in small periods.
-    const unsigned int SEQUENCE_LENGTH = 25; 
+    // const unsigned int SEQUENCE_LENGTH = 15; 
   
     // now simulate training datapoints
     simulate_diffeq_model3(net,

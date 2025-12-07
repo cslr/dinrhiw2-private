@@ -96,7 +96,7 @@ TARGET6=minihack2_test
 TARGET7=testsuite5
 TARGET8=testsuite_ipd
 
-CXXFLAGS=-Wall $(CFLAGS) -g -I. -I.. -I../.. -Iexceptions -I../math -I../neuralnetwork -I../hmm -I../rnn -I../crypto -I../datamining $(OPTIMIZE)
+CXXFLAGS=-Wall $(CFLAGS) -g -I. -I.. -I../.. -Iexceptions -I../math -I../neuralnetwork -I../neuralnetwork/neuro-diffeqs -I../hmm -I../rnn -I../crypto -I../datamining $(OPTIMIZE)
 # -I/usr/include/python3.9 -I/mingw64/include/python3.9
 
 LIBS=@EXTRA_LIBPATHS@ -lgmp -lpthread @EXTRA_LIBS@

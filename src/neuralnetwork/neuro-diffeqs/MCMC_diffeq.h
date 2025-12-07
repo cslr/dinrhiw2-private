@@ -16,16 +16,20 @@ namespace whiteice
   class MCMC_diffeq : public whiteice::math::MCMC<T>
   {
   public:
-    
+
+    // sequence length tells how long time periods simulate diff.eq. until reset
     MCMC_diffeq(const whiteice::nnetwork<T>& net,
 		const whiteice::dataset<T>& ds,
 		const std::vector<T>& times,
-		const whiteice::math::vertex<T>& diffeq_starting_point)
+		const whiteice::math::vertex<T>& diffeq_starting_point,
+		const unsigned int SEQUENCE_LENGTH = 15)
     {
       this->net = net;
       this->ds = ds;
       this->times = times;
       this->diffeq_starting_point = diffeq_starting_point;
+
+      this->SEQUENCE_LENGTH = SEQUENCE_LENGTH;
     }
   
     
@@ -34,6 +38,8 @@ namespace whiteice
     T U(const math::vertex<T>& q) const;
   
   protected:
+
+    unsigned int SEQUENCE_LENGTH = 15;
 
     whiteice::nnetwork<T> net;
     whiteice::dataset<T> ds;
