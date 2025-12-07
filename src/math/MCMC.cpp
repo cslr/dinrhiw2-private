@@ -185,26 +185,28 @@ namespace whiteice
     {
       std::lock_guard<std::mutex> lock(solution_mutex);
 
-      if(samplesU.size() < 400) return false;
+      if(samplesU.size() < 1000) return false;
 
       T m, s;
 
       m = T(0.0);
       s = T(0.0);
 
-      for(unsigned int i=0;i<samplesU.size();i++){
+      const unsigned int HISTORY_LEN = 400;
+
+      for(unsigned int i=samplesU.size()-HISTORY_LEN;i<samplesU.size();i++){
 	if(samplesU[i] > T(0.0)){
 	  m += samplesU[i];
 	  s += samplesU[i]*samplesU[i];
 	}
       }
 
-      m /= samplesU.size();
-      s /= samplesU.size();
-
-      s = whiteice::math::sqrt(whiteice::math::abs(s - m*m)/samplesU.size());
+      m /= HISTORY_LEN;
+      s /= HISTORY_LEN;
 
       // test: st.dev of mean / mean value [checks mean value has converged]
+
+      s = whiteice::math::sqrt(whiteice::math::abs(s - m*m)/HISTORY_LEN);
       
       T test = s/(m + T(1e-6));
 
