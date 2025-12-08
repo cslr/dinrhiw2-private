@@ -52,6 +52,14 @@ namespace whiteice
 
       bool hasConverged(); // have sampler probabilities converged?
 
+      void setTemperature(const float temp){
+	temperature = temp;
+      }
+
+      float getTemperature() const{
+	return temperature;
+      }
+
     protected:
 
       whiteice::math::vertex<T> starting_point;
@@ -59,6 +67,8 @@ namespace whiteice
     private:
 
       bool adapt_stdev = true; // adapt gaussian sampling step length
+
+      std::atomic<float> temperature = 1.0f;
 
       std::vector< math::vertex<T> > samples;
       unsigned int sum_N = 0;

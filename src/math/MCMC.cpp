@@ -212,7 +212,7 @@ namespace whiteice
 
       printf("CONVERGENCE TEST: %f\n", (float)test.c[0]);
 
-      if(test < T(0.008))
+      if(test < T(0.02))
 	return true;
       else
 	return false;
@@ -239,6 +239,8 @@ namespace whiteice
       mean.zero();
       for(unsigned int d=0;d<cov.size();d++) cov[d] = T(1.0f);
 
+      T Uq = U(q);
+
       while(running){
 	
 	rng.normal(r); // r ~ N(q, I*jump_stdev^2)*cov)
@@ -259,10 +261,10 @@ namespace whiteice
 
 	// p(r)/p(q) = exp(-U(r))/exp(-U(q)) = exp(U(q)-U(r))
 
-	auto Uq = U(q);
+	// auto Uq = U(q);
 	auto Ur = U(r);
 
-	T logP = Uq - Ur;
+	T logP = (Uq - Ur)/temperature;
 
 	if(logP > T(10.0)) logP = T(10.0);
 

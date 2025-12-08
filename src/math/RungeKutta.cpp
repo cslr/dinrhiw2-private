@@ -51,11 +51,12 @@ namespace whiteice
       const T h_min = T(1e-13);
       const T h_max = T(1e-2);
 #endif
+#if 1
       // for machine learning accuracy
       const T e0 = T(1e-8); // was: 1e-8 (error was kept at 1e-2)
-      const T h_min = T(0.05); // was 1e-2
-      const T h_max = T(0.2); // was 1e-1
-
+      const T h_min = T(1e-2); // was 1e-2
+      const T h_max = T(1e-1); // was 1e-1
+#endif
 	
       const T f6 = T(1.0/6.0);
       const T f5 = T(1.0/5.0);
