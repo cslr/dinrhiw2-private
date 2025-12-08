@@ -26,14 +26,16 @@ namespace whiteice
       // gradient estimator calls U(x)
       // 2*NUM_SAMPLES times which may be SLOW
       
-      vertex<T> epsilon = x;
       vertex<T> grad = x;
       
       grad.zero();
 
 #pragma omp parallel
       {
+	vertex<T> epsilon = x;
 	whiteice::math::vertex<T> g = grad;
+
+	epsilon.zero();
 	g.zero();
 
 #pragma omp for nowait schedule(auto)
