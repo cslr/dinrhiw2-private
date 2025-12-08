@@ -28,7 +28,8 @@ SOURCES = tst/test.cpp tst/pso_main.cpp tst/somtest.cpp tst/gene_main.cpp tst/st
 	neuro-diffeqs/MCMC_diffeq.cpp \
 	../math/fastpca.cpp ../math/vertex.cpp ../math/matrix.cpp ../dataset.cpp \
 	../math/modular.cpp ../math/superresolution.cpp ../math/quaternion.cpp \
-	../math/RNG.cpp ../math/LBFGS.cpp ../math/SGD.cpp ../math/pocketfft/pocketfft.c
+	../math/RNG.cpp ../math/LBFGS.cpp ../math/SGD.cpp ../math/pocketfft/pocketfft.c \
+	../reinforcement/EvolutionStrategies.cpp
 
 OBJECTS= activation_function.o odd_sigmoid.o identity_activation.o multidimensional_gaussian.o \
 	stretched_function.o optimized_function.o \
@@ -49,11 +50,11 @@ OBJECTS= activation_function.o odd_sigmoid.o identity_activation.o multidimensio
 	LinearKCluster.o rUHMC.o \
 	GeneralKCluster.o GlobalOptimizer.o \
 	DiffEQ_HMC.o neuro-diffeqs/diffeqs.o neuro-diffeqs/HMC_diffeq.o \
-	neuro-diffeqs/MCMC_diffeq.o
+	neuro-diffeqs/MCMC_diffeq.o neuro-diffeqs/SGD_diffeq.o
 
 EXTRA_OBJECTS = ../math/vertex.o ../math/matrix.o ../math/ownexception.o ../math/integer.o \
 	../math/matrix_rotations.o ../math/eig.o ../math/correlation.o ../math/blade_math.o \
-	../math/MCMC.o \
+	../math/MCMC.o ../math/SGD.o ../math/SGD_ESgrad.o \
 	../math/real.o 	../dataset.o ../conffile.o ../linear_ETA.o \
 	../dynamic_bitset.o ../math/ica.o ../math/BFGS.o ../math/LBFGS.o ../math/linear_algebra.o \
 	../math/correlation.o ../math/ica.o ../math/linear_equations.o ../math/norms.o ../math/RNG.o \
@@ -61,7 +62,7 @@ EXTRA_OBJECTS = ../math/vertex.o ../math/matrix.o ../math/ownexception.o ../math
 	../math/outerproduct.o ../math/fastpca.o ../Log.o ../VisualizationInterface.o \
 	../math/quaternion.o ../math/SGD.o ../math/RungeKutta.o ../math/pocketfft/pocketfft.o \
 	../datamining/discretize.o ../datamining/FrequentSetsFinder.o ../datamining/fpgrowth.o ../datamining/fptree.o \
-	../timed_boolean.o
+	../timed_boolean.o ../reinforcement/EvolutionStrategies.o
 
 
 TARGET1_OBJECTS=tst/test.o 

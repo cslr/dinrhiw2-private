@@ -209,6 +209,10 @@
 
 #include "MCMC.h"
 #include "MCMC_diffeq.h"
+#include "ES_diffeq.h"
+
+#include "SGD_ESgrad.h"
+#include "SGD_diffeq.h"
 
 #include "HMC.h"
 #include "UHMC.h"
