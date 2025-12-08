@@ -61,7 +61,9 @@ namespace whiteice
 
     //printf("MEAN ERROR: %f\n", mean_error.c[0]);
     
-    // E /= ds.size(0)*xdata[0].size();    // no scaling
+    E = whiteice::math::sqrt(T(2.0)*E / (ds.size(0)*xdata[0].size()) );
+
+    // printf("MEAN ERROR: %f\n", E.c[0]);
     
     return (E);    
   }
