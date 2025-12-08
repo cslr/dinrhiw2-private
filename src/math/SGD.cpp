@@ -2,7 +2,8 @@
  * Implments Stochasic Gradient Descent absract class to be inherited by a specific optimization class.
  * 
  *
- * TODO: allow implementing class to enable dropout heuristic in neural networks.
+ * TODO: allow implementing class to enable dropout heuristic
+ * in neural networks.
  *
  */
 
@@ -100,7 +101,7 @@ namespace whiteice
 	heuristics(x0);
 	
 	this->bestx = x0;
-	this->besty = getError(x0);
+	this->besty = this->getError(x0);
 	
 	iterations  = 0;
       }

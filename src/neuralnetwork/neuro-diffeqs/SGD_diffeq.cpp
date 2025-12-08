@@ -4,6 +4,13 @@
 
 namespace whiteice
 {
+
+  template <typename T>
+  T SGD_diffeq<T>::getError(const whiteice::math::vertex<T>& x) const
+  {
+    return U(x);
+  }
+  
   
   // diff.eq. function: prediction error
   template <typename T>

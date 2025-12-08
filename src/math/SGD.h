@@ -108,7 +108,7 @@ namespace whiteice
 	unsigned int MAX_ITERS;
 	unsigned int MAX_NO_IMPROVE_ITERS;
 
-	bool use_adam = false;
+	bool use_adam = true;
       
         bool overfit = false;
 	bool keepWorse = false; // do we save worse solutions

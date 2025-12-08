@@ -68,6 +68,8 @@
 
 #include "MCMC_diffeq.h"
 
+#include "ES_diffeq.h"
+
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
@@ -417,16 +419,16 @@ void mcmc_diffeq_test()
   arch.push_back(DIMENSION);
 
   net.setArchitecture(arch,
-		      whiteice::nnetwork< whiteice::math::blas_real<double> >::tanh
-		      );
-  net.randomize(2, 1.0);
+		      whiteice::nnetwork< whiteice::math::blas_real<double> >::tanh);
+
+  net.randomize(2, 1e-4);
 
   diffeq_starting_point.resize(DIMENSION);
   whiteice::RNG< whiteice::math::blas_real<double> > rng2;
   rng2.normal(diffeq_starting_point);
 
-  const unsigned int DATAPOINTS = 50;
-  // const unsigned int SEQUENCE_LENGTH = 15;
+  const unsigned int DATAPOINTS = 10;
+  const unsigned int SEQUENCE_LENGTH = 5;
 
   for(unsigned int i=0;i<DATAPOINTS;i++)
     times.push_back((float)i);
@@ -450,7 +452,84 @@ void mcmc_diffeq_test()
 
   net.randomize(2, 1.0);
   net.exportdata(params);
+
   
+  whiteice::SGD_diffeq sgd(net, ds, times, diffeq_starting_point,
+			   SEQUENCE_LENGTH);
+
+  sgd.setSmartConvergenceCheck(false);
+  sgd.setAdamOptimizer(true);
+
+  const unsigned int MAX_ITERS = 10000;
+  const unsigned int MAX_NO_IMPROVE_ITERS = 10000;
+  
+  sgd.minimize(params, 1e-2,
+	       MAX_ITERS,
+	       MAX_NO_IMPROVE_ITERS);
+
+  int seen_iteration = -1;
+
+  while(sgd.isRunning()){
+    sleep(1);
+    
+    whiteice::math::blas_real<double> error;
+    unsigned int iterations = 0;
+
+    if(sgd.getSolutionStatistics(error, iterations)){
+
+      if(seen_iteration == -1){
+	std::cout << "error: " << error 
+		  << " iterations: " << iterations << std::endl;
+	seen_iteration = (int)iterations;
+      }
+      else if(seen_iteration < (int)iterations){
+	std::cout << "error: " << error 
+		  << " iterations: " << iterations << std::endl;
+	seen_iteration = (int)iterations;
+      } 
+      
+    }
+  }
+  
+#if 0
+  whiteice::SGD_diffeq es(net, ds, times, diffeq_starting_point,
+			  SEQUENCE_LENGTH);
+  
+  es.setEvolution(false);
+  
+  es.startOptimize(50);
+
+  
+
+  int seen_iteration = -1;
+
+  while(true){
+    sleep(1);
+    unsigned int iterations = 0;
+    unsigned int best_index;
+    whiteice::math::blas_real<double> best_reward;
+    whiteice::math::blas_real<double> mean;
+    
+    es.getPopulationMeanReward
+      (iterations, best_index,
+       best_reward, mean);
+
+    if(seen_iteration == -1){
+      std::cout << "best reward: " << best_reward 
+		<< " iterations: " << iterations << std::endl;
+      seen_iteration = (int)iterations;
+    }
+    else if(seen_iteration < (int)iterations){
+      std::cout << "best reward: " << best_reward 
+		<< " iterations: " << iterations << std::endl;
+      seen_iteration = (int)iterations;
+    }
+    
+  }
+#endif
+  
+
+#if 0
   whiteice::MCMC_diffeq diffeq(net, ds, times, diffeq_starting_point);
 
   diffeq.startSampler(params);
@@ -468,6 +547,7 @@ void mcmc_diffeq_test()
   
   std::cout << "Model log-probability: " << diffeq.getMeanProbability()
 	    << std::endl;
+#endif
 }
 
 /**********************************************************************/

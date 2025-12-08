@@ -41,8 +41,8 @@ namespace whiteice
 
     private:
 
-      const unsigned int NUM_SAMPLES = 25;
-      const T sigma = T(1.0); // assumes functiona input scaling is 1.0
+      const unsigned int NUM_SAMPLES = 200; // was: 25
+      const T sigma = T(1e-2); // assumes functiona input scaling is 1.0
       
       const whiteice::RNG<T> random;
     };

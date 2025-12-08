@@ -39,6 +39,9 @@ namespace whiteice
  
     virtual ~SGD_diffeq(){ }
 
+
+    virtual T getError(const whiteice::math::vertex<T>& x) const;
+
   protected:
 
     // diff.eq. function: prediction error

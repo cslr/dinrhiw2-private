@@ -31,16 +31,28 @@ namespace whiteice
       
       grad.zero();
 
-      for(unsigned int n=0;n<NUM_SAMPLES;n++)
+#pragma omp parallel
       {
-	random.normal(epsilon);
-	
-	auto s_epsilon = epsilon;
-	s_epsilon *= sigma;
-	
-	grad += (this->U(x + s_epsilon) - this->U(x - s_epsilon))*epsilon;
-      }
+	whiteice::math::vertex<T> g = grad;
+	g.zero();
 
+#pragma omp for nowait schedule(auto)
+	for(unsigned int n=0;n<NUM_SAMPLES;n++)
+	{
+	  random.normal(epsilon);
+	  
+	  auto s_epsilon = epsilon;
+	  s_epsilon *= sigma;
+	  
+	  g += (this->U(x + s_epsilon) - this->U(x - s_epsilon))*epsilon;
+	}
+
+#pragma omp critical
+	{
+	  grad += g;
+	}
+      }
+	
       grad /= T(2.0)*NUM_SAMPLES*sigma;
 
       return grad;
