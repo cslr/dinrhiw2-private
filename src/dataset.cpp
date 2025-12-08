@@ -2490,7 +2490,7 @@ namespace whiteice
   {
     if(clusters.size() <= 0){
       std::string error = "dataset::operator[]: cluster zero doesn't exist.";
-      printf(error.c_str());
+      printf("%s", error.c_str());
       //assert(0);
       throw std::out_of_range(error);
     }
