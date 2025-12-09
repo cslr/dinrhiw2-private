@@ -74,8 +74,10 @@ namespace whiteice
 	if(k == 0)
 	  x0 = temp2;
       }
+
+      const T sigma = T(0.0);
       
-      if(simulate_diffeq_model2(nnet, x0, TIME_LENGTH, xdata, correct_times) == false){
+      if(simulate_diffeq_model2(nnet, x0, TIME_LENGTH, sigma, xdata, correct_times) == false){
 	assert(0); // should not happen
       }
       
@@ -140,7 +142,9 @@ namespace whiteice
 	if(k == 0) x0 = temp2;
       }
 
-      if(simulate_diffeq_model2(nnet, x0, TIME_LENGTH, xdata, correct_times) == false){
+      const T sigma = T(0.0);
+
+      if(simulate_diffeq_model2(nnet, x0, TIME_LENGTH, sigma, xdata, correct_times) == false){
 	assert(0); // should not happen
       }
 
