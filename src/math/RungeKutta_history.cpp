@@ -50,6 +50,14 @@ namespace whiteice
 
       if(it == map_points.end()){
 	it--;
+
+	if(t < it->first){ // time before first/last element
+	  whiteice::math::vertex<T> v;
+	  v.resize(DIM);
+	  v.zero();
+	  return v;
+	}
+	
 	return it->second;
       }
       else if(it == map_points.begin()){
