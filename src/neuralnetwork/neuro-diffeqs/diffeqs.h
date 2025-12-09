@@ -21,16 +21,20 @@ template <typename T = math::blas_real<float> >
   bool simulate_diffeq_model(const whiteice::nnetwork<T>& diffeq,
 			     const whiteice::math::vertex<T>& start,
 			     const float TIME_LENGTH,
+			     const T& sigma,
 			     std::vector< whiteice::math::vertex<T> >& data,
-			     std::vector<T>& times);
+			     std::vector<T>& times,
+			     const unsigned int HISTORY_LEN = 0);
 
 // fits simulated data points to correct_times values
 template <typename T = math::blas_real<float> > 
   bool simulate_diffeq_model2(const whiteice::nnetwork<T>& diffeq,
 			      const whiteice::math::vertex<T>& start,
 			      const float TIME_LENGTH,
+			      const T& sigma,
 			      std::vector< whiteice::math::vertex<T> >& data,
-			      const std::vector<T>& correct_times);
+			      const std::vector<T>& correct_times,
+			      const unsigned int HISTORY_LEN = 0);
 
 
 // simulate diff.eq. model in SEQUENCE_LENGTH long periods in parallel (OpenMP)
@@ -38,10 +42,12 @@ template <typename T = math::blas_real<float> >
 bool simulate_diffeq_model3(const whiteice::nnetwork<T>& diffeq,
 			    const whiteice::math::vertex<T>& start,
 			    const float TIME_LENGTH,
+			    const T& sigma,
 			    std::vector< whiteice::math::vertex<T> >& data,
 			    const std::vector<T>& correct_times,
 			    const whiteice::dataset<T>& correct_data,
-			    const unsigned int SEQUENCE_LENGTH);
+			    const unsigned int SEQUENCE_LENGTH,
+			    const unsigned int HISTORY_LEN = 0);
 
 
 template <typename T = math::blas_real<float> > 
@@ -87,16 +93,20 @@ extern template bool simulate_diffeq_model< math::blas_real<float> >
 (const whiteice::nnetwork< math::blas_real<float> >& diffeq,
  const whiteice::math::vertex< math::blas_real<float> >& start,
  const float TIME_LENGTH,
+ const math::blas_real<float>& sigma,
  std::vector< whiteice::math::vertex< math::blas_real<float> > >& data,
- std::vector< math::blas_real<float> >& times);
+ std::vector< math::blas_real<float> >& times,
+ const unsigned int HISTORY_LEN);
 
 
 extern template bool simulate_diffeq_model< math::blas_real<double> >
 (const whiteice::nnetwork< math::blas_real<double> >& diffeq,
  const whiteice::math::vertex< math::blas_real<double> >& start,
  const float TIME_LENGTH,
+ const math::blas_real<double>& sigma,
  std::vector< whiteice::math::vertex< math::blas_real<double> > >& data,
- std::vector< math::blas_real<double> >& times);
+ std::vector< math::blas_real<double> >& times,
+ const unsigned int HISTORY_LEN);
 
 
 // fits simulated data points to correct_times values
@@ -105,15 +115,19 @@ extern template bool simulate_diffeq_model2< math::blas_real<float> >
 (const whiteice::nnetwork< math::blas_real<float> >& diffeq,
  const whiteice::math::vertex< math::blas_real<float> >& start,
  const float TIME_LENGTH,
+ const math::blas_real<float>& sigma,
  std::vector< whiteice::math::vertex< math::blas_real<float> > >& data,
- const std::vector< math::blas_real<float> >& correct_times);
+ const std::vector< math::blas_real<float> >& correct_times,
+ const unsigned int HISTORY_LEN);
 
 extern template bool simulate_diffeq_model2< math::blas_real<double> >
 (const whiteice::nnetwork< math::blas_real<double> >& diffeq,
  const whiteice::math::vertex< math::blas_real<double> >& start,
  const float TIME_LENGTH,
+ const math::blas_real<double>& sigma,
  std::vector< whiteice::math::vertex< math::blas_real<double> > >& data,
- const std::vector< math::blas_real<double> >& correct_times);
+ const std::vector< math::blas_real<double> >& correct_times,
+ const unsigned int HISTORY_LEN);
 
 
 
@@ -121,19 +135,23 @@ extern template bool simulate_diffeq_model3< math::blas_real<float> >
 (const whiteice::nnetwork< math::blas_real<float> >& diffeq,
  const whiteice::math::vertex< math::blas_real<float> >& start,
  const float TIME_LENGTH,
+ const math::blas_real<float>& sigma,
  std::vector< whiteice::math::vertex< math::blas_real<float> > >& data,
  const std::vector< math::blas_real<float> >& correct_times,
  const whiteice::dataset< math::blas_real<float> >& correct_data,
- const unsigned int SEQUENCE_LENGTH);
+ const unsigned int SEQUENCE_LENGTH,
+ const unsigned int HISTORY_LEN);
 
 extern template bool simulate_diffeq_model3< math::blas_real<double> >
 (const whiteice::nnetwork< math::blas_real<double> >& diffeq,
  const whiteice::math::vertex< math::blas_real<double> >& start,
  const float TIME_LENGTH,
+ const math::blas_real<double>& sigma,
  std::vector< whiteice::math::vertex< math::blas_real<double> > >& data,
  const std::vector< math::blas_real<double> >& correct_times,
  const whiteice::dataset< math::blas_real<double> >& correct_data,
- const unsigned int SEQUENCE_LENGTH);
+ const unsigned int SEQUENCE_LENGTH,
+ const unsigned int HISTORY_LEN);
 
 
 

@@ -52,10 +52,10 @@ namespace whiteice
       const T h_max = T(1e-2);
 #endif
 #if 1
-      // for machine learning accuracy
-      const T e0 = T(1e-2); // was: 1e-8 (error was kept at 1e-2)
-      const T h_min = T(0.3); // was 1e-2, 0.1
-      const T h_max = T(0.55); // was 1e-1, 0.5
+      // for machine learning accuracy O(h^4) = O(0.3^4) = O(0.0081).
+      const T e0 = T(1e-8); // was: 1e-8 (error was kept at 1e-2)
+      const T h_min = T(0.1); // was 1e-2, 0.1
+      const T h_max = T(0.3); // was 1e-1, 0.5
 #endif
 	
       const T f6 = T(1.0/6.0);
@@ -143,6 +143,19 @@ namespace whiteice
 	else if(h > h_max) h = h_max;
 
 	// std::cout << "RK: h = " << h << std::endl;
+
+	// adds stochastic differential equation gaussian noise term to y
+	{
+	  if(sigma_term > T(0.0)){
+	    whiteice::math::vertex<T> noise;
+	    noise.resize(y.size());
+	    
+	    random.normal(noise);
+	    noise *= sigma_term*sqrt(h); // should be sqrt(dt), is sqrt(h) correct?
+
+	    y += noise;
+	  }
+	}
 
 	// handles bad and large values in values
 	for(unsigned int d=0;d<y.size();d++){

@@ -412,8 +412,10 @@ void mcmc_diffeq_test()
   std::vector< whiteice::math::blas_real<double> > times;
   whiteice::math::vertex< whiteice::math::blas_real<double> > diffeq_starting_point;
 
+  const unsigned int HISTORY_LEN = 2;
+
   std::vector<unsigned int> arch;
-  arch.push_back(DIMENSION);
+  arch.push_back(DIMENSION*(1+HISTORY_LEN));
   arch.push_back(50);
   arch.push_back(50);
   arch.push_back(DIMENSION);
@@ -436,10 +438,15 @@ void mcmc_diffeq_test()
   // generate target diff.eq. simulation trajectories using Runge-Kutta
   {
     std::vector< math::vertex< whiteice::math::blas_real<double> > > xdata;
+
+    const whiteice::math::blas_real<double> sigma = 0.0;
     
-    simulate_diffeq_model2(net, diffeq_starting_point,
-			   (times[times.size()-1]-times[0]).c[0],
-			   xdata, times);
+    if(simulate_diffeq_model2(net, diffeq_starting_point,
+			      (times[times.size()-1]-times[0]).c[0],
+			      sigma,
+			      xdata, times,
+			      HISTORY_LEN) == false)
+      printf("ERROR: simulate_diffeq_model2() FAILED.\n");
 
     ds.createCluster("correct trajectory", DIMENSION);
     ds.add(0, xdata);
@@ -455,7 +462,7 @@ void mcmc_diffeq_test()
 
   
   whiteice::SGD_diffeq sgd(net, ds, times, diffeq_starting_point,
-			   SEQUENCE_LENGTH);
+			   SEQUENCE_LENGTH, HISTORY_LEN);
 
   sgd.setSmartConvergenceCheck(false);
   sgd.setAdamOptimizer(true);

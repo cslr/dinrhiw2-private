@@ -25,6 +25,20 @@ namespace whiteice
       // estimates gradient
       // gradient estimator calls U(x)
       // 2*NUM_SAMPLES times which may be SLOW
+
+      // adapts sigma to be have same magnitude than parameter x
+      T mean = T(0.0);
+      T stdev = T(0.0);
+      for(unsigned int d=0;d<x.size();d++){
+	mean += x[d];
+	stdev += x[d]*x[d];
+      }
+
+      mean /= x.size();
+      stdev /= x.size();
+      stdev = whiteice::math::sqrt(whiteice::math::abs(stdev - mean*mean)+T(1e-3));
+      
+      const T sigma = T(0.01)*stdev; // scaling is 0.01*stdev of parameters
       
       vertex<T> grad = x;
       

@@ -162,7 +162,7 @@ namespace whiteice
 	  ttmp = t + T(0.5)*h;
 	  calculate_parameters(tmp, ttmp, map_points, HISTORY_LEN, ode_y);
 	  k[2] = h * (f->calculate(odeparam<T>(ttmp, ode_y)));
-		      
+	  
 	  tmp = y + k[2];
 	  ttmp = t + h;
 	  calculate_parameters(tmp, ttmp, map_points, HISTORY_LEN, ode_y);
@@ -254,7 +254,7 @@ namespace whiteice
 	  if(isnan(y[d])) y[d] = T(0.0);
 	  if(isinf(y[d])) y[d] = T(0.0);
 	}
-	
+
 	points.push_back(y);
 	times.push_back(t);
 

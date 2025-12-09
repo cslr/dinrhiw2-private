@@ -54,7 +54,7 @@ namespace whiteice
     template <typename T>
     modular<T>::modular(const T& value)
     {
-      this->value = value;
+      this->value = (value % DEFAULT_MODULAR_BASIS);
       this->modulo = DEFAULT_MODULAR_BASIS;
     }
     

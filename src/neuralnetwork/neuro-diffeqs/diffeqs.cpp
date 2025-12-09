@@ -10,6 +10,7 @@
 #include "nnetwork.h"
 #include "bayesian_nnetwork.h"
 #include "RungeKutta.h"
+#include "RungeKutta_history.h"
 
 #include <vector>
 
@@ -122,10 +123,12 @@ template <typename T>
 bool simulate_diffeq_model(const whiteice::nnetwork<T>& diffeq,
 			   const whiteice::math::vertex<T>& start,
 			   const float TIME_LENGTH,
+			   const T& sigma,
 			   std::vector< whiteice::math::vertex<T> >& data,
-			   std::vector<T>& times)
+			   std::vector<T>& times,
+			   const unsigned int HISTORY_LEN)
 {
-  if(start.size() != diffeq.getInputs(0)) return false;
+  if((start.size()*(1+HISTORY_LEN)) != diffeq.getInputs(0)) return false;
   if(start.size() != diffeq.getNeurons(diffeq.getLayers()-1)) return false;
   if(TIME_LENGTH < 0.0f) return false;
   if(TIME_LENGTH > 1e6f) return false; // too long simulation length [sanity check]
@@ -139,12 +142,20 @@ bool simulate_diffeq_model(const whiteice::nnetwork<T>& diffeq,
   
   nnet_ode< T > ode(diffeq);
 
-  whiteice::math::RungeKutta< T > rk(&ode);
+  // assumes that neural network input dimensions have proper dimensions
+    
+  assert(diffeq.input_size() == (start.size()*(1+HISTORY_LEN)));
+
+  whiteice::math::RungeKutta_history< T > rk(&ode);
+
+  rk.setHistoryLength(HISTORY_LEN);
+  rk.setSigma(sigma);
 
   rk.calculate(start_time, TIME_LENGTH,
 	       start,
 	       data,
 	       times);
+
   
 
   if(data.size() > 0 && times.size() > 0 && data.size() == times.size())
@@ -159,15 +170,19 @@ template <typename T>
 bool simulate_diffeq_model2(const whiteice::nnetwork<T>& diffeq,
 			    const whiteice::math::vertex<T>& start,
 			    const float TIME_LENGTH,
+			    const T& sigma,			    
 			    std::vector< whiteice::math::vertex<T> >& data,
-			    const std::vector<T>& correct_times)
+			    const std::vector<T>& correct_times,
+			    const unsigned int HISTORY_LEN)
 {
   std::vector< whiteice::math::vertex<T> > data2;
   std::vector< T > times;
-  
-  if(simulate_diffeq_model(diffeq, start, TIME_LENGTH, data2, times) == false) return false;
 
   data.clear();
+  
+  if(simulate_diffeq_model(diffeq, start, TIME_LENGTH,
+			   sigma, data2, times, HISTORY_LEN) == false)
+    return false;
 
   unsigned int kbest = 0;
   
@@ -200,10 +215,12 @@ template <typename T>
 bool simulate_diffeq_model3(const whiteice::nnetwork<T>& diffeq,
 			    const whiteice::math::vertex<T>& start,
 			    const float TIME_LENGTH,
+			    const T& sigma,
 			    std::vector< whiteice::math::vertex<T> >& data,
 			    const std::vector<T>& correct_times,
 			    const whiteice::dataset<T>& correct_data,
-			    const unsigned int SEQUENCE_LENGTH)
+			    const unsigned int SEQUENCE_LENGTH,
+			    const unsigned int HISTORY_LEN)
 {
   if(SEQUENCE_LENGTH <= 2) return false;
   if(correct_times.size() != correct_data.size(0)) return false;
@@ -244,14 +261,14 @@ bool simulate_diffeq_model3(const whiteice::nnetwork<T>& diffeq,
 
       //printf("C: %d\n", n);
       
-      if(simulate_diffeq_model2(diffeq, nstart_point, NTIME_LENGTH/N,
-				ndata, ncorrect_times) == false){
+      if(simulate_diffeq_model2(diffeq, nstart_point, NTIME_LENGTH/N, sigma,
+				ndata, ncorrect_times, HISTORY_LEN) == false){
 	ok = false;
 	continue;
       }
       else{
 	//printf("D: %d\n", n);
-	
+
 	results.insert(std::pair< unsigned int,
 		       std::vector< whiteice::math::vertex<T> > >(n, ndata));
       }
@@ -295,8 +312,8 @@ bool simulate_diffeq_model3(const whiteice::nnetwork<T>& diffeq,
 
     //printf("DD\n");
         
-    if(simulate_diffeq_model2(diffeq, nstart_point, (TIME_LENGTH - NTIME_LENGTH),
-			      ndata, ncorrect_times) == false){
+    if(simulate_diffeq_model2(diffeq, nstart_point, (TIME_LENGTH - NTIME_LENGTH), sigma,
+			      ndata, ncorrect_times, HISTORY_LEN) == false){
       return false;
     }
     else{
@@ -571,10 +588,13 @@ bool fit_diffeq_to_data_hmc(whiteice::nnetwork<T>& diffeq,
   std::vector< whiteice::math::vertex<T> > xdata;
 
   auto delta_time = (times[times.size()-1] - times[0]).c[0];
+
+  const T sigma = T(0.0);
   
   if(simulate_diffeq_model2(diffeq,
 			    start_point,
 			    delta_time,
+			    sigma,
 			    xdata,
 			    times) == false){
     printf("CHECK POINT 2\n");
@@ -735,16 +755,20 @@ template bool simulate_diffeq_model< math::blas_real<float> >
 (const whiteice::nnetwork< math::blas_real<float> >& diffeq,
  const whiteice::math::vertex< math::blas_real<float> >& start,
  const float TIME_LENGTH,
+ const math::blas_real<float>& sigma,
  std::vector< whiteice::math::vertex< math::blas_real<float> > >& data,
- std::vector< whiteice::math::blas_real<float> >& times);
+ std::vector< whiteice::math::blas_real<float> >& times,
+ const unsigned int HISTORY_LEN);
 
 
 template bool simulate_diffeq_model< math::blas_real<double> >
 (const whiteice::nnetwork< math::blas_real<double> >& diffeq,
  const whiteice::math::vertex< math::blas_real<double> >& start,
  const float TIME_LENGTH,
+ const math::blas_real<double>& sigma,
  std::vector< whiteice::math::vertex< math::blas_real<double> > >& data,
- std::vector< whiteice::math::blas_real<double> >& times);
+ std::vector< whiteice::math::blas_real<double> >& times,
+ const unsigned int HISTORY_LEN);
 
 
 // fits simulated data points to correct_times values
@@ -753,34 +777,42 @@ template bool simulate_diffeq_model2< math::blas_real<float> >
 (const whiteice::nnetwork< math::blas_real<float> >& diffeq,
  const whiteice::math::vertex< math::blas_real<float> >& start,
  const float TIME_LENGTH,
+ const math::blas_real<float>& sigma,
  std::vector< whiteice::math::vertex< math::blas_real<float> > >& data,
- const std::vector< math::blas_real<float> >& correct_times);
+ const std::vector< math::blas_real<float> >& correct_times,
+ const unsigned int HISTORY_LEN);
 
 template bool simulate_diffeq_model2< math::blas_real<double> >
 (const whiteice::nnetwork< math::blas_real<double> >& diffeq,
  const whiteice::math::vertex< math::blas_real<double> >& start,
  const float TIME_LENGTH,
+ const math::blas_real<double>& sigma,
  std::vector< whiteice::math::vertex< math::blas_real<double> > >& data,
- const std::vector< math::blas_real<double> >& correct_times);
+ const std::vector< math::blas_real<double> >& correct_times,
+ const unsigned int HISTORY_LEN);
 
 
 template bool simulate_diffeq_model3< math::blas_real<float> >
 (const whiteice::nnetwork< math::blas_real<float> >& diffeq,
  const whiteice::math::vertex< math::blas_real<float> >& start,
  const float TIME_LENGTH,
+ const math::blas_real<float>& sigma,
  std::vector< whiteice::math::vertex< math::blas_real<float> > >& data,
  const std::vector< math::blas_real<float> >& correct_times,
  const whiteice::dataset< math::blas_real<float> >& correct_data,
- const unsigned int SEQUENCE_LENGTH);
+ const unsigned int SEQUENCE_LENGTH,
+ const unsigned int HISTORY_LEN);
 
 template bool simulate_diffeq_model3< math::blas_real<double> >
 (const whiteice::nnetwork< math::blas_real<double> >& diffeq,
  const whiteice::math::vertex< math::blas_real<double> >& start,
  const float TIME_LENGTH,
+ const math::blas_real<double>& sigma,
  std::vector< whiteice::math::vertex< math::blas_real<double> > >& data,
  const std::vector< math::blas_real<double> >& correct_times,
  const whiteice::dataset< math::blas_real<double> >& correct_data,
- const unsigned int SEQUENCE_LENGTH);
+ const unsigned int SEQUENCE_LENGTH,
+ const unsigned int HISTORY_LEN);
 
 
 

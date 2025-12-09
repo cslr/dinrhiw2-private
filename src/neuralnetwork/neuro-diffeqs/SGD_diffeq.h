@@ -24,12 +24,19 @@ namespace whiteice
 	       const std::vector<T>& times,
 	       const whiteice::math::vertex<T>& diffeq_starting_point,
 	       const unsigned int SEQUENCE_LENGTH = 15,
+	       const unsigned int HISTORY_LENGTH = 0,
+	       const T& sigma = T(0.0), // noise term in diff.eqs.
 	       bool overfit = false) : whiteice::math::SGD_ESgrad<T>(overfit)
     {
       this->net = net;
       this->ds = ds;
       this->times = times;
       this->diffeq_starting_point = diffeq_starting_point;
+
+      if(sigma >= T(0.0))
+	this->sigma = sigma;
+
+      this->HISTORY_LENGTH = HISTORY_LENGTH;
 
       if(SEQUENCE_LENGTH > times.size())
 	this->SEQUENCE_LENGTH = times.size();
@@ -52,7 +59,11 @@ namespace whiteice
     
   private:
 
+    unsigned int HISTORY_LENGTH = 0;
+    
     unsigned int SEQUENCE_LENGTH = 15;
+
+    T sigma = T(0.0);
     
     whiteice::nnetwork<T> net;
     whiteice::dataset<T> ds;

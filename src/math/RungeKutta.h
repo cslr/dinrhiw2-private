@@ -14,6 +14,7 @@
 
 #include "odefunction.h"
 #include "vertex.h"
+#include "RNG.h"
 #include <vector>
 
 namespace whiteice
@@ -29,6 +30,10 @@ namespace whiteice
 	
 	odefunction<T>* getFunction() const ;
 	void setFunction(odefunction<T>* f) ;
+
+	T getSigma() const { return sigma_term; }
+	void setSigma(const T& s){ if(s >= T(0.0)) sigma_term = s; }
+	
 	
 	// calculates values from the starting point y0
 	// with adaptive step length, adds results to the end of vector
@@ -41,7 +46,12 @@ namespace whiteice
 	
       private:
 	odefunction<T>* f;
-	
+
+	// Stochastic diff.eq.
+	// supports addition of gaussian noise term with sigma^2 variance
+	T sigma_term = T(0.0);
+
+	const whiteice::RNG<T> random;
       };
     
     

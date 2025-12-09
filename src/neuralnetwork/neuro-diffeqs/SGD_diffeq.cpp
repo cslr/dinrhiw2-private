@@ -10,8 +10,8 @@ namespace whiteice
   {
     return U(x);
   }
-  
-  
+
+
   // diff.eq. function: prediction error
   template <typename T>
   T SGD_diffeq<T>::U(const whiteice::math::vertex<T>& q) const
@@ -23,16 +23,21 @@ namespace whiteice
     assert(ok == true);
 
     // neural network diff.eq. diverge easily so process in small periods.
-    // const unsigned int SEQUENCE_LENGTH = 15; 
+    // const unsigned int SEQUENCE_LENGTH = 15;
+
+    assert(times.size() >= 2);
   
     // now simulate training datapoints
     simulate_diffeq_model3(net,
 			   this->diffeq_starting_point,
 			   (times[times.size()-1]-times[0]).c[0],
+			   sigma,
 			   xdata, times,
 			   ds,
-			   SEQUENCE_LENGTH);
+			   SEQUENCE_LENGTH,
+			   HISTORY_LENGTH);
 
+    
     assert(xdata.size() > 0);
     assert(xdata.size() == ds.size(0));
     assert(xdata[0].size() == ds.dimension(0));
