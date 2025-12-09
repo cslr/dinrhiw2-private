@@ -292,7 +292,7 @@ bool simulate_diffeq_model3(const whiteice::nnetwork<T>& diffeq,
       nstart_point = correct_data[nstart];
       
       for(unsigned int ni=nstart;ni<nend;ni++){
-	nparams.push_back(parameters[ni]);
+	if(parameters.size() >= nend) nparams.push_back(parameters[ni]);
 	ncorrect_times.push_back(correct_times[ni]);
       }
 
@@ -345,7 +345,7 @@ bool simulate_diffeq_model3(const whiteice::nnetwork<T>& diffeq,
     //printf("CC\n");
       
     for(unsigned int ni=nstart;ni<nend;ni++){
-      nparams.push_back(parameters[ni]);
+      if(parameters.size() >= nend) nparams.push_back(parameters[ni]);
       ncorrect_times.push_back(correct_times[ni]);
     }
 
