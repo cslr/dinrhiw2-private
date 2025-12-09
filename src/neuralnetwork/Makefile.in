@@ -30,7 +30,7 @@ SOURCES = tst/test.cpp tst/pso_main.cpp tst/somtest.cpp tst/gene_main.cpp tst/st
 	../math/modular.cpp ../math/superresolution.cpp ../math/quaternion.cpp \
 	../math/RNG.cpp ../math/LBFGS.cpp ../math/SGD.cpp ../math/pocketfft/pocketfft.c \
 	../reinforcement/EvolutionStrategies.cpp \
-	./math/RungeKutta_history.cpp ./math/RungeKutta.cpp
+	../math/RungeKutta_history.cpp ../math/RungeKutta.cpp
 
 OBJECTS= activation_function.o odd_sigmoid.o identity_activation.o multidimensional_gaussian.o \
 	stretched_function.o optimized_function.o \
