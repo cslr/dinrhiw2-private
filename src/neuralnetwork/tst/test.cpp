@@ -413,9 +413,10 @@ void mcmc_diffeq_test()
   whiteice::math::vertex< whiteice::math::blas_real<double> > diffeq_starting_point;
 
   const unsigned int HISTORY_LEN = 2;
+  const unsigned int PARAMETER_DIM = 3;
 
   std::vector<unsigned int> arch;
-  arch.push_back(DIMENSION*(1+HISTORY_LEN));
+  arch.push_back(DIMENSION*(1+HISTORY_LEN)+PARAMETER_DIM);
   arch.push_back(50);
   arch.push_back(50);
   arch.push_back(DIMENSION);
@@ -440,7 +441,19 @@ void mcmc_diffeq_test()
     std::vector< math::vertex< whiteice::math::blas_real<double> > > xdata;
 
     const whiteice::math::blas_real<double> sigma = 0.0;
-    const std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > parameters; // empty parameter for no control parameters
+    std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > parameters;
+
+    whiteice::RNG< whiteice::math::blas_real<double> > random;
+    
+    // tests with random control parameters
+    for(unsigned int i=0;i<times.size();i++){
+      whiteice::math::vertex< whiteice::math::blas_real<double> > v;
+      v.resize(PARAMETER_DIM);
+      random.normal(v);
+      v *= 0.001f; // st.dev. is 0.001f (very small random numbers)
+      
+      parameters.push_back(v);
+    }
     
     if(simulate_diffeq_model2(net, diffeq_starting_point,
 			      (times[times.size()-1]-times[0]).c[0],
@@ -463,9 +476,21 @@ void mcmc_diffeq_test()
   net.randomize(2, 1.0);
   net.exportdata(params);
 
-  const std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > >
+  std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > >
     parameters; // empty parameter for no control parameters
 
+  whiteice::RNG< whiteice::math::blas_real<double> > random;
+  
+  // tests with random control parameters
+  for(unsigned int i=0;i<times.size();i++){
+    whiteice::math::vertex< whiteice::math::blas_real<double> > v;
+    v.resize(PARAMETER_DIM);
+    random.normal(v);
+    v *= 0.001f; // st.dev. is 0.001f (very small random numbers)
+    
+    parameters.push_back(v);
+  }
+  
   
   whiteice::SGD_diffeq sgd(net, ds,
 			   parameters,

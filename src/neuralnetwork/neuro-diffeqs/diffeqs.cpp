@@ -89,7 +89,9 @@ public:
   {
     whiteice::math::vertex<T> output;
 
-    if(nnet.calculate(x.y, output) == false) return output;
+    if(nnet.calculate(x.y, output) == false){
+      assert(0);
+    }
     
     return output;
   }
@@ -102,7 +104,10 @@ public:
   {
     whiteice::math::vertex<T> output;
     
-    nnet.calculate(x.y, output);
+    if(nnet.calculate(x.y, output) == false){
+      assert(0);
+    }
+      
     
     y = output;
   }
@@ -131,7 +136,8 @@ bool simulate_diffeq_model(const whiteice::nnetwork<T>& diffeq,
 			   const std::vector<T>& parameter_times,
 			   const unsigned int HISTORY_LEN)
 {
-  if((start.size()*(1+HISTORY_LEN)) != diffeq.getInputs(0)) return false;
+  if(parameters.size() > 0)
+    if((start.size()*(1+HISTORY_LEN)+parameters[0].size()) != diffeq.getInputs(0)) return false;
   if(start.size() != diffeq.getNeurons(diffeq.getLayers()-1)) return false;
   if(TIME_LENGTH < 0.0f) return false;
   if(TIME_LENGTH > 1e6f) return false; // too long simulation length [sanity check]
@@ -147,8 +153,6 @@ bool simulate_diffeq_model(const whiteice::nnetwork<T>& diffeq,
 
   // assumes that neural network input dimensions have proper dimensions
     
-  assert(diffeq.input_size() == (start.size()*(1+HISTORY_LEN)));
-
   bool hasParams = false;
 
   if(parameters.size() > 0){
