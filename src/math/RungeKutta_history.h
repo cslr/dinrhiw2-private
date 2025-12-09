@@ -1,11 +1,10 @@
 /*
- * calculates standard 4th order 
- * Runge-Kutta (RK4) integration
+ * calculates standard 4th order Runge-Kutta (RK4) integration
  * with adaptive step length
  *
- * Uses HISTORY_LEN older values y[t-1,t-(HISTORY_LEN-1)]
+ * Uses HISTORY_LEN older values y[t-1,..t-HISTORY_LEN]
  * in ODE function with linear interpolation
- *
+ * 
  * ODE function must take vector parameter with dimension: dim(x)*(HISTORY_LEN+1)
  * 
  * TODO: later make this start computation

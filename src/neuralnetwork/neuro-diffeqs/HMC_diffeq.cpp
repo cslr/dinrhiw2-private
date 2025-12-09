@@ -11,13 +11,16 @@ T HMC_diffeq<T>::U(const math::vertex<T>& q, bool useRegulizer) const
   std::vector< math::vertex<T> > xdata;
 
   const T sigma = T(0.0);
+  const std::vector< whiteice::math::vertex<T> > parameters; // empty parameter for no control parameters
   
   // now simulate training datapoints
   simulate_diffeq_model2(this->nnet,
 			 start_point,
 			 (times[times.size()-1]-times[0]).c[0],
 			 sigma,
-			 xdata, times);
+			 xdata,
+			 parameters, // empty parameter for no control parameters
+			 times);
 
   datacp.clearData(0);
   datacp.add(0, xdata);
@@ -64,13 +67,16 @@ math::vertex<T> HMC_diffeq<T>::Ugrad(const math::vertex<T>& q) const
   std::vector< math::vertex<T> > xdata;
 
   const T sigma = T(0.0);
+  const std::vector< whiteice::math::vertex<T> > parameters; // empty parameter for no control parameters
   
   // now simulate training datapoints
   simulate_diffeq_model2(this->nnet,
 			 start_point,
 			 (times[times.size()-1]-times[0]).c[0],
 			 sigma,
-			 xdata, times);
+			 xdata,
+			 parameters,
+			 times);
 
   //printf("data sizes: %d %d %d\n", (int)this->data.size(0), (int)this->data.size(1), (int)xdata.size());
   
@@ -160,13 +166,17 @@ T HMC_diffeq<T>::getMeanError(unsigned int latestN) const
       std::vector< math::vertex<T> > xdata;
 
       const T sigma = T(0.0);
+
+      const std::vector< whiteice::math::vertex<T> > parameters; // empty parameter for no control parameters
       
       // now simulate training datapoints
       simulate_diffeq_model2(nnet2,
 			     start_point,
 			     (times[times.size()-1]-times[0]).c[0],
 			     sigma,
-			     xdata, times);
+			     xdata,
+			     parameters,
+			     times);
       
       //printf("data sizes: %d %d %d\n", (int)this->data.size(0), (int)this->data.size(1), (int)xdata.size());
       

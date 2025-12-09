@@ -440,11 +440,14 @@ void mcmc_diffeq_test()
     std::vector< math::vertex< whiteice::math::blas_real<double> > > xdata;
 
     const whiteice::math::blas_real<double> sigma = 0.0;
+    const std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > parameters; // empty parameter for no control parameters
     
     if(simulate_diffeq_model2(net, diffeq_starting_point,
 			      (times[times.size()-1]-times[0]).c[0],
 			      sigma,
-			      xdata, times,
+			      xdata,
+			      parameters,
+			      times,
 			      HISTORY_LEN) == false)
       printf("ERROR: simulate_diffeq_model2() FAILED.\n");
 
@@ -460,8 +463,13 @@ void mcmc_diffeq_test()
   net.randomize(2, 1.0);
   net.exportdata(params);
 
+  const std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > >
+    parameters; // empty parameter for no control parameters
+
   
-  whiteice::SGD_diffeq sgd(net, ds, times, diffeq_starting_point,
+  whiteice::SGD_diffeq sgd(net, ds,
+			   parameters,
+			   times, diffeq_starting_point,
 			   SEQUENCE_LENGTH, HISTORY_LEN);
 
   sgd.setSmartConvergenceCheck(false);

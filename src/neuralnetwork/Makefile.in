@@ -30,7 +30,7 @@ SOURCES = tst/test.cpp tst/pso_main.cpp tst/somtest.cpp tst/gene_main.cpp tst/st
 	../math/modular.cpp ../math/superresolution.cpp ../math/quaternion.cpp \
 	../math/RNG.cpp ../math/LBFGS.cpp ../math/SGD.cpp ../math/pocketfft/pocketfft.c \
 	../reinforcement/EvolutionStrategies.cpp \
-	../math/RungeKutta_history.cpp ../math/RungeKutta.cpp
+	../math/RungeKutta_history.cpp ../math/RungeKuttaP_history.cpp ../math/RungeKutta.cpp
 
 OBJECTS= activation_function.o odd_sigmoid.o identity_activation.o multidimensional_gaussian.o \
 	stretched_function.o optimized_function.o \
@@ -61,7 +61,8 @@ EXTRA_OBJECTS = ../math/vertex.o ../math/matrix.o ../math/ownexception.o ../math
 	../math/correlation.o ../math/ica.o ../math/linear_equations.o ../math/norms.o ../math/RNG.o \
 	../math/modular.o ../math/superresolution.o \
 	../math/outerproduct.o ../math/fastpca.o ../Log.o ../VisualizationInterface.o \
-	../math/quaternion.o ../math/SGD.o ../math/RungeKutta_history.o ../math/pocketfft/pocketfft.o \
+	../math/quaternion.o ../math/SGD.o ../math/RungeKutta_history.o ../math/RungeKuttaP_history.o \
+	../math/pocketfft/pocketfft.o \
 	../datamining/discretize.o ../datamining/FrequentSetsFinder.o ../datamining/fpgrowth.o ../datamining/fptree.o \
 	../timed_boolean.o ../reinforcement/EvolutionStrategies.o ../math/RungeKutta.o
 

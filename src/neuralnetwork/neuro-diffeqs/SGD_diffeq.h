@@ -21,6 +21,8 @@ namespace whiteice
   public:
     SGD_diffeq(const whiteice::nnetwork<T>& net,
 	       const whiteice::dataset<T>& ds,
+	       // p(t): control vectors at times[t] (can be empty for no control parameters)
+	       const std::vector< whiteice::math::vertex<T> >& parameters, 
 	       const std::vector<T>& times,
 	       const whiteice::math::vertex<T>& diffeq_starting_point,
 	       const unsigned int SEQUENCE_LENGTH = 15,
@@ -30,6 +32,7 @@ namespace whiteice
     {
       this->net = net;
       this->ds = ds;
+      this->parameters = parameters;
       this->times = times;
       this->diffeq_starting_point = diffeq_starting_point;
 
@@ -67,6 +70,8 @@ namespace whiteice
     
     whiteice::nnetwork<T> net;
     whiteice::dataset<T> ds;
+
+    std::vector< whiteice::math::vertex<T> > parameters; // control vector parameters at times datapoints p(t)
     std::vector<T> times; // time-steps for datapoints we use
     whiteice::math::vertex<T> diffeq_starting_point;
     

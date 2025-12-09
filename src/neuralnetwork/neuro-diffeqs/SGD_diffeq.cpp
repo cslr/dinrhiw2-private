@@ -32,7 +32,9 @@ namespace whiteice
 			   this->diffeq_starting_point,
 			   (times[times.size()-1]-times[0]).c[0],
 			   sigma,
-			   xdata, times,
+			   xdata,
+			   parameters,
+			   times,
 			   ds,
 			   SEQUENCE_LENGTH,
 			   HISTORY_LENGTH);

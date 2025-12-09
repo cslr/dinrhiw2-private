@@ -21,13 +21,16 @@ namespace whiteice
     // const unsigned int SEQUENCE_LENGTH = 15;
 
     const T sigma = T(0.0);
-  
+    const std::vector< whiteice::math::vertex<T> > parameters; // empty parameter for no control parameters
+    
     // now simulate training datapoints
     simulate_diffeq_model3(net,
 			   this->diffeq_starting_point,
 			   (times[times.size()-1]-times[0]).c[0],
 			   sigma,
-			   xdata, times,
+			   xdata,
+			   parameters,
+			   times,
 			   ds,
 			   SEQUENCE_LENGTH);
 

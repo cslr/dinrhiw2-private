@@ -76,8 +76,11 @@ namespace whiteice
       }
 
       const T sigma = T(0.0);
+      const std::vector< whiteice::math::vertex<T> > parameters; // empty parameter for no control parameters
       
-      if(simulate_diffeq_model2(nnet, x0, TIME_LENGTH, sigma, xdata, correct_times) == false){
+      if(simulate_diffeq_model2(nnet, x0, TIME_LENGTH, sigma, xdata,
+				parameters,
+				correct_times) == false){
 	assert(0); // should not happen
       }
       
@@ -143,8 +146,11 @@ namespace whiteice
       }
 
       const T sigma = T(0.0);
+      const std::vector< whiteice::math::vertex<T> > parameters; // empty parameter for no control parameters
 
-      if(simulate_diffeq_model2(nnet, x0, TIME_LENGTH, sigma, xdata, correct_times) == false){
+      if(simulate_diffeq_model2(nnet, x0, TIME_LENGTH, sigma, xdata,
+				parameters,
+				correct_times) == false){
 	assert(0); // should not happen
       }
 
