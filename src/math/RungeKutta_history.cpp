@@ -146,8 +146,8 @@ namespace whiteice
 #if 1
       // for machine learning accuracy O(h^4) = O(0.3^4) = O(0.0081).
       const T e0 = T(1e-8); // was: 1e-8 (error was kept at 1e-2)
-      const T h_min = T(0.1); // was 1e-2, 0.1
-      const T h_max = T(0.3); // was 1e-1, 0.5
+      const T h_min = T(0.8); // was 1e-2, 0.1
+      const T h_max = T(1.0); // was 1e-1, 0.3
 #endif
 	
       const T f6 = T(1.0/6.0);
