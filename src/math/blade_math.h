@@ -1663,7 +1663,8 @@ namespace whiteice
       vertex<T> conj(const vertex<T>& x)
       {
 	vertex<T> y(x);
-	return y.conj();
+	y.conj();
+	return y;
       }
     
     // conjugates matrix value (no transpose)
@@ -1671,7 +1672,8 @@ namespace whiteice
       matrix<T> conj(const matrix<T>& X)
       {
 	matrix<T> Y(X);
-	return Y.conj();
+	Y.conj();
+	return Y;
       }
 
     

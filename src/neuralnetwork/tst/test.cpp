@@ -209,6 +209,8 @@ int main()
 
     // kmeans_test();
 
+    // hmc_test();
+
     mcmc_diffeq_test();
 
     // simple_tsne_test();
@@ -233,7 +235,6 @@ int main()
 
     // nnetwork_kl_divergence_test();
 
-    // hmc_test();
 
     // return 0;
 
@@ -403,14 +404,14 @@ private:
 
 void mcmc_diffeq_test()
 {
-  std::cout << "MCMC_diffeq learning test." << std::endl;
+  std::cout << "MCMC_diffeq learning test (complex numbers)." << std::endl;
 
   const unsigned int DIMENSION = 4;
   
-  whiteice::nnetwork< whiteice::math::blas_real<double> > net;
-  whiteice::dataset<whiteice::math::blas_real<double> > ds;
-  std::vector< whiteice::math::blas_real<double> > times;
-  whiteice::math::vertex< whiteice::math::blas_real<double> > diffeq_starting_point;
+  whiteice::nnetwork< whiteice::math::blas_complex<double> > net;
+  whiteice::dataset<whiteice::math::blas_complex<double> > ds;
+  std::vector< whiteice::math::blas_complex<double> > times;
+  whiteice::math::vertex< whiteice::math::blas_complex<double> > diffeq_starting_point;
 
   const unsigned int HISTORY_LEN = 2;
   const unsigned int PARAMETER_DIM = 3;
@@ -422,12 +423,12 @@ void mcmc_diffeq_test()
   arch.push_back(DIMENSION);
 
   net.setArchitecture(arch,
-		      whiteice::nnetwork< whiteice::math::blas_real<double> >::tanh);
+		      whiteice::nnetwork< whiteice::math::blas_complex<double> >::tanh);
 
   net.randomize(2, 1e-4);
 
   diffeq_starting_point.resize(DIMENSION);
-  whiteice::RNG< whiteice::math::blas_real<double> > rng2;
+  whiteice::RNG< whiteice::math::blas_complex<double> > rng2;
   rng2.normal(diffeq_starting_point);
 
   const unsigned int DATAPOINTS = 10;
@@ -438,19 +439,19 @@ void mcmc_diffeq_test()
 
   // generate target diff.eq. simulation trajectories using Runge-Kutta
   {
-    std::vector< math::vertex< whiteice::math::blas_real<double> > > xdata;
+    std::vector< math::vertex< whiteice::math::blas_complex<double> > > xdata;
 
-    const whiteice::math::blas_real<double> sigma = 0.0;
-    std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > > parameters;
+    const whiteice::math::blas_complex<double> sigma = 0.0;
+    std::vector< whiteice::math::vertex< whiteice::math::blas_complex<double> > > parameters;
 
-    whiteice::RNG< whiteice::math::blas_real<double> > random;
+    whiteice::RNG< whiteice::math::blas_complex<double> > random;
     
     // tests with random control parameters
     for(unsigned int i=0;i<times.size();i++){
-      whiteice::math::vertex< whiteice::math::blas_real<double> > v;
+      whiteice::math::vertex< whiteice::math::blas_complex<double> > v;
       v.resize(PARAMETER_DIM);
       random.normal(v);
-      v *= 0.001f; // st.dev. is 0.001f (very small random numbers)
+      v *= whiteice::math::blas_complex<double>(0.001); // st.dev. is 0.001f (very small random numbers)
       
       parameters.push_back(v);
     }
@@ -471,22 +472,22 @@ void mcmc_diffeq_test()
       std::cout << xdata[i] << std::endl;
   }
 
-  whiteice::math::vertex< whiteice::math::blas_real<double> > params;
+  whiteice::math::vertex< whiteice::math::blas_complex<double> > params;
 
   net.randomize(2, 1.0);
   net.exportdata(params);
 
-  std::vector< whiteice::math::vertex< whiteice::math::blas_real<double> > >
+  std::vector< whiteice::math::vertex< whiteice::math::blas_complex<double> > >
     parameters; // empty parameter for no control parameters
 
-  whiteice::RNG< whiteice::math::blas_real<double> > random;
+  whiteice::RNG< whiteice::math::blas_complex<double> > random;
   
   // tests with random control parameters
   for(unsigned int i=0;i<times.size();i++){
-    whiteice::math::vertex< whiteice::math::blas_real<double> > v;
+    whiteice::math::vertex< whiteice::math::blas_complex<double> > v;
     v.resize(PARAMETER_DIM);
     random.normal(v);
-    v *= 0.001f; // st.dev. is 0.001f (very small random numbers)
+    v *= whiteice::math::blas_complex<double>(0.001); // st.dev. is 0.001f (very small random numbers)
     
     parameters.push_back(v);
   }
@@ -512,7 +513,7 @@ void mcmc_diffeq_test()
   while(sgd.isRunning()){
     sleep(1);
     
-    whiteice::math::blas_real<double> error;
+    whiteice::math::blas_complex<double> error;
     unsigned int iterations = 0;
 
     if(sgd.getSolutionStatistics(error, iterations)){
@@ -4599,6 +4600,7 @@ void hmc_test()
 
 
 
+#if 0
   std::cout << "HMC SAMPLING TEST (Neural network)" << std::endl;
 
   {
@@ -4661,9 +4663,10 @@ void hmc_test()
 
     
   }
+#endif
 
 
-#if 0
+#if 1
   std::cout << "HMC SAMPLING TEST (Normal distribution)" << std::endl;
   
   {

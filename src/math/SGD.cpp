@@ -90,7 +90,7 @@ namespace whiteice
 	return false;
       }
 
-      if(lrate <= T(0.0f) || MAX_NO_IMPROVE_ITERS <= 0){
+      if(whiteice::math::abs(lrate)[0] <= 0.0f || MAX_NO_IMPROVE_ITERS <= 0){
 	thread_mutex.unlock();
 	return false;
       }

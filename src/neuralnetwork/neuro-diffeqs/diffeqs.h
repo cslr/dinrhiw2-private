@@ -215,7 +215,6 @@ extern template bool simulate_diffeq_model3< math::blas_real<double> >
  const unsigned int HISTORY_LEN);
 
 
-
 extern template bool simulate_diffeq_model3< math::blas_complex<float> >
 (const whiteice::nnetwork< math::blas_complex<float> >& diffeq,
  const whiteice::math::vertex< math::blas_complex<float> >& start,

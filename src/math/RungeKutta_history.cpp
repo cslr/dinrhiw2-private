@@ -36,7 +36,7 @@ namespace whiteice
     template <typename T>
     whiteice::math::vertex<T> RungeKutta_history<T>::linearly_interpolate_find
     (const T& t,
-     const std::map<T, whiteice::math::vertex<T> >& map_points,
+     const std::map<double, whiteice::math::vertex<T> >& map_points,
      const unsigned int DIM) const
     {
       if(map_points.size() == 0){
@@ -46,12 +46,12 @@ namespace whiteice
 	return v;
       }
 
-      auto it = map_points.lower_bound(t);
+      auto it = map_points.lower_bound(t.c[0]);
 
       if(it == map_points.end()){
 	it--;
 
-	if(t < it->first){ // time before first/last element
+	if(t.c[0] < it->first){ // time before first/last element
 	  whiteice::math::vertex<T> v;
 	  v.resize(DIM);
 	  v.zero();
@@ -62,7 +62,7 @@ namespace whiteice
       }
       else if(it == map_points.begin()){
 
-	if(t < it->first){ // time before first element
+	if(t.c[0] < it->first){ // time before first element
 	  whiteice::math::vertex<T> v;
 	  v.resize(DIM);
 	  v.zero();
@@ -78,7 +78,8 @@ namespace whiteice
 	// v = x(tk) + (x(t0)-x(tk))*((t-tk)/(t0-tk))
 
 	whiteice::math::vertex<T> v;
-	v = it_prev->second + (it->second - it_prev->second)*((t - it_prev->first)/(it->first - it_prev->first));
+	v = it_prev->second + (it->second - it_prev->second)*
+	  T((t.c[0] - it_prev->first)/(it->first - it_prev->first));
 
 	return v;
       }
@@ -90,7 +91,7 @@ namespace whiteice
     bool RungeKutta_history<T>::calculate_parameters
     (const whiteice::math::vertex<T>& y,
      const T& t,
-     const std::map<T, whiteice::math::vertex<T> >& map_points,
+     const std::map<double, whiteice::math::vertex<T> >& map_points,
      const unsigned int HISTORY_LEN,
      whiteice::math::vertex<T>& ode_y) const
     {
@@ -129,7 +130,7 @@ namespace whiteice
      std::vector< whiteice::math::vertex<T> >& points,
      std::vector< T >& times)
     {
-      std::map<T, whiteice::math::vertex<T> > map_points;
+      std::map<double, whiteice::math::vertex<T> > map_points;
       
       whiteice::math::vertex<T> k[4], tmp;
       whiteice::math::vertex<T> y(y0), yn;
@@ -155,7 +156,7 @@ namespace whiteice
       const T f3 = T(1.0/3.0);
       const T fd = T(1.0/((double)y0.size()));
 
-      while(t < t_end){
+      while(t.c[0] < t_end.c[0]){
 	// calculates next point with h and 2 x (h/2)
 	// results are compared and the step length h is adjusted
 	// when error is too big/small. Result from 2x(h/2) is
@@ -268,16 +269,16 @@ namespace whiteice
 
 	  T abs_y = whiteice::math::abs(y[d]);
 	  
-	  if(abs_y[0] < T(-1e30)[0]) y[d] = T(0.0);
-	  else if(abs_y[0] > T(+1e30)[0]) y[d] = T(0.0);
-	  if(isnan(abs_y[0])) y[d] = T(0.0);
-	  if(isinf(abs_y[0])) y[d] = T(0.0);
+	  if(abs_y.c[0] < T(-1e30).c[0]) y[d] = T(0.0);
+	  else if(abs_y.c[0] > T(+1e30).c[0]) y[d] = T(0.0);
+	  if(isnan(abs_y.c[0])) y[d] = T(0.0);
+	  if(isinf(abs_y.c[0])) y[d] = T(0.0);
 	}
 
 	points.push_back(y);
 	times.push_back(t);
 
-	map_points.insert(std::pair<T, whiteice::math::vertex<T> >(t, y));
+	map_points.insert(std::pair<double, whiteice::math::vertex<T> >(t.c[0], y));
       }
     }
     

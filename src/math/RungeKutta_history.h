@@ -38,7 +38,7 @@ namespace whiteice
 	void setFunction(odefunction<T>* f) ;
 
 	T getSigma() const { return sigma_term; }
-	void setSigma(const T& s){ if(s >= T(0.0)) sigma_term = s; }
+	void setSigma(const T& s){ if(whiteice::math::abs(s) >= T(0.0)[0]) sigma_term = whiteice::math::abs(s); }
 
 	unsigned int getHistoryLength() const { return HISTORY_LEN; }
 	void setHistoryLength(unsigned int history_len){ this->HISTORY_LEN = history_len; }
@@ -59,14 +59,14 @@ namespace whiteice
 	// good vector from historical values
 	whiteice::math::vertex<T> linearly_interpolate_find
 	(const T& t,
-	 const std::map<T, whiteice::math::vertex<T> >& map_points,
+	 const std::map<double, whiteice::math::vertex<T> >& map_points,
 	 const unsigned int DIM) const;
 
 	// calculates ODE vector parameter from historical values
 	bool calculate_parameters
 	(const whiteice::math::vertex<T>& y,
 	 const T& t,
-	 const std::map<T, whiteice::math::vertex<T> >& map_points,
+	 const std::map<double, whiteice::math::vertex<T> >& map_points,
 	 const unsigned int HISTORY_LEN,
 	 whiteice::math::vertex<T>& ode_y) const;
 	

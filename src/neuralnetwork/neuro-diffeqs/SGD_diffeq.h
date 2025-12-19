@@ -36,7 +36,7 @@ namespace whiteice
       this->times = times;
       this->diffeq_starting_point = diffeq_starting_point;
 
-      if(sigma >= T(0.0))
+      if(sigma.c[0] >= T(0.0).c[0])
 	this->sigma = sigma;
 
       this->HISTORY_LENGTH = HISTORY_LENGTH;
@@ -80,6 +80,7 @@ namespace whiteice
 
   extern template class SGD_diffeq< whiteice::math::blas_real<float> >;
   extern template class SGD_diffeq< whiteice::math::blas_real<double> >;
+
 
   extern template class SGD_diffeq< whiteice::math::blas_complex<float> >;
   extern template class SGD_diffeq< whiteice::math::blas_complex<double> >;
