@@ -95,13 +95,22 @@ namespace whiteice {
     unsigned int (RNG<T>::*rdrand32)() const = &whiteice::RNG<T>::_rand32;
     unsigned long long (RNG<T>::*rdrand64)() const = &whiteice::RNG<T>::_rand64;
     
-    // functions to access assembly level instructionxs
+    // functions to access assembly level instructions
     virtual unsigned int _rdrand32() const;
     virtual unsigned long long _rdrand64() const;
+
+    virtual unsigned int _rdtscrand32() const;
+    virtual unsigned long long _rdtscrand64() const;
+
+    virtual unsigned int _xorshiftrand32() const;
+    virtual unsigned long long _xorshiftrand64() const;
     
     // rand() using instructions to use if RDRAND is not available
     virtual unsigned int _rand32() const;
     virtual unsigned long long _rand64() const;
+
+    mutable unsigned int xs_state  = 0;
+    mutable std::mutex xs_mutex;
 
     mutable std::random_device* rdsource = nullptr;
     mutable std::mt19937* gen = nullptr;

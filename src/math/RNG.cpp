@@ -1,6 +1,15 @@
 /*
  * RNG.cpp
  *
+ * HACK: 
+ * RNG now uses xorshift to generate random numbers which is only
+ * aprox uniformly distributed BUT IS 2x FASTER than fast rand()! state variable
+ * 
+ * HOWEVER, for correctness (thread-safe) one must use mutex to sync access to state variable
+ * which makes code as fast as standard (non-thread safe) rand() function call.
+ * 
+ * A better solution would use xorshift directly with own state variable which would be much faster.
+ *
  *  Created on: 28.6.2015
  *      Author: Tomas Ukkonen
  */
@@ -52,11 +61,23 @@ RNG<T>::RNG(const bool usehw)
   
   // setups function pointers to be used for rng
   if(has_rdrand && usehw){
-    rdrand32 = &whiteice::RNG<T>::_rdrand32;
-    rdrand64 = &whiteice::RNG<T>::_rdrand64;
+    //rdrand32 = &whiteice::RNG<T>::_rdtscrand32; // rdtsc is slow and dword requires 4 calls to rdtsc to get proper random values
+    //rdrand64 = &whiteice::RNG<T>::_rdtscrand64;
+    
+    // rdrand32 = &whiteice::RNG<T>::_rdrand32;
+    // rdrand64 = &whiteice::RNG<T>::_rdrand64;
+    
+    rdrand32 = &whiteice::RNG<T>::_xorshiftrand32;
+    rdrand64 = &whiteice::RNG<T>::_xorshiftrand64;
 
-    if(has_rdrand) srand(this->_rdrand32());
-    else srand(time(0));
+    if(has_rdrand){
+      xs_state = this->_rdrand32();
+      srand(this->_rdrand32());
+    }
+    else{
+      xs_state = time(0);
+      srand(time(0));
+    }
   }
   else{
     if(has_rdrand) srand(this->_rdrand32());
@@ -66,8 +87,21 @@ RNG<T>::RNG(const bool usehw)
     gen = new std::mt19937((*rdsource)());
     distrib = new std::uniform_int_distribution<unsigned int>(0, 0xFFFFFFFF);
     
-    rdrand32 = &whiteice::RNG<T>::_rand32; // uses C++ rand()
-    rdrand64 = &whiteice::RNG<T>::_rand64; // uses C++ rand()
+    // rdrand32 = &whiteice::RNG<T>::_rand32; // uses C++ rand()
+    // rdrand64 = &whiteice::RNG<T>::_rand64; // uses C++ rand()
+    
+    rdrand32 = &whiteice::RNG<T>::_xorshiftrand32;
+    rdrand64 = &whiteice::RNG<T>::_xorshiftrand64;
+
+    if(has_rdrand){
+      xs_state = this->_rdrand32();
+      srand(this->_rdrand32());
+    }
+    else{
+      xs_state = time(0);
+      srand(time(0));
+    }
+    
   }
   
   // calculates ziggurat tables for normal and exponential distribution
@@ -351,6 +385,73 @@ unsigned long long RNG<T>::_rdrand64() const
   
   return lvalue;
 }
+
+template <typename T>
+unsigned int RNG<T>::_rdtscrand32() const
+{
+  unsigned int lo1 = 0;
+
+  asm volatile ("rdtsc" : "=a"(lo1));
+
+  unsigned int lo2 = 0;
+
+  asm volatile ("rdtsc" : "=a"(lo2));
+
+  unsigned int lo3 = 0;
+
+  asm volatile ("rdtsc" : "=a"(lo3));
+
+  unsigned int lo4 = 0;
+
+  asm volatile ("rdtsc" : "=a"(lo4));
+
+  unsigned int lo = (lo1 & 0xFF) + ((lo2 & 0xFF)<<8) + ((lo3 & 0xFF)<<16) + ((lo4 & 0xFF)<<24);
+
+  return lo;
+}
+
+template <typename T>
+unsigned long long RNG<T>::_rdtscrand64() const
+{
+  unsigned int lo = 0, hi = 0;
+
+  lo = _rdtscrand32();
+  hi = _rdtscrand32();
+
+  const unsigned long long value = ((unsigned long long)lo) + (((unsigned long long)hi)<<32);
+
+  return value;
+}
+
+
+template <typename T>
+unsigned int RNG<T>::_xorshiftrand32() const
+{
+  std::lock_guard<std::mutex> lock(xs_mutex); // this is very SLOW but is needed for thread-safety
+
+  unsigned int x = xs_state;
+  
+  x ^= x << 13;
+  x ^= x >> 17;
+  x ^= x << 5;
+
+  xs_state = x;
+  
+  return xs_state;
+}
+
+ template <typename T>
+unsigned long long RNG<T>::_xorshiftrand64() const
+{
+  unsigned int lo = 0, hi = 0;
+  
+  lo = _xorshiftrand32();
+  hi = _xorshiftrand32();
+
+  const unsigned long long value = ((unsigned long long)lo) + (((unsigned long long)hi)<<32);
+  
+  return value;
+} 
 
 template <typename T>
 unsigned int RNG<T>::_rand32() const
