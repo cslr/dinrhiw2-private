@@ -55,7 +55,7 @@ namespace whiteice
 #pragma omp for nowait schedule(auto)
       for(unsigned int i=0;i<ds.size(0);i++){
 	err = xdata[i] - ds.access(0, i);
-	e += T(0.5f)*(err*err)[0];
+	e += T(0.5f)*(err*whiteice::math::conj(err))[0];
       }
       
 #pragma omp critical (mvjrwerfweghx)
@@ -68,7 +68,7 @@ namespace whiteice
 
     //printf("MEAN ERROR: %f\n", mean_error.c[0]);
     
-    E = whiteice::math::sqrt(T(2.0)*E / (ds.size(0)*xdata[0].size()) );
+    E = whiteice::math::abs( whiteice::math::sqrt(T(2.0)*E / (ds.size(0)*xdata[0].size()) ) );
 
     // printf("MEAN ERROR: %f\n", E.c[0]);
     
@@ -87,5 +87,8 @@ namespace whiteice
 
   template class SGD_diffeq< whiteice::math::blas_real<float> >;
   template class SGD_diffeq< whiteice::math::blas_real<double> >;
+  
+  template class SGD_diffeq< whiteice::math::blas_complex<float> >;
+  template class SGD_diffeq< whiteice::math::blas_complex<double> >;
   
 };

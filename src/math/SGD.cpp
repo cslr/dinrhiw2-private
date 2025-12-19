@@ -50,7 +50,7 @@ namespace whiteice
       this->smart_convergence_check = true;
       this->adaptive_lrate = true;
 
-      this->use_adam = true;
+      // this->use_adam = true; ALWAYS TRUE
     }
     
  
@@ -317,7 +317,7 @@ namespace whiteice
 	vertex<T> v(x.size());
 	vertex<T> m_hat(x.size());
 	vertex<T> v_hat(x.size());
-	
+
 	m.zero();
 	v.zero();
 	
@@ -332,24 +332,14 @@ namespace whiteice
 
 	  // #pragma omp parallel for schedule(static)
 	  for(unsigned int i=0;i<grad.size();i++){
-	    m[i] = beta1 * m[i] + (T(1.0) - beta1)*grad[i];
-	    v[i] = beta2 * v[i] + (T(1.0) - beta2)*grad[i]*grad[i];
-
-	    m_hat[i] = m[i] / (T(1.0) - whiteice::math::pow(beta1[0], T(iterations)[0]));
-	    v_hat[i] = v[i] / (T(1.0) - whiteice::math::pow(beta2[0], T(iterations)[0]));
-
-	    if(0){
-	      T inv = T(0.0);
-	      const T sqrt_v = whiteice::math::sqrt(v_hat[i]);
+	    for(unsigned int k = 0;k<m[i].size();k++){
+	      m[i][k] = beta1[k] * m[i][k] + (T(1.0) - beta1)[k]*grad[i][k];
+	      v[i][k] = beta2[k] * v[i][k] + (T(1.0) - beta2)[k]*grad[i][k]*grad[i][k];
 	      
-	      for(unsigned int k=0;k<inv.size();k++){
-		inv[k] = T(1.0)[0] / (sqrt_v[i][k] + epsilon[0]);
-	      }
-
-	      x[i] -= (alpha * inv) * m_hat[i];
-	    }
-	    else{
-	      x[i] -= (alpha / (whiteice::math::sqrt(v_hat[i]) + epsilon)) * m_hat[i];
+	      m_hat[i][k] = m[i][k] / (T(1.0)[k] - whiteice::math::pow(beta1[0], T(iterations)[0]));
+	      v_hat[i][k] = v[i][k] / (T(1.0)[k] - whiteice::math::pow(beta2[0], T(iterations)[0]));
+	      
+	      x[i][k] -= (alpha[k] / (whiteice::math::sqrt(v_hat[i][k]) + epsilon[k])) * m_hat[i][k];
 	    }
 	  }
 
@@ -357,7 +347,7 @@ namespace whiteice
 
 	  T new_error = getError(x);
 
-	  if(new_error >= real_besty){
+	  if(whiteice::math::abs(new_error)[0] >= whiteice::math::abs(real_besty)[0]){
 	    no_improve_iterations++;
 	  }
 	  else{
@@ -372,29 +362,19 @@ namespace whiteice
 
 	  
 	  if(smart_convergence_check){
-	    errors.push_back(real_besty); // NOTE: getError() must return >= 0.0 values
+	    errors.push_back(whiteice::math::abs(real_besty)); // NOTE: getError() must return >= 0.0 values
 	    
 	    if(errors.size() >= 50){
 	      
 	      while(errors.size() > 50)
 		errors.pop_front();
 
-	      // make all values to be positive
-	      T min_value = *errors.begin();
-	      
-	      for(const auto& e : errors)
-		if(e < min_value) min_value = e;
-
-	      if(min_value > T(0.0))
-		min_value = T(0.0);
-
-	      
 	      T m = T(0.0f);
 	      T s = T(0.0f);
 	      
 	      for(const auto& e : errors){
-		m += (e-min_value);
-		s += (e-min_value)*(e-min_value);
+		m += e;
+		s += e*whiteice::math::conj(e);
 	      }
 	      
 	      m /= errors.size();
@@ -405,10 +385,11 @@ namespace whiteice
 	      
 	      T r = T(0.0f);
 	      
-	      if(m > T(0.0f))
+	      if(whiteice::math::abs(m)[0] > whiteice::math::abs(T(0.0f)[0]))
 		r = s/m;
 	      
-	      if(r[0] <= T(0.005f)[0]){ // convergence: 0.5% st.dev. when compared to mean.
+	      if(whiteice::math::abs(r)[0] <= whiteice::math::abs(T(0.005f))[0]){
+		// convergence: 0.5% st.dev. when compared to mean.
 		solution_converged = true;
 		break;
 	      }
@@ -437,228 +418,6 @@ namespace whiteice
 	return; // exit
       }
       
-
-      this->iterations = 0;
-      unsigned int no_improve_iterations = 0;
-      unsigned int no_improve_iterations_count = 0;
-      std::list<T> errors; // used for convergence check
-
-      vertex<T> grad;
-      
-      vertex<T> x(bestx);
-      T real_besty = besty;
-
-      const T lrate0 = lrate;
-      T mistep_lrate = lrate;
-      bool use_mistep_lrate = false;
-      int mistep_go_worse = 0;
-
-      bool recalculate_gradient = true;
-
-      
-      // stops if given number of iterations has passed or no improvements in N iters
-      // or if instructed to stop. Additionally, in the loop there is convergence check
-      // to check if to stop computing.
-      while((iterations < MAX_ITERS || MAX_ITERS == 0) &&
-	    (no_improve_iterations) < MAX_NO_IMPROVE_ITERS &&
-	    thread_running)
-      {
-	if(recalculate_gradient == true)
-	  grad = Ugrad(x);
-
-	recalculate_gradient = true; // as the default calculates gradient each iteration..
-
-	auto old_x = x;
-
-	auto lratef = lrate;
-
-	if(use_mistep_lrate){
-	  use_mistep_lrate = false;
-	  // x -= mistep_lrate*grad; // minimization
-
-	  lratef = mistep_lrate;
-
-	  //std::cout << "lrate = " << mistep_lrate << std::endl;
-	}
-	else{
-	  // x -= lrate*grad; // minimization
-
-	  //std::cout << "lrate = " << lrate << std::endl;
-	}
-
-	auto delta_grad = grad;
-
-	for(unsigned int j=0;j<grad.size();j++){
-	  for(unsigned int k=0;k<grad[0].size();k++){
-	    delta_grad[j][k] *= lratef[0];
-	  }
-	}
-
-	/*
-	//if(mistep_go_worse)
-	{
-	  // random scaling of the gradient [0.90,1.10]
-	  
-	  for(unsigned int j=0;j<grad.size();j++){
-	    auto scaling = (T(rng.uniform())*T(0.20f) + T(0.90f))[0];
-	    for(unsigned int k=0;k<grad[0].size();k++){
-	      delta_grad[j][k] *= scaling;
-	    }
-	  }
-	}
-	*/
-
-
-	x -= delta_grad; 
-	
-	heuristics(x);
-
-	const T ynew = getError(x);
-
-	// std::cout << "SGD::getError() = " << ynew << std::endl;
-
-	if(ynew[0] < (T(0.99999)*real_besty)[0]){ // 0.01% reductions or smaller mean there is no improvement
-	  no_improve_iterations = 0;
-	  no_improve_iterations_count = 0;
-	}
-	else{
-	  no_improve_iterations++;
-	  no_improve_iterations_count++;
-	  //std::cout << "NO IMPROVE: " << no_improve_iterations_count << std::endl;
-	}
-	
-
-	bool worse = false;
-	
-	if(ynew[0] < besty[0] || keepWorse){
-	  {
-	    std::lock_guard<std::mutex> lock(solution_mutex);
-	    
-	    this->besty = ynew;
-	    this->bestx = x;
-	  }
-
-#if 1
-	  if(lrate[0] < 0.01)
-	    lrate[0] = sqrt(lrate[0]);
-#endif
-	}
-	else{
-	  if((mistep_go_worse > 0 && ynew[0] < (T(1.250)*besty)[0]) /* || 
-								      (ynew - besty)[0] < 1e-5*/){ 
-	    // go worse direction [just once]
-	    if(mistep_go_worse) mistep_go_worse--;
-	    worse = true; 
-	  }
-	  else{
-	    if(ynew[0] >= (T(1.250)*besty)[0]){
-	      x = old_x; // don't go to worse directions..
-
-	      recalculate_gradient = false; // no need to calculate gradient again.. 
-	    }
-	    else{
-	      worse = true;
-	    }
-	  }
-	}
-
-	if(ynew[0] < real_besty[0]){ // results improved
-	  real_besty = ynew;
-	  
-	  if(adaptive_lrate) // was: increase learning rate by 10%
-	    lrate *= T(2.00f);
-	}
-	else{ // result didn't improve, quickly reduce learning rate by 50%
-	  if(adaptive_lrate){
-	    if(worse == false) lrate *= T(0.50f); // was 0.50 = 50%
-	    else lrate *= T(1.00f); // go to worse direction so increase still lrate
-
-	  }
-	}
-
-
-	
-	if(lrate[0] < T(1e-10)[0] || no_improve_iterations_count >= 20){
-	  // lrate = T(1e-10);
-
-	  // resets LRATE and goes to worse direction
-	  T e = T(0.0f);
-	  e = T(0.35)*T(rng.uniform()) + T(0.15);
-	  
-	  mistep_lrate[0] = pow(lrate[0], e[0]);
-	  
-	  use_mistep_lrate = true;
-	  std::cout << "MISTEP LRATE: " << mistep_lrate << std::endl;
-	  lrate[0] = mistep_lrate[0];
-	  mistep_go_worse = 2;
-
-	  if((rng.rand()%100) < 10){ // 10% probability to reset x 
-	    x = bestx; // resets x too [don't work in practice]
-	    std::cout << "RESET X" << std::endl;
-	  }
-	  
-	  no_improve_iterations_count = 0;
-	}
-	else if(lrate > T(1e10)){
-	  lrate = T(1e10);
-	  no_improve_iterations_count = 0;
-	}
-
-	iterations++;
-
-	
-	// smart convergence check: checks if (st.dev. / mean) <= 0.001 (<= 0.1%)
-	if(smart_convergence_check){
-	  errors.push_back(real_besty); // NOTE: getError() must return >= 0.0 values
-
-	  if(errors.size() >= 100){
-	  
-	    while(errors.size() > 100)
-	      errors.pop_front();
-
-	    // make all values to be positive
-	    T min_value = *errors.begin();
-
-	    for(const auto& e : errors)
-	      if(e < min_value) min_value = e;
-
-	    
-	    T m = T(0.0f);
-	    T s = T(0.0f);
-	    
-	    for(const auto& e : errors){
-	      m += (e-min_value);
-	      s += (e-min_value)*(e-min_value);
-	    }
-	    
-	    m /= errors.size();
-	    s /= errors.size();
-
-	    s -= m*m;
-	    s = sqrt(abs(s));
-
-	    T r = T(0.0f);
-
-	    if(m > T(0.0f))
-	      r = s/m;
-
-	    if(r[0] <= T(0.005f)[0]){ // convergence: 0.1% st.dev. when compared to mean.
-	      solution_converged = true;
-	      break;
-	    }
-
-	  }
-	}
-
-	
-
-	while(sleep_mode && thread_running){
-	  std::chrono::milliseconds duration(200);
-	  std::this_thread::sleep_for(duration);
-	}
-
-      }
-
       
       {
 	solution_converged = true;
@@ -677,7 +436,10 @@ namespace whiteice
     //template class SGD< double >;
     
     template class SGD< blas_real<float> >;
-    template class SGD< blas_real<double> >;    
+    template class SGD< blas_real<double> >;
+
+    template class SGD< blas_complex<float> >;
+    template class SGD< blas_complex<double> >;
 
     
     template class SGD< superresolution<

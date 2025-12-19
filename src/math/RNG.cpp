@@ -154,7 +154,8 @@ T RNG<T>::normal() const
      typeid(T) == typeid(whiteice::math::blas_complex<double>))
   {
     // complex Normal distribution CN(0,1) = N(0,0.5) + N(0,0.5)*i
-    const float scaling = sqrt(0.5f);
+    // INSTEAD: use different Normal distribution = N(0,1) + N(0,1)*i
+    const float scaling = 1.0f; // sqrt(0.5f);
     whiteice::math::blas_complex<float> Nz(scaling*rnor(), scaling*rnor());
     T value;
     whiteice::math::convert(value, Nz);
@@ -171,7 +172,8 @@ void RNG<T>::normal(math::vertex<T>& n) const
      typeid(T) == typeid(whiteice::math::blas_complex<double>))
   {
     // complex Normal distribution CN(0,1) = N(0,0.5) + N(0,0.5)*i
-    const float scaling = sqrt(0.5f);
+    // INSTEAD: use different Normal distribution = N(0,1) + N(0,1)*i
+    const float scaling = 1.0f; // sqrt(0.5f);
     for(unsigned int i=0;i<n.size();i++){
       whiteice::math::blas_complex<float> Nz(scaling*rnor(), scaling*rnor());
       whiteice::math::convert(n[i], Nz);
@@ -191,7 +193,8 @@ void RNG<T>::normal(math::matrix<T>& N) const
      typeid(T) == typeid(whiteice::math::blas_complex<double>))
   {
     // complex Normal distribution CN(0,1) = N(0,0.5) + N(0,0.5)*i
-    const float scaling = sqrt(0.5f);
+    // INSTEAD: use different Normal distribution = N(0,1) + N(0,1)*i
+    const float scaling = 1.0f; // sqrt(0.5f);
     for(unsigned int i=0;i<N.size();i++){
       whiteice::math::blas_complex<float> Nz(scaling*rnor(), scaling*rnor());
       whiteice::math::convert(N[i], Nz);

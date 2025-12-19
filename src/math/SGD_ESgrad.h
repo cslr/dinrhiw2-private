@@ -51,6 +51,9 @@ namespace whiteice
     
     extern template class SGD_ESgrad< blas_real<float> >;
     extern template class SGD_ESgrad< blas_real<double> >;
+    
+    extern template class SGD_ESgrad< blas_complex<float> >;
+    extern template class SGD_ESgrad< blas_complex<double> >;
 
     extern template class SGD_ESgrad< superresolution<
       blas_real<float>,

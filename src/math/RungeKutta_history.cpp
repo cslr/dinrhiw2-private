@@ -102,7 +102,7 @@ namespace whiteice
 
       // adds HISTORY_LEN past vectors (linearly interpolated in time points)
       for(unsigned int h=1;h<=HISTORY_LEN;h++){
-	whiteice::math::vertex<T> v = linearly_interpolate_find(t-h, map_points, y.size());
+	whiteice::math::vertex<T> v = linearly_interpolate_find(t-T(h), map_points, y.size());
 	vectors.push_back(v);
 	dimensions += v.size();
       }
@@ -146,8 +146,8 @@ namespace whiteice
 #if 1
       // for machine learning accuracy O(h^4) = O(0.3^4) = O(0.0081).
       const T e0 = T(1e-8); // was: 1e-8 (error was kept at 1e-2)
-      const T h_min = T(0.8); // was 1e-2, 0.1
-      const T h_max = T(1.0); // was 1e-1, 0.3
+      const T h_min = T(0.1); // was 1e-2, 0.1
+      const T h_max = T(0.3); // was 1e-1, 0.3
 #endif
 	
       const T f6 = T(1.0/6.0);
@@ -245,14 +245,14 @@ namespace whiteice
 	// h = (h_new + h_old)/2
 	h *= T(0.5)*(pow(e0/e, f5) + T(1.0));
 	
-	if(h < h_min) h = h_min;
-	else if(h > h_max) h = h_max;
+	if(whiteice::math::abs(h)[0] < whiteice::math::abs(h_min)[0]) h = h_min;
+	else if(whiteice::math::abs(h)[0] > whiteice::math::abs(h_max)[0]) h = h_max;
 
 	// std::cout << "RK: h = " << h << std::endl;
 
 	// adds stochastic differential equation gaussian noise term to y
 	{
-	  if(sigma_term > T(0.0)){
+	  if(whiteice::math::abs(sigma_term)[0] > T(0.0)[0]){
 	    whiteice::math::vertex<T> noise;
 	    noise.resize(y.size());
 	    
@@ -265,10 +265,13 @@ namespace whiteice
 
 	// handles bad and large values in values
 	for(unsigned int d=0;d<y.size();d++){
-	  if(y[d] < T(-1e30)) y[d] = T(0.0);
-	  else if(y[d] > T(+1e30)) y[d] = T(0.0);
-	  if(isnan(y[d])) y[d] = T(0.0);
-	  if(isinf(y[d])) y[d] = T(0.0);
+
+	  T abs_y = whiteice::math::abs(y[d]);
+	  
+	  if(abs_y[0] < T(-1e30)[0]) y[d] = T(0.0);
+	  else if(abs_y[0] > T(+1e30)[0]) y[d] = T(0.0);
+	  if(isnan(abs_y[0])) y[d] = T(0.0);
+	  if(isinf(abs_y[0])) y[d] = T(0.0);
 	}
 
 	points.push_back(y);
@@ -284,11 +287,10 @@ namespace whiteice
     
     //////////////////////////////////////////////////////////////////////
     
-    template class RungeKutta_history< float >;
-    template class RungeKutta_history< double >;
     template class RungeKutta_history< blas_real<float> >;
     template class RungeKutta_history< blas_real<double> >;
-    //template class RungeKutta_history< blas_complex<float> >;
-    //template class RungeKutta_history< blas_complex<double> >;
+    
+    template class RungeKutta_history< blas_complex<float> >;
+    template class RungeKutta_history< blas_complex<double> >;
   };
 };

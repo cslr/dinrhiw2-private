@@ -70,7 +70,7 @@ namespace whiteice
 	void setAdaptiveLRate(bool adaptiveFlag){ adaptive_lrate = adaptiveFlag; }
 	bool getAdaptiveLRate() const { return adaptive_lrate; }
 
-	void setAdamOptimizer(const bool adam = true){ use_adam = adam; }
+	void setAdamOptimizer(const bool adam = true){ }
 	bool getAdamOptimizer() const { return use_adam; }
 
 	// x is the best parameter found, y is training error and
@@ -108,7 +108,7 @@ namespace whiteice
 	unsigned int MAX_ITERS;
 	unsigned int MAX_NO_IMPROVE_ITERS;
 
-	bool use_adam = true;
+	const bool use_adam = true; // always use ADAM optimizer
       
         bool overfit = false;
 	bool keepWorse = false; // do we save worse solutions
@@ -143,6 +143,9 @@ namespace whiteice
     //extern template class SGD< double >;
     extern template class SGD< blas_real<float> >;
     extern template class SGD< blas_real<double> >;
+
+    extern template class SGD< blas_complex<float> >;
+    extern template class SGD< blas_complex<double> >;
 
     extern template class SGD< superresolution<
 				 blas_real<float>,

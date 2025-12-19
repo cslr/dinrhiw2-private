@@ -293,14 +293,14 @@ namespace whiteice
 	// h = (h_new + h_old)/2
 	h *= T(0.5)*(pow(e0/e, f5) + T(1.0));
 	
-	if(h < h_min) h = h_min;
-	else if(h > h_max) h = h_max;
+	if(whiteice::math::abs(h)[0] < whiteice::math::abs(h_min)[0]) h = h_min;
+	else if(whiteice::math::abs(h)[0] > whiteice::math::abs(h_max)[0]) h = h_max;
 
 	// std::cout << "RK: h = " << h << std::endl;
 
 	// adds stochastic differential equation gaussian noise term to y
 	{
-	  if(sigma_term > T(0.0)){
+	  if(whiteice::math::abs(sigma_term)[0] > T(0.0)[0]){
 	    whiteice::math::vertex<T> noise;
 	    noise.resize(y.size());
 	    
@@ -313,10 +313,13 @@ namespace whiteice
 
 	// handles bad and large values in values
 	for(unsigned int d=0;d<y.size();d++){
-	  if(y[d] < T(-1e30)) y[d] = T(0.0);
-	  else if(y[d] > T(+1e30)) y[d] = T(0.0);
-	  if(isnan(y[d])) y[d] = T(0.0);
-	  if(isinf(y[d])) y[d] = T(0.0);
+		  
+	  T abs_y = whiteice::math::abs(y[d]);
+	  
+	  if(abs_y[0] < T(-1e30)[0]) y[d] = T(0.0);
+	  else if(abs_y[0] > T(+1e30)[0]) y[d] = T(0.0);
+	  if(isnan(abs_y[0])) y[d] = T(0.0);
+	  if(isinf(abs_y[0])) y[d] = T(0.0);
 	}
 
 	points.push_back(y);
@@ -332,11 +335,9 @@ namespace whiteice
     
     //////////////////////////////////////////////////////////////////////
     
-    template class RungeKuttaP_history< float >;
-    template class RungeKuttaP_history< double >;
     template class RungeKuttaP_history< blas_real<float> >;
     template class RungeKuttaP_history< blas_real<double> >;
-    //template class RungeKuttaP_history< blas_complex<float> >;
-    //template class RungeKuttaP_history< blas_complex<double> >;
+    template class RungeKuttaP_history< blas_complex<float> >;
+    template class RungeKuttaP_history< blas_complex<double> >;
   };
 };

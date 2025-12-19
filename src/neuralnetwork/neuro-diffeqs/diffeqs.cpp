@@ -820,6 +820,32 @@ template bool simulate_diffeq_model< math::blas_real<double> >
  const unsigned int HISTORY_LEN);
 
 
+template bool simulate_diffeq_model< math::blas_complex<float> >
+(const whiteice::nnetwork< math::blas_complex<float> >& diffeq,
+ const whiteice::math::vertex< math::blas_complex<float> >& start,
+ const float TIME_LENGTH,
+ const math::blas_complex<float>& sigma,
+ std::vector< whiteice::math::vertex< math::blas_complex<float> > >& data,
+ std::vector< math::blas_complex<float> >& times,
+ const std::vector< whiteice::math::vertex< math::blas_complex<float> > >& parameters,
+ const std::vector< math::blas_complex<float> >& parameter_times,
+ const unsigned int HISTORY_LEN);
+
+
+template bool simulate_diffeq_model< math::blas_complex<double> >
+(const whiteice::nnetwork< math::blas_complex<double> >& diffeq,
+ const whiteice::math::vertex< math::blas_complex<double> >& start,
+ const float TIME_LENGTH,
+ const math::blas_complex<double>& sigma,
+ std::vector< whiteice::math::vertex< math::blas_complex<double> > >& data,
+ std::vector< math::blas_complex<double> >& times,
+ const std::vector< whiteice::math::vertex< math::blas_complex<double> > >& parameters,
+ const std::vector< math::blas_complex<double> >& parameter_times,
+ const unsigned int HISTORY_LEN);
+
+
+
+
 // fits simulated data points to correct_times values
 // template <typename T = math::blas_real<float> >
 template bool simulate_diffeq_model2< math::blas_real<float> >
@@ -841,6 +867,29 @@ template bool simulate_diffeq_model2< math::blas_real<double> >
  const std::vector< whiteice::math::vertex< math::blas_real<double> > >& parameters,
  const std::vector< math::blas_real<double> >& correct_times,
  const unsigned int HISTORY_LEN);
+
+template bool simulate_diffeq_model2< math::blas_complex<float> >
+(const whiteice::nnetwork< math::blas_complex<float> >& diffeq,
+ const whiteice::math::vertex< math::blas_complex<float> >& start,
+ const float TIME_LENGTH,
+ const math::blas_complex<float>& sigma,
+ std::vector< whiteice::math::vertex< math::blas_complex<float> > >& data,
+ const std::vector< whiteice::math::vertex< math::blas_complex<float> > >& parameters,
+ const std::vector< math::blas_complex<float> >& correct_times,
+ const unsigned int HISTORY_LEN);
+
+template bool simulate_diffeq_model2< math::blas_complex<double> >
+(const whiteice::nnetwork< math::blas_complex<double> >& diffeq,
+ const whiteice::math::vertex< math::blas_complex<double> >& start,
+ const float TIME_LENGTH,
+ const math::blas_complex<double>& sigma,
+ std::vector< whiteice::math::vertex< math::blas_complex<double> > >& data,
+ const std::vector< whiteice::math::vertex< math::blas_complex<double> > >& parameters,
+ const std::vector< math::blas_complex<double> >& correct_times,
+ const unsigned int HISTORY_LEN);
+
+
+
 
 
 template bool simulate_diffeq_model3< math::blas_real<float> >
@@ -866,6 +915,36 @@ template bool simulate_diffeq_model3< math::blas_real<double> >
  const whiteice::dataset< math::blas_real<double> >& correct_data,
  const unsigned int SEQUENCE_LENGTH,
  const unsigned int HISTORY_LEN);
+
+
+template bool simulate_diffeq_model3< math::blas_complex<float> >
+(const whiteice::nnetwork< math::blas_complex<float> >& diffeq,
+ const whiteice::math::vertex< math::blas_complex<float> >& start,
+ const float TIME_LENGTH,
+ const math::blas_complex<float>& sigma,
+ std::vector< whiteice::math::vertex< math::blas_complex<float> > >& data,
+ const std::vector< whiteice::math::vertex< math::blas_complex<float> > >& parameters,
+ const std::vector< math::blas_complex<float> >& correct_times,
+ const whiteice::dataset< math::blas_complex<float> >& correct_data,
+ const unsigned int SEQUENCE_LENGTH,
+ const unsigned int HISTORY_LEN);
+
+template bool simulate_diffeq_model3< math::blas_complex<double> >
+(const whiteice::nnetwork< math::blas_complex<double> >& diffeq,
+ const whiteice::math::vertex< math::blas_complex<double> >& start,
+ const float TIME_LENGTH,
+ const math::blas_complex<double>& sigma,
+ std::vector< whiteice::math::vertex< math::blas_complex<double> > >& data,
+ const std::vector< whiteice::math::vertex< math::blas_complex<double> > >& parameters,
+ const std::vector< math::blas_complex<double> >& correct_times,
+ const whiteice::dataset< math::blas_complex<double> >& correct_data,
+ const unsigned int SEQUENCE_LENGTH,
+ const unsigned int HISTORY_LEN);
+
+
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 
 
 

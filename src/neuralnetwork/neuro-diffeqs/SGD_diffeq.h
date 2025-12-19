@@ -80,6 +80,9 @@ namespace whiteice
 
   extern template class SGD_diffeq< whiteice::math::blas_real<float> >;
   extern template class SGD_diffeq< whiteice::math::blas_real<double> >;
+
+  extern template class SGD_diffeq< whiteice::math::blas_complex<float> >;
+  extern template class SGD_diffeq< whiteice::math::blas_complex<double> >;
   
 };
 

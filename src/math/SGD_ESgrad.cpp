@@ -59,6 +59,8 @@ namespace whiteice
 	  
 	  auto s_epsilon = epsilon;
 	  s_epsilon *= sigma;
+
+	  whiteice::math::conj(epsilon); // conjugate value for wirtinger derivates.. [works bad for f: C->R]??
 	  
 	  g += (this->U(x + s_epsilon) - this->U(x - s_epsilon))*epsilon;
 	}
@@ -79,6 +81,9 @@ namespace whiteice
 
     template class SGD_ESgrad< blas_real<float> >;
     template class SGD_ESgrad< blas_real<double> >;
+
+    template class SGD_ESgrad< blas_complex<float> >;
+    template class SGD_ESgrad< blas_complex<double> >;
 
     template class SGD_ESgrad< superresolution<
       blas_real<float>,

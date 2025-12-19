@@ -85,12 +85,10 @@ namespace whiteice
     
     //////////////////////////////////////////////////////////////////////
     
-    extern template class RungeKutta_history< float >;
-    extern template class RungeKutta_history< double >;
     extern template class RungeKutta_history< blas_real<float> >;
     extern template class RungeKutta_history< blas_real<double> >;
-    //extern template class RungeKutta< blas_complex<float> >;
-    //extern template class RungeKutta< blas_complex<double> >;
+    extern template class RungeKutta_history< blas_complex<float> >;
+    extern template class RungeKutta_history< blas_complex<double> >;
     
   };
 };
