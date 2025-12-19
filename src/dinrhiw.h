@@ -214,6 +214,8 @@
 #include "SGD_ESgrad.h"
 #include "SGD_diffeq.h"
 
+#include "LinearARX.h"
+
 #include "HMC.h"
 #include "UHMC.h"
 #include "PTHMC.h"

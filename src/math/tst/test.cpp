@@ -44,6 +44,8 @@
 #include "real.h"
 #include "eig.h"
 
+#include "LinearARX.h"
+
 #include "MCMC.h"
 #include "MCMC_gaussian.h"
 
@@ -87,6 +89,8 @@ void correlation_test();
 
 void blas_compile_tests();
 void blas_correctness_tests();
+
+void linear_arx_test();
 
 //////////////////////////////////////////////////////////////////////
 
@@ -214,9 +218,10 @@ void rng_test()
 
 	s -= m*m;
 	s *= v.size()/((double)(v.size() - 1)); // sample variance..
+	s = sqrt(s);
 
 	std::cout << "normal distributin mean: " << m << std::endl;
-	std::cout << "normal distribution var: " << s << std::endl;
+	std::cout << "normal distribution stdev: " << s << std::endl;
 
 	v.resize(100000); // only saves 100.000 samples instead of 10.000.000
 	v.saveAscii("normal_rnd.txt");
@@ -356,6 +361,9 @@ int main()
     
     std::cout << "(AUTO)CORRELATION CALCULATION TESTS" << std::endl;  
     correlation_test();
+    
+    std::cout << "LinearARX time-series prediction with control (fast linear only)" << std::endl;
+    linear_arx_test();
   }
   catch(std::exception& e){
     std::cout << "Exception: " << e.what() << std::endl;
@@ -363,6 +371,88 @@ int main()
   
   return true;
 }
+
+
+
+void linear_arx_test()
+{
+  const unsigned int HISTLEN = 4;
+  
+  whiteice::dataset<> xdata, pdata;
+
+  xdata.createCluster("x", 10);
+  pdata.createCluster("p", 11);
+
+  for(unsigned int i=0;i<1000;i++){
+    whiteice::math::vertex<> x, p;
+    
+    x.resize(10);
+    p.resize(11);
+
+    whiteice::rng.normal(x);
+    whiteice::rng.normal(p);
+
+    xdata.add(0, x);
+    pdata.add(0, p);
+  }
+
+  xdata.preprocess(); // mean,stdev normalization
+  pdata.preprocess();
+
+  whiteice::math::LinearARX arx;
+
+  if(arx.computeSolution(xdata, pdata, HISTLEN) == false){
+    printf("ERROR: computing solution FAILED.\n");
+    return;
+  }
+  
+  // tests predict call don't fail
+  std::vector< whiteice::math::vertex<> > xx; // HISTLEN x(t)..x(t-HISTLEN-1) VECTOR ELEMENTS
+  std::vector< whiteice::math::vertex<> > pp; // HISTLEN p(t)..p(t-HISTLEN-1) VECTOR ELEMENTS
+  whiteice::math::vertex<> y;
+
+  
+  for(unsigned int h=0;h<HISTLEN;h++){
+    whiteice::math::vertex<> x, p;
+    
+    x.resize(10);
+    p.resize(11);
+
+    whiteice::rng.normal(x);
+    whiteice::rng.normal(p);
+
+    xx.push_back(x);
+    pp.push_back(p);
+  }
+
+
+  printf("ARX model error (optimized model): %f\n", arx.getError().c[0]);
+
+  if(arx.predict(xx, pp, y) == false){
+    printf("ERROR: predicting next step value FAILED.\n");
+    return;
+  }
+  else{
+    std::cout << "arx predicted y = " << y << std::endl;
+  }
+
+  arx.randomizeSolutionMatrices();
+  
+  printf("ARX model error (random model): %f\n", arx.getError().c[0]);
+
+
+  if(arx.predict(xx, pp, y) == false){
+    printf("ERROR: predicting next step value FAILED.\n");
+    return;
+  }
+  else{
+    std::cout << "arx predicted y = " << y << std::endl;
+  }
+  
+  
+  printf("LinearARX model checks done.\n");
+}
+
 
 
 
