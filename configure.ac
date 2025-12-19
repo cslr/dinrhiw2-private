@@ -743,6 +743,15 @@ dnl  optimization_flags="$optimization_flags -D_GLIBCXX_DEBUG -fsanitize=address
   conf_flags="$conf_flags -fsanitize=thread"
 ])
 
+AC_ARG_ENABLE([addressdebug],
+	AS_HELP_STRING([--enable-addressdebug],[Enable g++ address sanitizer debugging]))
+
+AS_IF([test "x$enable_addressdebug" = "xyes"],[
+  optimization_flags="$optimization_flags -fsanitize=address"
+dnl  optimization_flags="$optimization_flags -D_GLIBCXX_DEBUG -fsanitize=address"
+  conf_flags="$conf_flags -fsanitize=address"
+])
+
 dnl enable newer C++ standards
 dnl CFLAGS="-std=gnu++20 $CFLAGS"
 dnl conf_flags="-std=gnu++20 -Wno-strict-aliasing $conf_flags `python3-config --cflags --embed`"
