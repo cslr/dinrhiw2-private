@@ -376,7 +376,7 @@ int main()
 
 void linear_arx_test()
 {
-  const unsigned int HISTLEN = 4;
+  const unsigned int HISTLEN = 20;
   
   whiteice::dataset<> xdata, pdata;
 

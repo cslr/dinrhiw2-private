@@ -94,16 +94,18 @@ namespace whiteice
       Rpy.zero();
       Rxy.zero();
 
+      
+      const T scale = T(1.0f);
+
       for(unsigned int i=0;i<x.size();i++){
-	// outer products should be optimized..
-	Ryx += y[i].outerproduct(x[i]);
-	Rpx += p[i].outerproduct(x[i]);
-	Rpp += p[i].outerproduct();
-	Ryp += y[i].outerproduct(p[i]);
-	Rxp += x[i].outerproduct(p[i]);
-	Rxx += x[i].outerproduct();
-	Rpy += p[i].outerproduct(y[i]);
-	Rxy += x[i].outerproduct(y[i]);
+	addouterproduct(Ryx, scale, y[i], x[i]);
+	addouterproduct(Rpx, scale, p[i], x[i]);
+	addouterproduct(Rpp, scale, p[i], p[i]);
+	addouterproduct(Ryp, scale, y[i], p[i]);
+	addouterproduct(Rxp, scale, x[i], p[i]);
+	addouterproduct(Rxx, scale, x[i], x[i]);
+	addouterproduct(Rpy, scale, p[i], y[i]);
+	addouterproduct(Rxy, scale, x[i], y[i]);
       }
 
       Ryx /= T(x.size());
@@ -116,19 +118,46 @@ namespace whiteice
       Rxy /= T(x.size());
       
       //////////////////////////////////////////////////////////////////////
-      // calculates parameter matrices A and B
+      // calculates parameter matrices A and B, needs matrix inverse and
+      // matrixes may have zero determinant meaning that inversion gives
+      // bad results or fails.. trying to regularize problem by adding
+      // small positive terms to diagonal (hack).
 
-      // std::cout << "Rxx.det() == " << Rxx.det() << std::endl;
+      {
+	T mindiag = T(1e-5);
+	const T scaling = T(4.0f);
+	
+	while(Rxx.det() <= T(1e-5)){
+	  for(unsigned int i=0;i<Rxx.xsize();i++)
+	    Rxx(i,i) += mindiag;
+	  
+	  mindiag *= scaling;
+
+	  //std::cout << "Rxx.det() == " << Rxx.det() << std::endl;
+	}
+      }
       
-      if(Rxx.pseudoinverse() == false) return false;
+      if(Rxx.inv() == false) return false;
 
       whiteice::math::matrix<T> TMP, TMP1;
 
       TMP1 = Rpp-Rpx*Rxx*Rxp;
 
-      // std::cout << "TMP1.det() == " << TMP1.det() << std::endl;
+      {
+	T mindiag = T(1e-5);
+	const T scaling = T(4.0f);
+	
+	while(TMP1.det() <= T(1e-5)){
+	  for(unsigned int i=0;i<TMP1.xsize();i++)
+	    TMP1(i,i) += mindiag;
+	  
+	  mindiag *= scaling;
+
+	  //std::cout << "TMP1.det() == " << TMP1.det() << std::endl;
+	}
+      }
       
-      if(TMP1.pseudoinverse() == false) return false;
+      if(TMP1.inv() == false) return false;
       
       TMP = Rpx*Rxx*Rxy-Rpy;
 
