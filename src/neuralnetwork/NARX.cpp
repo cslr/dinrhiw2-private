@@ -30,7 +30,7 @@ namespace whiteice
   {
     std::lock_guard<std::mutex> lock(compute_mutex);
 
-    if(xdata.size(0) == 0 || pdata.size(0) == 0 || HISTLEN == 0)
+    if(xdata.size(0) < 10 || pdata.size(0) < 10 || HISTLEN == 0)
       return false;
 
     if(xdata.size(0) != pdata.size(0)) return false;
@@ -67,13 +67,13 @@ namespace whiteice
 	  const auto& x = xdata.access(0,i-h);
 	  
 	  for(unsigned int k=0;k<xdata.dimension(0);k++){
-	    v[h*xdata.dimension(0)*pdata.dimension(0) + k] = x[k];
+	    v[h*(xdata.dimension(0)+pdata.dimension(0)) + k] = x[k];
 	  }
 
 	  const auto& p = pdata.access(0,i-h);
 
 	  for(unsigned int k=0;k<pdata.dimension(0);k++){
-	    v[h*xdata.dimension(0)*pdata.dimension(0) + xdata.dimension(0) + k] = p[k];
+	    v[h*(xdata.dimension(0)+pdata.dimension(0)) + xdata.dimension(0) + k] = p[k];
 	  }
 	}
 	
@@ -172,7 +172,7 @@ namespace whiteice
     whiteice::math::vertex<T> v;
 
     {
-      v.resize(xdata.dimension(0)*pdata.dimension(0)*HISTLEN);
+      v.resize((xdata.dimension(0)+pdata.dimension(0))*HISTLEN);
       v.zero();
       
       for(unsigned int h=0;h<HISTLEN;h++){
@@ -183,7 +183,7 @@ namespace whiteice
 	  xdata.preprocess(0, xi);
 	  
 	  for(unsigned int k=0;k<xdata.dimension(0);k++){
-	    v[h*xdata.dimension(0)*pdata.dimension(0) + k] = xi[k];
+	    v[h*(xdata.dimension(0)+pdata.dimension(0)) + k] = xi[k];
 	  }
 
 	  auto pi = p[HISTLEN-1-h];
@@ -191,7 +191,7 @@ namespace whiteice
 	  pdata.preprocess(0, pi);
 
 	  for(unsigned int k=0;k<pdata.dimension(0);k++){
-	    v[h*xdata.dimension(0)*pdata.dimension(0) + xdata.dimension(0) + k] = pi[k];
+	    v[h*(xdata.dimension(0)+pdata.dimension(0)) + xdata.dimension(0) + k] = pi[k];
 	  }
 	}
 	
