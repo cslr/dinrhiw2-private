@@ -109,14 +109,14 @@ namespace whiteice
       /*
        * Returns true if optimizer is running
        */
-      bool isRunning();
+      bool isRunning() const;
 
 
       /*
        * Returns true if heuristics estimate that optimizer has converged.
        * "stdev/mean" of most recent errors is less than percentage => convergence.
        */
-      bool hasConverged(T percentage = T(0.01));
+      bool hasConverged(T percentage = T(0.01)) const;
       
       /*
        * returns the best NN solution found so far and
@@ -167,7 +167,7 @@ namespace whiteice
       
       // flag to indicate this is the first thread to start optimization
       bool first_time;
-      std::mutex first_time_lock;
+      mutable std::mutex first_time_lock;
       
       bool deep_pretraining;
 
@@ -201,7 +201,7 @@ namespace whiteice
       bool running;
       
       volatile int thread_is_running;
-      std::mutex thread_is_running_mutex;
+      mutable std::mutex thread_is_running_mutex;
       std::condition_variable thread_is_running_cond;
       bool optimize_started_finished;
       

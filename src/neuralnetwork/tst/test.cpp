@@ -70,6 +70,8 @@
 
 #include "ES_diffeq.h"
 
+#include "NARX.h" // naive one step time-series prediction using neural networks
+
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
@@ -181,7 +183,9 @@ void linear_kcluster_test(); // unit tests LinearKCluster class
 
 void general_kcluster_test(); // unit tests GeneralKCluster class
 
-void r_hmc_test(); // tests recurrent Hamiltonian Monte Carlo sampling.. 
+void r_hmc_test(); // tests recurrent Hamiltonian Monte Carlo sampling..
+
+void narx_test();
 
 
 
@@ -205,6 +209,11 @@ int main()
   whiteice::logging.setOutputFile("testsuite1.log");
 
   try{
+
+    narx_test();
+    
+    return 0;
+    
     // nn_layer_norm_gradient_value_test();
 
     // kmeans_test();
@@ -398,6 +407,93 @@ private:
   char* reason;
   
 };
+
+/**********************************************************************/
+/**********************************************************************/
+
+void narx_test()
+{
+  std::cout << "NARX sine-wave prediction testing" << std::endl;
+
+  // generates sine wave (10 Hz)
+  std::vector< whiteice::math::vertex<> > x;
+  {
+    const float f = 10.0f;
+    const float dt = 0.10f;
+
+    float t = 0.0f;
+
+    for(unsigned int i=0;i<100;i++){ // 1 seconds
+      whiteice::math::vertex<> v;
+      v.resize(1);
+      v[0] = sin(f*t);
+      
+      x.push_back(v);
+      t += dt;
+    }
+  }
+
+  // generates control parameters (noise)
+  std::vector< whiteice::math::vertex<> > p;
+  {
+    for(unsigned int i=0;i<100;i++){
+      whiteice::math::vertex<> v;
+      v.resize(1);
+      v[0] = whiteice::rng.uniformf();
+      
+      p.push_back(v);
+    }
+  }
+
+  whiteice::dataset<> xdata, pdata;
+
+  xdata.createCluster("x", 1);
+  pdata.createCluster("p", 1);
+
+  xdata.add(0, x);
+  pdata.add(0, p);
+
+  whiteice::NARX<> narx;
+
+  const unsigned int HISTLEN = 10;
+  whiteice::nnetwork<> net;
+
+  std::vector<unsigned int> arch;
+  arch.push_back((xdata.dimension(0)+pdata.dimension(0))*HISTLEN);
+  arch.push_back(25);
+  arch.push_back(25);
+  arch.push_back(xdata.dimension(0));
+
+  net.setArchitecture(arch);
+  
+  net.randomize(2, 1.0);
+
+  if(narx.startOptimization(net, xdata, pdata, HISTLEN) == false){
+    printf("Starting NARX optimization FAILED.\n");
+    return;
+  }
+
+  whiteice::math::vertex<> params;
+  whiteice::math::blas_real<float> error;
+
+  while(narx.isRunning()){
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    if(narx.getSolution(params, error)){
+      printf("Solution error: %f\n", error.c[0]);
+      fflush(stdout);
+    }
+  }
+
+  narx.stopOptimization();
+
+  if(narx.getSolution(params, error)){
+    printf("Final solution error: %f\n", error.c[0]);
+    fflush(stdout);
+  }
+
+  printf("NARX tests done.\n");
+}
 
 /**********************************************************************/
 /**********************************************************************/

@@ -397,7 +397,7 @@ namespace whiteice
     }
     
     template <typename T>
-    bool NNGradDescent<T>::isRunning()
+    bool NNGradDescent<T>::isRunning() const
     {
       std::lock_guard<std::mutex> lock1(start_lock);
       std::lock_guard<std::mutex> lock2(thread_is_running_mutex); // was unique_lock????
@@ -406,7 +406,7 @@ namespace whiteice
 
     
     template <typename T>
-    bool NNGradDescent<T>::hasConverged(T percentage)
+    bool NNGradDescent<T>::hasConverged(T percentage) const
     {
       if(real(percentage) <= real(T(0.0f))) return true;
       if(real(percentage) >= real(T(1.0f))) return false;
