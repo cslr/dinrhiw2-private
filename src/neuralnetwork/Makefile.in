@@ -25,7 +25,7 @@ SOURCES = tst/test.cpp tst/pso_main.cpp tst/somtest.cpp tst/gene_main.cpp tst/st
 	LinearKCluster.cpp rUHMC.cpp \
 	GeneralKCluster.cpp GlobalOptimizer.cpp \
 	DiffEQ_HMC.cpp neuro-diffeqs/diffeqs.cpp neuro-diffeqs/HMC_diffeq.cpp \
-	neuro-diffeqs/MCMC_diffeq.cpp \
+	neuro-diffeqs/MCMC_diffeq.cpp NARX.cpp \
 	../math/fastpca.cpp ../math/vertex.cpp ../math/matrix.cpp ../dataset.cpp \
 	../math/modular.cpp ../math/superresolution.cpp ../math/quaternion.cpp \
 	../math/RNG.cpp ../math/LBFGS.cpp ../math/SGD.cpp ../math/pocketfft/pocketfft.c \
@@ -46,7 +46,7 @@ OBJECTS= activation_function.o odd_sigmoid.o identity_activation.o multidimensio
 	stackedRBM_pretraining.o rLBFGS_nnetwork.o Mixture.o EnsembleMeans.o \
 	rLBFGS_recurrent_nnetwork.o SGD_recurrent_nnetwork.o \
 	rLBFGS_recurrent_nnetwork_softmax_actions.o \
-	SGD_snet.o pretrain.o \
+	SGD_snet.o pretrain.o NARX.o \
 	globaloptimum.o KMBoosting.o WeightingOptimizer.o \
 	LinearKCluster.o rUHMC.o \
 	GeneralKCluster.o GlobalOptimizer.o \

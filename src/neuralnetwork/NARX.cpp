@@ -237,6 +237,103 @@ namespace whiteice
 
     return true;
   }
+
+
+  template <typename T>
+  bool NARX<T>::save(const std::string& filename) const
+  {
+    std::unique_lock<std::mutex> lock(compute_mutex);
+    
+    if(HISTLEN == 0 || FUTURELEN == 0)
+      return false;
+
+    if(filename.size() == 0) return false;
+
+    whiteice::dataset<T> params;
+
+    params.createCluster("HISTLEN", 1);
+    params.createCluster("FUTURELEN", 1);
+
+    whiteice::math::vertex<T> v;
+    v.resize(1);
+
+    v[0] = HISTLEN;
+    params.add(0, v);
+
+    v[0] = FUTURELEN;
+    params.add(1, v);
+
+    const std::string netfile = filename + ".nnet";
+    const std::string xfile = filename + ".xdata";
+    const std::string pfile = filename + ".pdata";
+    const std::string paramsfile = filename + ".params";
+    
+    if(net.save(netfile) == false ||
+       xdata.save(xfile) == false ||
+       pdata.save(pfile) == false ||
+       params.save(paramsfile) == false)
+      return false;
+
+    return true;
+  }
+  
+
+  template <typename T>
+  bool NARX<T>::load(const std::string& filename)
+  {
+    std::unique_lock<std::mutex> lock(compute_mutex);
+
+    if(filename.size() == 0) return false;
+
+    const std::string netfile = filename + ".nnet";
+    const std::string xfile = filename + ".xdata";
+    const std::string pfile = filename + ".pdata";
+    const std::string paramsfile = filename + ".params";
+
+    whiteice::nnetwork<T> net;
+    whiteice::dataset<T> xdata;
+    whiteice::dataset<T> pdata;
+    whiteice::dataset<T> params;
+
+    if(net.load(netfile) == false ||
+       xdata.load(xfile) == false ||
+       pdata.load(pfile) == false ||
+       params.load(paramsfile) == false)
+      return false;
+
+
+    if(params.getNumberOfClusters() != 2) return false;
+    if(params.dimension(0) != 1) return false;
+    if(params.dimension(1) != 1) return false;
+    if(xdata.getNumberOfClusters() != 1) return false;
+    if(pdata.getNumberOfClusters() != 1) return false;
+
+    if(xdata.size(0) != 0 || pdata.size(0) != 0) return false;
+
+    whiteice::math::vertex<T> v;
+    v = params.access(0, 0);    
+    const unsigned int HISTLEN = (unsigned int)v[0].c[0];
+    
+    v = params.access(1, 0);
+    const unsigned int FUTURELEN = (unsigned int)v[0].c[0];
+
+    if(net.input_size() != ((xdata.dimension(0)+pdata.dimension(0))*HISTLEN +
+			    (FUTURELEN-1)*pdata.dimension(0)))
+      return false;
+
+    if(net.output_size() != xdata.dimension(0))
+      return false;
+
+    // things seems to be in order, set values to class variables
+
+    this->HISTLEN = HISTLEN;
+    this->FUTURELEN = FUTURELEN;
+    this->xdata = xdata;
+    this->pdata = pdata;
+    this->net = net;
+
+    return true;
+  }
   
   
   template class NARX< whiteice::math::blas_real<float> >;

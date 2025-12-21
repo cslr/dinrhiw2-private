@@ -493,8 +493,21 @@ void narx_test()
     fflush(stdout);
   }
 
-  // tests predict
+  // minitests save() & load and then predict
   {
+    if(narx.save("narx.dat") == false){
+      printf("ERROR: NARX save() FAILED.\n");
+      return;
+    }
+
+    whiteice::NARX<> narx2;
+
+    if(narx2.load("narx.dat") == false){
+      printf("ERROR: NARX load() FAILED.\n");
+      return;
+    }
+    
+    
     std::vector< whiteice::math::vertex<> > xv;
     std::vector< whiteice::math::vertex<> > pv;
     std::vector< whiteice::math::vertex<> > p_futurev;
@@ -511,7 +524,7 @@ void narx_test()
       p_futurev.push_back(p[index+(FUTURELEN-1)-f]);
     }
 
-    if(narx.predict(xv, pv, p_futurev, y) == false){
+    if(narx2.predict(xv, pv, p_futurev, y) == false){
       printf("ERROR: predicting future value with narx FAILED.\n");
       return;
     }

@@ -17,6 +17,7 @@
 #include "nnetwork.h"
 #include "NNGradDescent.h"
 
+#include <string>
 #include <vector>
 #include <mutex>
 #include <thread>
@@ -53,6 +54,12 @@ namespace whiteice
      const std::vector< whiteice::math::vertex<T> >& p, // HISTLEN p(t-HISTLEN-1)..p(t) VECTOR ELEMENTS
      const std::vector< whiteice::math::vertex<T> >& p_future, // FUTURELEN p(t+1)..p(t-FUTURELEN) [FUTURELEN-1 elements]
      whiteice::math::vertex<T>& y) const; // predicted vector y=E{x(t+FUTURELEN)}
+
+
+    // saves and loads model to/from disk [saves multiple files]
+    bool save(const std::string& filename) const;
+    
+    bool load(const std::string& filename);
     
     
   private:
@@ -64,8 +71,8 @@ namespace whiteice
 
     // parameters of the model (updated by calls to functions), used by predict()
 
-    unsigned int HISTLEN = 1;
-    unsigned int FUTURELEN = 1;
+    unsigned int HISTLEN = 0;
+    unsigned int FUTURELEN = 0;
 
     mutable whiteice::nnetwork<T> net;
     whiteice::dataset<T> xdata;
