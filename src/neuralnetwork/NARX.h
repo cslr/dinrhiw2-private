@@ -36,7 +36,8 @@ namespace whiteice
     bool startOptimization(const whiteice::nnetwork<T>& net,
 			   const whiteice::dataset<T>& xdata,
 			   const whiteice::dataset<T>& pdata,
-			   const unsigned int HISTLEN);
+			   const unsigned int HISTLEN,
+			   const unsigned int FUTURELEN);
     
     bool isRunning() const;
 
@@ -45,11 +46,13 @@ namespace whiteice
 
     bool stopOptimization();
 
-    
+
+    // time-series given are from the past to the present and then future (control values p)
     bool predict
     (const std::vector< whiteice::math::vertex<T> >& x, // HISTLEN x(t-HISTLEN-1)..x(t) VECTOR ELEMENTS
      const std::vector< whiteice::math::vertex<T> >& p, // HISTLEN p(t-HISTLEN-1)..p(t) VECTOR ELEMENTS
-     whiteice::math::vertex<T>& y) const; // predicted vector y=x(t+1)
+     const std::vector< whiteice::math::vertex<T> >& p_future, // FUTURELEN p(t+1)..p(t-FUTURELEN) [FUTURELEN-1 elements]
+     whiteice::math::vertex<T>& y) const; // predicted vector y=E{x(t+FUTURELEN)}
     
     
   private:
@@ -61,7 +64,8 @@ namespace whiteice
 
     // parameters of the model (updated by calls to functions), used by predict()
 
-    unsigned int HISTLEN=0;
+    unsigned int HISTLEN = 1;
+    unsigned int FUTURELEN = 1;
 
     mutable whiteice::nnetwork<T> net;
     whiteice::dataset<T> xdata;

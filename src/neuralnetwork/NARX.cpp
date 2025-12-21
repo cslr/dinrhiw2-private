@@ -26,11 +26,15 @@ namespace whiteice
   bool NARX<T>::startOptimization(const whiteice::nnetwork<T>& net,
 				  const whiteice::dataset<T>& xdata,
 				  const whiteice::dataset<T>& pdata,
-				  const unsigned int HISTLEN)
+				  const unsigned int HISTLEN,
+				  const unsigned int FUTURELEN)
   {
     std::lock_guard<std::mutex> lock(compute_mutex);
 
-    if(xdata.size(0) < 10 || pdata.size(0) < 10 || HISTLEN == 0)
+    if(xdata.size(0) < FUTURELEN || pdata.size(0) < FUTURELEN || HISTLEN == 0)
+      return false;
+
+    if(FUTURELEN == 0)
       return false;
 
     if(xdata.size(0) != pdata.size(0)) return false;
@@ -39,6 +43,7 @@ namespace whiteice
 
 
     this->HISTLEN = HISTLEN;
+    this->FUTURELEN = FUTURELEN;
     this->xdata = xdata;
     this->pdata = pdata;
     this->net = net;
@@ -51,14 +56,14 @@ namespace whiteice
 
     whiteice::dataset<T> data;
     
-    data.createCluster("history data", (xdata.dimension(0)+pdata.dimension(0))*HISTLEN);
+    data.createCluster("history data", (xdata.dimension(0)+pdata.dimension(0))*HISTLEN + (FUTURELEN-1)*pdata.dimension(0));
     data.createCluster("output data", xdata.dimension(0));
     
-    for(unsigned int i=0;i<xdata.size(0)-1;i++){
+    for(unsigned int i=0;i<xdata.size(0)-FUTURELEN;i++){
 
       whiteice::math::vertex<T> v;
       
-      v.resize((xdata.dimension(0)+pdata.dimension(0))*HISTLEN);
+      v.resize((xdata.dimension(0)+pdata.dimension(0))*HISTLEN + (FUTURELEN-1)*pdata.dimension(0));
       v.zero();
       
       for(unsigned int h=0;h<HISTLEN;h++){
@@ -79,8 +84,16 @@ namespace whiteice
 	
       }
 
+      for(unsigned int f=0;f<(FUTURELEN-1);f++){
+	const auto& p = pdata.access(0,i+f);
+	
+	for(unsigned int k=0;k<pdata.dimension(0);k++){
+	  v[(xdata.dimension(0)+pdata.dimension(0))*HISTLEN + f*pdata.dimension(0) + k] = p[k];
+	}
+      }
+
       data.add(0, v);
-      data.add(1, xdata.access(0, i+1));
+      data.add(1, xdata.access(0, i+FUTURELEN));
     }
     
 
@@ -162,17 +175,20 @@ namespace whiteice
   bool NARX<T>::predict
   (const std::vector< whiteice::math::vertex<T> >& x, // HISTLEN x(t-HISTLEN-1)..x(t) VECTOR ELEMENTS
    const std::vector< whiteice::math::vertex<T> >& p, // HISTLEN p(t-HISTLEN-1)..p(t) VECTOR ELEMENTS
-   whiteice::math::vertex<T>& y) const // predicted vector y=x(t+1)
+   const std::vector< whiteice::math::vertex<T> >& p_future, // FUTURELEN p(t+1)..p(t+FUTURELEN) [FUTURELEN-1 elements]
+   whiteice::math::vertex<T>& y) const // predicted vector y=x(t+FUTURELEN)
   {
     std::unique_lock<std::mutex> lock(compute_mutex);
 
     if(x.size() != HISTLEN || p.size() != HISTLEN) return false;
+    if(p_future.size() != FUTURELEN-1) return false;
 
     // creates input vector and preprocesses input data with dataset preprocessings
     whiteice::math::vertex<T> v;
 
     {
-      v.resize((xdata.dimension(0)+pdata.dimension(0))*HISTLEN);
+      v.resize((xdata.dimension(0)+pdata.dimension(0))*HISTLEN +
+	       (FUTURELEN-1)*pdata.dimension(0));
       v.zero();
       
       for(unsigned int h=0;h<HISTLEN;h++){
@@ -196,6 +212,19 @@ namespace whiteice
 	}
 	
       }
+
+
+      for(unsigned int f=0;f<(FUTURELEN-1);f++){
+	auto pi = p_future[f];
+	
+	pdata.preprocess(0, pi);
+	
+	for(unsigned int k=0;k<pdata.dimension(0);k++){
+	  v[(xdata.dimension(0)+pdata.dimension(0))*HISTLEN +
+	    f*pdata.dimension(0) + k] = pi[k];
+	}
+      }
+
       
     }
 

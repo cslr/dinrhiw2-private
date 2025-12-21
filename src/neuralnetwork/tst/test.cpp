@@ -456,10 +456,11 @@ void narx_test()
   whiteice::NARX<> narx;
 
   const unsigned int HISTLEN = 10;
+  const unsigned int FUTURELEN = 5; // 0.5 secs into future
   whiteice::nnetwork<> net;
 
   std::vector<unsigned int> arch;
-  arch.push_back((xdata.dimension(0)+pdata.dimension(0))*HISTLEN);
+  arch.push_back((xdata.dimension(0)+pdata.dimension(0))*HISTLEN + (FUTURELEN-1)*pdata.dimension(0));
   arch.push_back(25);
   arch.push_back(25);
   arch.push_back(xdata.dimension(0));
@@ -468,7 +469,7 @@ void narx_test()
   
   net.randomize(2, 1.0);
 
-  if(narx.startOptimization(net, xdata, pdata, HISTLEN) == false){
+  if(narx.startOptimization(net, xdata, pdata, HISTLEN, FUTURELEN) == false){    
     printf("Starting NARX optimization FAILED.\n");
     return;
   }
@@ -490,6 +491,32 @@ void narx_test()
   if(narx.getSolution(params, error)){
     printf("Final solution error: %f\n", error.c[0]);
     fflush(stdout);
+  }
+
+  // tests predict
+  {
+    std::vector< whiteice::math::vertex<> > xv;
+    std::vector< whiteice::math::vertex<> > pv;
+    std::vector< whiteice::math::vertex<> > p_futurev;
+    whiteice::math::vertex<> y;
+
+    const unsigned int index = rand() % (x.size()-FUTURELEN-HISTLEN-10) + HISTLEN;
+
+    for(unsigned int h=0;h<HISTLEN;h++){
+      xv.push_back(x[index-h]);
+      pv.push_back(p[index-h]);
+    }
+
+    for(unsigned int f=0;f<(FUTURELEN-1);f++){
+      p_futurev.push_back(p[index+(FUTURELEN-1)-f]);
+    }
+
+    if(narx.predict(xv, pv, p_futurev, y) == false){
+      printf("ERROR: predicting future value with narx FAILED.\n");
+      return;
+    }
+
+    std::cout << "NARX predicted value: " << y << std::endl;
   }
 
   printf("NARX tests done.\n");
