@@ -48,6 +48,9 @@ namespace whiteice
     bool stopOptimization();
 
 
+    T getError() const; // uses predict() to calculate expected |error| per dimension
+
+
     // time-series given are from the past to the present and then future (control values p)
     bool predict
     (const std::vector< whiteice::math::vertex<T> >& x, // HISTLEN x(t-HISTLEN-1)..x(t) VECTOR ELEMENTS

@@ -453,6 +453,9 @@ void narx_test()
   xdata.add(0, x);
   pdata.add(0, p);
 
+  xdata.preprocess(0);
+  pdata.preprocess(0);
+
   whiteice::NARX<> narx;
 
   const unsigned int HISTLEN = 10;
@@ -465,7 +468,7 @@ void narx_test()
   arch.push_back(25);
   arch.push_back(xdata.dimension(0));
 
-  net.setArchitecture(arch);
+  net.setArchitecture(arch); // no tanh!
   
   net.randomize(2, 1.0);
 
@@ -492,6 +495,8 @@ void narx_test()
     printf("Final solution error: %f\n", error.c[0]);
     fflush(stdout);
   }
+
+  std::cout << "narx::predict() error in dataset: " << narx.getError() << std::endl;
 
   // minitests save() & load and then predict
   {

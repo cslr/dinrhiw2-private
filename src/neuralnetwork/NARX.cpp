@@ -48,10 +48,7 @@ namespace whiteice
     this->pdata = pdata;
     this->net = net;
 
-    this->xdata.clearData(); // removes data but keeps preprocessing information
-    this->pdata.clearData();
     
-
     // creates dataset that neural network tries to learn (predicts only the next step)
 
     whiteice::dataset<T> data;
@@ -170,6 +167,77 @@ namespace whiteice
     else return false;
   }
 
+
+  template <typename T>
+  T NARX<T>::getError() const // uses predict() to calculate expected |error| per dimension
+  {
+    if(xdata.size(0) == 0 || pdata.size(0) == 0 || HISTLEN == 0 || FUTURELEN == 0)
+      return T(-1.0f);
+
+    T error = T(0.0f);
+    unsigned int counter = 0;
+
+    for(unsigned int i=(HISTLEN-1);i<xdata.size(0)-FUTURELEN;i++){
+
+      std::vector< whiteice::math::vertex<T> > x;
+      std::vector< whiteice::math::vertex<T> > p;
+      std::vector< whiteice::math::vertex<T> > p_future;
+      
+      for(unsigned int h=0;h<HISTLEN;h++){	
+	
+	if(h <= i){
+	  auto xx = xdata.access(0,i-(HISTLEN-1)+h);
+	  auto pp = pdata.access(0,i-(HISTLEN-1)+h);
+
+	  xdata.invpreprocess(0, xx);
+	  pdata.invpreprocess(0, pp);
+
+	  x.push_back(xx);
+	  p.push_back(pp);
+	}
+	else{
+	  auto xx = xdata.access(0,0);
+	  auto pp = pdata.access(0,0);
+	  
+	  xx.zero();
+	  pp.zero();
+
+	  xdata.invpreprocess(0, xx);
+	  pdata.invpreprocess(0, pp);
+
+	  x.push_back(xx);
+	  p.push_back(pp);
+	}
+	
+      }
+
+      for(unsigned int f=0;f<(FUTURELEN-1);f++){
+	auto p = pdata.access(0,i+f);
+
+	pdata.invpreprocess(0, p);
+
+	p_future.push_back(p);
+      }
+
+      whiteice::math::vertex<T> y;
+      
+      if(this->predict(x, p, p_future, y) == false)
+	return T(-1.0f);
+
+      auto ynext = xdata.access(0, i+FUTURELEN);
+
+      xdata.preprocess(0, y); // adds preprocessing
+      
+      error += (y-ynext).norm();
+      counter += y.size();
+    }
+
+    if(counter)
+      error /= counter;
+
+    return error;
+  }
+
   
   template <typename T>
   bool NARX<T>::predict
@@ -229,11 +297,11 @@ namespace whiteice
     }
 
     
-    // predicts x(t+1)
+    // predicts x(t+FUTURELEN)
 
     if(net.calculate(v, y) == false) return false;
     
-    xdata.invpreprocess(0, y); // removes preprocessing from predicted x(t+1)
+    xdata.invpreprocess(0, y); // removes preprocessing from predicted x(t+FUTURELEN)
 
     return true;
   }
@@ -301,14 +369,11 @@ namespace whiteice
        params.load(paramsfile) == false)
       return false;
 
-
     if(params.getNumberOfClusters() != 2) return false;
     if(params.dimension(0) != 1) return false;
     if(params.dimension(1) != 1) return false;
     if(xdata.getNumberOfClusters() != 1) return false;
     if(pdata.getNumberOfClusters() != 1) return false;
-
-    if(xdata.size(0) != 0 || pdata.size(0) != 0) return false;
 
     whiteice::math::vertex<T> v;
     v = params.access(0, 0);    
