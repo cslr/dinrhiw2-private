@@ -456,6 +456,9 @@ void narx_test()
   xdata.preprocess(0);
   pdata.preprocess(0);
 
+  std::vector<unsigned int> indexes;
+  indexes.push_back(0);
+
   whiteice::NARX<> narx;
 
   const unsigned int HISTLEN = 10;
@@ -472,7 +475,9 @@ void narx_test()
   
   net.randomize(2, 1.0);
 
-  if(narx.startOptimization(net, xdata, pdata, HISTLEN, FUTURELEN) == false){    
+  if(narx.startOptimization(net, xdata, pdata,
+			    indexes,
+			    HISTLEN, FUTURELEN) == false){    
     printf("Starting NARX optimization FAILED.\n");
     return;
   }

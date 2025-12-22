@@ -37,6 +37,7 @@ namespace whiteice
     bool startOptimization(const whiteice::nnetwork<T>& net,
 			   const whiteice::dataset<T>& xdata,
 			   const whiteice::dataset<T>& pdata,
+			   const std::vector<unsigned int>& pred_indexes,
 			   const unsigned int HISTLEN,
 			   const unsigned int FUTURELEN);
     
@@ -80,6 +81,7 @@ namespace whiteice
     mutable whiteice::nnetwork<T> net;
     whiteice::dataset<T> xdata;
     whiteice::dataset<T> pdata;
+    std::vector<unsigned int> pred_indexes;
   };
 
   

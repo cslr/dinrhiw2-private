@@ -26,6 +26,7 @@ namespace whiteice
   bool NARX<T>::startOptimization(const whiteice::nnetwork<T>& net,
 				  const whiteice::dataset<T>& xdata,
 				  const whiteice::dataset<T>& pdata,
+				  const std::vector<unsigned int>& pred_indexes,
 				  const unsigned int HISTLEN,
 				  const unsigned int FUTURELEN)
   {
@@ -34,6 +35,13 @@ namespace whiteice
     if(xdata.size(0) < FUTURELEN || pdata.size(0) < FUTURELEN || HISTLEN == 0)
       return false;
 
+    if(pred_indexes.size() == 0 || pred_indexes.size() > xdata.dimension(0))
+      return false;
+
+    for(unsigned int i=0;i<pred_indexes.size();i++)
+      if(pred_indexes[i] >= xdata.dimension(0))
+	return false;
+
     if(FUTURELEN == 0)
       return false;
 
@@ -41,11 +49,13 @@ namespace whiteice
 
     if(sgd.isRunning()) return false;
 
+    // dont check net compatibility with data dimensions..
 
     this->HISTLEN = HISTLEN;
     this->FUTURELEN = FUTURELEN;
     this->xdata = xdata;
     this->pdata = pdata;
+    this->pred_indexes = pred_indexes;
     this->net = net;
 
     
@@ -54,7 +64,7 @@ namespace whiteice
     whiteice::dataset<T> data;
     
     data.createCluster("history data", (xdata.dimension(0)+pdata.dimension(0))*HISTLEN + (FUTURELEN-1)*pdata.dimension(0));
-    data.createCluster("output data", xdata.dimension(0));
+    data.createCluster("output data", pred_indexes.size());
     
     for(unsigned int i=0;i<xdata.size(0)-FUTURELEN;i++){
 
@@ -90,7 +100,18 @@ namespace whiteice
       }
 
       data.add(0, v);
-      data.add(1, xdata.access(0, i+FUTURELEN));
+
+      whiteice::math::vertex<T> out;      
+      out.resize(pred_indexes.size());
+
+      const auto w = xdata.access(0, i+FUTURELEN);
+
+      for(unsigned int j=0;j<pred_indexes.size();j++){
+	out[j] = w[pred_indexes[j]];
+      }
+
+      
+      data.add(1, out);
     }
     
 
@@ -225,11 +246,28 @@ namespace whiteice
 	return T(-1.0f);
 
       auto ynext = xdata.access(0, i+FUTURELEN);
+      auto yfull = ynext;
 
-      xdata.preprocess(0, y); // adds preprocessing
+      for(unsigned int i=0;i<pred_indexes.size();i++){
+	yfull[pred_indexes[i]] = y[i];
+      }
+
+      xdata.preprocess(0, yfull); // adds preprocessing
+
+      // calculates only pred_indexes term errors
+
+      whiteice::math::vertex<T> ynext_p, y_p;
+
+      y_p.resize(pred_indexes.size());
+      ynext_p.resize(pred_indexes.size());
+
+      for(unsigned int i=0;i<pred_indexes.size();i++){
+	y_p[i] = yfull[pred_indexes[i]];
+	ynext_p[i] = ynext[pred_indexes[i]];
+      }
       
-      error += (y-ynext).norm();
-      counter += y.size();
+      error += (y_p-ynext_p).norm();
+      counter += y_p.size();
     }
 
     if(counter)
@@ -300,8 +338,22 @@ namespace whiteice
     // predicts x(t+FUTURELEN)
 
     if(net.calculate(v, y) == false) return false;
+
+    // converts output y to dim(x) long vector for invpreprocess
+
+    auto yy = xdata.access(0,0);
+
+    for(unsigned int k=0;k<pred_indexes.size();k++){
+      yy[pred_indexes[k]] = y[k];
+    }
     
-    xdata.invpreprocess(0, y); // removes preprocessing from predicted x(t+FUTURELEN)
+    xdata.invpreprocess(0, yy); // removes preprocessing from predicted x(t+FUTURELEN)
+
+    // converts yy back to pred_indexes low dimensional vector
+    
+    for(unsigned int k=0;k<pred_indexes.size();k++){
+      y[k] = yy[pred_indexes[k]];
+    }
 
     return true;
   }
@@ -321,6 +373,7 @@ namespace whiteice
 
     params.createCluster("HISTLEN", 1);
     params.createCluster("FUTURELEN", 1);
+    params.createCluster("pred_indexes", pred_indexes.size());
 
     whiteice::math::vertex<T> v;
     v.resize(1);
@@ -330,6 +383,13 @@ namespace whiteice
 
     v[0] = FUTURELEN;
     params.add(1, v);
+
+    v.resize(pred_indexes.size());
+    
+    for(unsigned int i=0;i<v.size();i++)
+      v[i] = T(pred_indexes[i]);
+
+    params.add(2, v);
 
     const std::string netfile = filename + ".nnet";
     const std::string xfile = filename + ".xdata";
@@ -362,6 +422,7 @@ namespace whiteice
     whiteice::dataset<T> xdata;
     whiteice::dataset<T> pdata;
     whiteice::dataset<T> params;
+    std::vector<unsigned int> pred_indexes;
 
     if(net.load(netfile) == false ||
        xdata.load(xfile) == false ||
@@ -369,18 +430,26 @@ namespace whiteice
        params.load(paramsfile) == false)
       return false;
 
-    if(params.getNumberOfClusters() != 2) return false;
+    if(params.getNumberOfClusters() != 3) return false;
     if(params.dimension(0) != 1) return false;
     if(params.dimension(1) != 1) return false;
+    if(params.dimension(2) < 1) return false;
     if(xdata.getNumberOfClusters() != 1) return false;
     if(pdata.getNumberOfClusters() != 1) return false;
 
     whiteice::math::vertex<T> v;
-    v = params.access(0, 0);    
+    v = params.access(0, 0);
     const unsigned int HISTLEN = (unsigned int)v[0].c[0];
     
     v = params.access(1, 0);
     const unsigned int FUTURELEN = (unsigned int)v[0].c[0];
+
+    v = params.access(2, 0);
+
+    pred_indexes.resize(v.size());
+
+    for(unsigned int i=0;i<v.size();i++)
+      pred_indexes[i] = (unsigned int)v[i].c[0];
 
     if(net.input_size() != ((xdata.dimension(0)+pdata.dimension(0))*HISTLEN +
 			    (FUTURELEN-1)*pdata.dimension(0)))
@@ -395,6 +464,7 @@ namespace whiteice
     this->FUTURELEN = FUTURELEN;
     this->xdata = xdata;
     this->pdata = pdata;
+    this->pred_indexes = pred_indexes;
     this->net = net;
 
     return true;
