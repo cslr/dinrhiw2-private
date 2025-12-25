@@ -830,8 +830,9 @@ namespace whiteice
 	}
 
 #ifdef WINOS
-	SetThreadPriority(GetCurrentThread(),
-			  THREAD_PRIORITY_IDLE);
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+	// SetPriorityClass(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+			  
 #endif	
       }
 
@@ -1003,7 +1004,11 @@ namespace whiteice
 		
 #pragma omp parallel shared(sumgrad)
 	      {
-		math::vertex<T> sgrad, grad;
+#ifdef WINOS
+	        SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+#endif
+	
+	        math::vertex<T> sgrad, grad;
 		sgrad.resize(nn->exportdatasize());
 		sgrad.zero();
 		
@@ -1072,6 +1077,9 @@ namespace whiteice
 	      
 #pragma omp parallel shared(sumgrad)
 	      {
+#ifdef WINOS
+	        SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+#endif
 		math::vertex<T> sgrad, grad;
 		sgrad.resize(nn->exportdatasize());
 		sgrad.zero();
@@ -1138,15 +1146,24 @@ namespace whiteice
 	    
 	  }
 
-#pragma omp parallel for schedule(dynamic, 25)
-	  for(unsigned int i=0;i<sumgrad.size();i++){
-	    m[i] = beta1 * m[i] + (T(1.0) - beta1)*sumgrad[i];
-	    v[i] = beta2 * v[i] + (T(1.0) - beta2)*sumgrad[i]*sumgrad[i];
 
-	    const T m_hat = m[i] / (T(1.0) - whiteice::math::pow(beta1[0], T(iterations)[0]));
-	    const T v_hat = v[i] / (T(1.0) - whiteice::math::pow(beta2[0], T(iterations)[0]));
-
-	    x[i] -= (alpha / (whiteice::math::sqrt(v_hat) + epsilon)) * m_hat;
+#pragma omp parallel
+	  {
+	    		
+#ifdef WINOS
+	    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+#endif
+		
+#pragma omp for schedule(dynamic, 25)
+	    for(unsigned int i=0;i<sumgrad.size();i++){
+	      m[i] = beta1 * m[i] + (T(1.0) - beta1)*sumgrad[i];
+	      v[i] = beta2 * v[i] + (T(1.0) - beta2)*sumgrad[i]*sumgrad[i];
+	      
+	      const T m_hat = m[i] / (T(1.0) - whiteice::math::pow(beta1[0], T(iterations)[0]));
+	      const T v_hat = v[i] / (T(1.0) - whiteice::math::pow(beta2[0], T(iterations)[0]));
+	      
+	      x[i] -= (alpha / (whiteice::math::sqrt(v_hat) + epsilon)) * m_hat;
+	    }
 	  }
 
 	  // if(heuristics) heuristics(x);
@@ -1492,7 +1509,10 @@ namespace whiteice
 		
 #pragma omp parallel shared(sumgrad)
 		{
-		  math::vertex<T> sgrad, grad;
+#ifdef WINOS
+	          SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+#endif
+	          math::vertex<T> sgrad, grad;
 		  sgrad.resize(nn->exportdatasize());
 		  sgrad.zero();
 		  
@@ -1562,6 +1582,10 @@ namespace whiteice
 		
 #pragma omp parallel shared(sumgrad)
 		{
+#ifdef WINOS
+	          SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+#endif
+		  
 		  math::vertex<T> sgrad, grad;
 		  sgrad.resize(nn->exportdatasize());
 		  sgrad.zero();
