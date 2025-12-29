@@ -321,7 +321,7 @@ namespace whiteice
 	thread_is_running = 0;
 
 	this->nn = new nnetwork<T>(nn); // copies network (settings)
-	nn.exportdata(bestx);
+	this->nn->exportdata(bestx);
 
 	if(this->nn->getBatchNorm()){
 	  std::vector< whiteice::math::vertex<T> > xdata;
@@ -922,24 +922,28 @@ namespace whiteice
 
 	std::unique_ptr< nnetwork<T> > nn(new nnetwork<T>(*(this->nn)));
 
+	vertex<T> x;
+	
 	{
 	  std::lock_guard<std::mutex> lock(first_time_lock);
 
 	  if(first_time == false){ // don't use initial weights..
+	    logging.info("NNGradDescent: randomize initial neural net parameters");
 	    nn->randomize(); // NO pretraining for now
+	    nn->exportdata(x);
+	    
 	  }
 	  else{
+	    logging.info("NNGradDescent: load previous neural net parameters");
 	    nn->importdata(bestx);
+	    x = bestx;
 	    first_time = false;
 	  }
 	}
 	
-	vertex<T> x;
 	T real_besty, pure_real_besty;
 
 	{
-	  nn->exportdata(x);
-
 	  if(dropout){
 	    auto nn_without_dropout = *nn;
 	    nn_without_dropout.removeDropOut();
@@ -997,7 +1001,7 @@ namespace whiteice
 	    sumgrad.zero();
 	    
 	    // number of samples used to estimate gradient in minibatch mode
-	    const unsigned int MINIBATCHSIZE = 1000 > dtrain.size(0) ? dtrain.size(0) : 1000;
+	    const unsigned int MINIBATCHSIZE = 2000 > dtrain.size(0) ? dtrain.size(0) : 2000;
 	      
 	    if(use_minibatch){
 	      const T ninv = T(1.0f/MINIBATCHSIZE);
@@ -1502,7 +1506,7 @@ namespace whiteice
 	      sumgrad.zero();
 	      
 	      // number of samples used to estimate gradient in minibatch mode
-	      const unsigned int MINIBATCHSIZE = 1000 > dtrain.size(0) ? dtrain.size(0) : 1000;
+	      const unsigned int MINIBATCHSIZE = 2000 > dtrain.size(0) ? dtrain.size(0) : 2000;
 	      
 	      if(use_minibatch){
 		const T ninv = T(1.0f/MINIBATCHSIZE);

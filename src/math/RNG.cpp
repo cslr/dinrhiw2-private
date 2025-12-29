@@ -64,11 +64,11 @@ RNG<T>::RNG(const bool usehw)
     //rdrand32 = &whiteice::RNG<T>::_rdtscrand32; // rdtsc is slow and dword requires 4 calls to rdtsc to get proper random values
     //rdrand64 = &whiteice::RNG<T>::_rdtscrand64;
     
-    // rdrand32 = &whiteice::RNG<T>::_rdrand32;
-    // rdrand64 = &whiteice::RNG<T>::_rdrand64;
+    rdrand32 = &whiteice::RNG<T>::_rdrand32;
+    rdrand64 = &whiteice::RNG<T>::_rdrand64;
     
-    rdrand32 = &whiteice::RNG<T>::_xorshiftrand32;
-    rdrand64 = &whiteice::RNG<T>::_xorshiftrand64;
+    //rdrand32 = &whiteice::RNG<T>::_xorshiftrand32; // we don't need absolute speed so disabled
+    //rdrand64 = &whiteice::RNG<T>::_xorshiftrand64;
 
     if(has_rdrand){
       xs_state = this->_rdrand32();
@@ -87,11 +87,11 @@ RNG<T>::RNG(const bool usehw)
     gen = new std::mt19937((*rdsource)());
     distrib = new std::uniform_int_distribution<unsigned int>(0, 0xFFFFFFFF);
     
-    // rdrand32 = &whiteice::RNG<T>::_rand32; // uses C++ rand()
-    // rdrand64 = &whiteice::RNG<T>::_rand64; // uses C++ rand()
+    rdrand32 = &whiteice::RNG<T>::_rand32; // uses C++ rand()
+    rdrand64 = &whiteice::RNG<T>::_rand64; // uses C++ rand()
     
-    rdrand32 = &whiteice::RNG<T>::_xorshiftrand32;
-    rdrand64 = &whiteice::RNG<T>::_xorshiftrand64;
+    //rdrand32 = &whiteice::RNG<T>::_xorshiftrand32; // we don't need absolute speed so disabled
+    //rdrand64 = &whiteice::RNG<T>::_xorshiftrand64;
 
     if(has_rdrand){
       xs_state = this->_rdrand32();

@@ -116,11 +116,12 @@ namespace whiteice
     
 
     {
-      sgd.setUseMinibatch(false);
-      sgd.setOverfit(true);
+      sgd.setUseMinibatch(true); // was: false
+      sgd.setOverfit(false); // don't overfit data (better with real data)
       sgd.setMNE(true); // norm error E{|correct-predicted|}
-      
-      if(sgd.startOptimize(data, this->net, 1) == false){
+
+      // initially use NN
+      if(sgd.startOptimize(data, this->net, 1, 0xFFFFFFFF, false , true , false) == false){
 	printf("NARX: SGD neural net optimization start FAILED.\n");
 	return false;
       }

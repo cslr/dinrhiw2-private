@@ -415,6 +415,8 @@ void narx_test()
 {
   std::cout << "NARX sine-wave prediction testing" << std::endl;
 
+  const unsigned int NUMDATA = 2000;
+
   // generates sine wave (10 Hz)
   std::vector< whiteice::math::vertex<> > x;
   {
@@ -423,7 +425,7 @@ void narx_test()
 
     float t = 0.0f;
 
-    for(unsigned int i=0;i<100;i++){ // 1 seconds
+    for(unsigned int i=0;i<NUMDATA;i++){ // 1 seconds
       whiteice::math::vertex<> v;
       v.resize(1);
       v[0] = sin(f*t);
@@ -436,7 +438,7 @@ void narx_test()
   // generates control parameters (noise)
   std::vector< whiteice::math::vertex<> > p;
   {
-    for(unsigned int i=0;i<100;i++){
+    for(unsigned int i=0;i<NUMDATA;i++){
       whiteice::math::vertex<> v;
       v.resize(1);
       v[0] = whiteice::rng.uniformf();
@@ -502,6 +504,43 @@ void narx_test()
   }
 
   std::cout << "narx::predict() error in dataset: " << narx.getError() << std::endl;
+
+  {
+    whiteice::NARX<> narx2;
+    
+    net.importdata(params);
+
+    if(narx2.startOptimization(net, xdata, pdata,
+			       indexes,
+			       HISTLEN, FUTURELEN) == false){    
+      printf("Starting NARX optimization FAILED.\n");
+      return;
+    }
+    
+    whiteice::math::vertex<> params;
+    whiteice::math::blas_real<float> error;
+    
+    while(narx2.isRunning()){
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      
+      if(narx2.getSolution(params, error)){
+	printf("Solution error (again): %f\n", error.c[0]);
+	fflush(stdout);
+      }
+    }
+    
+    narx2.stopOptimization();
+    
+    if(narx2.getSolution(params, error)){
+      printf("Final solution error (again): %f\n", error.c[0]);
+      fflush(stdout);
+    }
+    
+    std::cout << "narx::predict() error in dataset (again): " << narx.getError() << std::endl;
+    
+  }
+  
+  
 
   // minitests save() & load and then predict
   {
