@@ -87,11 +87,11 @@ RNG<T>::RNG(const bool usehw)
     gen = new std::mt19937((*rdsource)());
     distrib = new std::uniform_int_distribution<unsigned int>(0, 0xFFFFFFFF);
     
-    rdrand32 = &whiteice::RNG<T>::_rand32; // uses C++ rand()
-    rdrand64 = &whiteice::RNG<T>::_rand64; // uses C++ rand()
+    //rdrand32 = &whiteice::RNG<T>::_rand32; // uses C++ rand()
+    //rdrand64 = &whiteice::RNG<T>::_rand64; // uses C++ rand()
     
-    //rdrand32 = &whiteice::RNG<T>::_xorshiftrand32; // we don't need absolute speed so disabled
-    //rdrand64 = &whiteice::RNG<T>::_xorshiftrand64;
+    rdrand32 = &whiteice::RNG<T>::_xorshiftrand32; // (thread-safe version so used)
+    rdrand64 = &whiteice::RNG<T>::_xorshiftrand64;
 
     if(has_rdrand){
       xs_state = this->_rdrand32();
