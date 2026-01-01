@@ -215,6 +215,7 @@
 #include "SGD_diffeq.h"
 
 #include "LinearARX.h"
+#include "NARX.h"
 
 #include "HMC.h"
 #include "UHMC.h"
