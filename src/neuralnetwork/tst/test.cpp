@@ -420,22 +420,28 @@ void narx_test()
   // generates sine wave (10 Hz)
   std::vector< whiteice::math::vertex<> > x;
   {
-    const float f = 10.0f;
+    std::vector<float> f;
+
+    f.resize(30);
+    for(auto& fi : f) fi = whiteice::rng.uniformf();
+    
     const float dt = 0.10f;
 
     float t = 0.0f;
 
-    for(unsigned int i=0;i<NUMDATA;i++){ // 1 seconds
+    for(unsigned int i=0;i<NUMDATA;i++){ // 1 seconds [30 dimensional]
       whiteice::math::vertex<> v;
-      v.resize(1);
-      v[0] = sin(f*t);
+      v.resize(f.size());
+
+      for(unsigned int k=0;k<v.size();k++)
+	v[k] = sin(f[k]*t);
       
       x.push_back(v);
       t += dt;
     }
   }
 
-  // generates control parameters (noise)
+  // generates control parameters (noise) [one dimensional]
   std::vector< whiteice::math::vertex<> > p;
   {
     for(unsigned int i=0;i<NUMDATA;i++){
@@ -449,7 +455,7 @@ void narx_test()
 
   whiteice::dataset<> xdata, pdata;
 
-  xdata.createCluster("x", 1);
+  xdata.createCluster("x", x[0].size());
   pdata.createCluster("p", 1);
 
   xdata.add(0, x);
@@ -459,16 +465,19 @@ void narx_test()
   pdata.preprocess(0);
 
   std::vector<unsigned int> indexes;
-  indexes.push_back(0);
+
+  for(unsigned int i=0;i<x[0].size();i++)
+    indexes.push_back(i);
 
   whiteice::NARX<> narx;
 
   const unsigned int HISTLEN = 10;
   const unsigned int FUTURELEN = 5; // 0.5 secs into future
+  const unsigned int REDUCED_DIM = 50; // how low reduced dim is..
   whiteice::nnetwork<> net;
 
   std::vector<unsigned int> arch;
-  arch.push_back((xdata.dimension(0)+pdata.dimension(0))*HISTLEN + (FUTURELEN-1)*pdata.dimension(0));
+  arch.push_back(REDUCED_DIM + (FUTURELEN-1)*pdata.dimension(0));
   arch.push_back(25);
   arch.push_back(25);
   arch.push_back(xdata.dimension(0));
@@ -479,7 +488,7 @@ void narx_test()
 
   if(narx.startOptimization(net, xdata, pdata,
 			    indexes,
-			    HISTLEN, FUTURELEN) == false){    
+			    HISTLEN, FUTURELEN, REDUCED_DIM) == false){    
     printf("Starting NARX optimization FAILED.\n");
     return;
   }
@@ -512,7 +521,7 @@ void narx_test()
 
     if(narx2.startOptimization(net, xdata, pdata,
 			       indexes,
-			       HISTLEN, FUTURELEN) == false){    
+			       HISTLEN, FUTURELEN, REDUCED_DIM) == false){    
       printf("Starting NARX optimization FAILED.\n");
       return;
     }
@@ -555,6 +564,9 @@ void narx_test()
       printf("ERROR: NARX load() FAILED.\n");
       return;
     }
+
+
+    std::cout << "narx::predict() error in dataset (after save and load): " << narx2.getError() << std::endl;
     
     
     std::vector< whiteice::math::vertex<> > xv;

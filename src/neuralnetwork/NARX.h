@@ -21,6 +21,7 @@
 #include <vector>
 #include <mutex>
 #include <thread>
+#include <atomic>
 
 
 namespace whiteice
@@ -39,14 +40,15 @@ namespace whiteice
 			   const whiteice::dataset<T>& pdata,
 			   const std::vector<unsigned int>& pred_indexes,
 			   const unsigned int HISTLEN,
-			   const unsigned int FUTURELEN);
+			   const unsigned int FUTURELEN,
+			   const unsigned int REDUCED_DIM = 100);
     
     bool isRunning() const;
 
     // reported error = E{|corrent-predicted|}, mean norm of difference
     bool getSolution(whiteice::math::vertex<T>& params, T& solution_error);
 
-    bool stopOptimization();
+    bool stopOptimization(); // this function call MAY block if PCA+ICA preprocessing is still active..
 
 
     T getError() const; // uses predict() to calculate expected |error| per dimension
@@ -61,12 +63,20 @@ namespace whiteice
 
 
     // saves and loads model to/from disk [saves multiple files]
-    bool save(const std::string& filename) const;
+    bool save(const std::string& filename) const; // FIXME don't save dimension reduction (broken)
     
-    bool load(const std::string& filename);
+    bool load(const std::string& filename); // FIXME don't load dimension reduction (broken)
     
     
   private:
+
+
+    // calculates ICA dimension reduction and starts NNGRradDescent<> optimizer
+    void optimize_function();
+
+    std::atomic<bool> optimize_running = false;
+    std::thread* optimize_thread = nullptr;
+    
 
     mutable std::mutex compute_mutex;
     
@@ -74,14 +84,22 @@ namespace whiteice
 
 
     // parameters of the model (updated by calls to functions), used by predict()
+    
+    mutable std::mutex params_mutex;
 
     unsigned int HISTLEN = 0;
     unsigned int FUTURELEN = 0;
+    unsigned int REDUCED_DIM = 0;
+
 
     mutable whiteice::nnetwork<T> net;
     whiteice::dataset<T> xdata;
     whiteice::dataset<T> pdata;
     std::vector<unsigned int> pred_indexes;
+
+    whiteice::math::matrix<T> ICA_reduce;
+    whiteice::math::vertex<T> ICA_mean_reduce; // parameters
+
   };
 
   

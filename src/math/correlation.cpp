@@ -77,7 +77,7 @@ namespace whiteice
 	gpu_sync();
 
 	// copies lower triangular elements to upper triangular part of the M matrix
-#pragma omp parallel for schedule(auto)
+//#pragma omp parallel for schedule(auto)
 	for(unsigned int i=0;i<N;i++)
 	  for(unsigned int j=(i+1);j<N;j++)
 	    R(i,j) = R(j,i);
@@ -125,7 +125,7 @@ namespace whiteice
 	gpu_sync();
 
 	// copies lower triangular elements to upper triangular part of the M matrix
-#pragma omp parallel for schedule(auto)
+//#pragma omp parallel for schedule(auto)
 	for(unsigned int i=0;i<N;i++)
 	  for(unsigned int j=(i+1);j<N;j++)
 	    R(i,j) = R(j,i);
@@ -170,7 +170,7 @@ namespace whiteice
 	gpu_sync();
 	
 	// copies lower triangular elements to upper triangular part of the M matrix
-#pragma omp parallel for schedule(auto)	
+//#pragma omp parallel for schedule(auto)	
 	for(unsigned int i=0;i<N;i++)
 	  for(unsigned int j=(i+1);j<N;j++)
 	    R(i,j) = R(j,i);
@@ -220,7 +220,7 @@ namespace whiteice
 	gpu_sync();
 	
 	// copies lower triangular elements to upper triangular part of the M matrix
-#pragma omp parallel for schedule(auto)
+//#pragma omp parallel for schedule(auto)
 	for(unsigned int i=0;i<N;i++)
 	  for(unsigned int j=(i+1);j<N;j++)
 	    R(i,j) = R(j,i);
@@ -393,7 +393,7 @@ namespace whiteice
 
 	// OPTIMIZE ME:
 	// copies lower triangular elements to upper triangular part of the M matrix
-#pragma omp parallel for schedule(auto)
+// #pragma omp parallel for schedule(auto)
 	for(unsigned int i=0;i<K;i++)
 	  for(unsigned int j=(i+1);j<K;j++)
 	    R(i,j) = R(j,i);
@@ -424,7 +424,7 @@ namespace whiteice
 
 	// OPTIMIZE ME
 	// copies lower triangular elements to upper triangular part of the M matrix
-#pragma omp parallel for schedule(auto)
+//#pragma omp parallel for schedule(auto)
 	for(unsigned int i=0;i<K;i++)
 	  for(unsigned int j=(i+1);j<K;j++)
 	    R(i,j) = R(j,i);
@@ -449,7 +449,7 @@ namespace whiteice
 
 	// OPTIMIZE ME
 	// copies lower triangular elements to upper triangular part of the M matrix
-#pragma omp parallel for schedule(auto)	
+//#pragma omp parallel for schedule(auto)	
 	for(unsigned int i=0;i<K;i++)
 	  for(unsigned int j=(i+1);j<K;j++)
 	    R(i,j) = R(j,i);	
@@ -481,7 +481,7 @@ namespace whiteice
 
 	// OPTIMIZE ME: cudaScopy()..
 	// copies lower triangular elements to upper triangular part of the M matrix
-#pragma omp parallel for schedule(auto)	
+//#pragma omp parallel for schedule(auto)	
 	for(unsigned int i=0;i<K;i++)
 	  for(unsigned int j=(i+1);j<K;j++)
 	    R(i,j) = R(j,i);
@@ -584,7 +584,7 @@ namespace whiteice
       
       if(typeid(T) == typeid(blas_real<float>)){	
 
-#pragma omp parallel shared(m) shared(R)
+//#pragma omp parallel shared(m) shared(R)
 	{
 	  matrix<T> Ri;
 	  vertex<T> mi;
@@ -595,7 +595,7 @@ namespace whiteice
 	  mi.resize(N);
 	  mi.zero();
 
-#pragma omp for nowait schedule(auto)
+//#pragma omp for nowait schedule(auto)
 	  for(unsigned int index=0;index<data.size();index++){
 	    auto& v = data[index];
 	    
@@ -611,7 +611,7 @@ namespace whiteice
 	    mi += v;
 	  }
 
-#pragma omp critical (mean_covariance_estimate0)
+//#pragma omp critical (mean_covariance_estimate0)
 	  {
 	    m += mi;
 	    R += Ri;
@@ -644,7 +644,7 @@ namespace whiteice
 	gpu_sync();
 	
 	// copies lower triangular elements to upper triangular part of the M matrix
-#pragma omp parallel for schedule(auto)
+//#pragma omp parallel for schedule(auto)
 	for(unsigned int i=0;i<N;i++)
 	  for(unsigned int j=(i+1);j<N;j++)
 	    R(i,j) = R(j,i);
@@ -656,7 +656,7 @@ namespace whiteice
 	float sf;
 	whiteice::math::convert(sf, s);
 
-#pragma omp parallel shared(m) shared(R)
+//#pragma omp parallel shared(m) shared(R)
 	{
 	  matrix<T> Ri;
 	  vertex<T> mi;
@@ -667,7 +667,7 @@ namespace whiteice
 	  mi.resize(N);
 	  mi.zero();
 
-#pragma omp for nowait schedule(auto)
+//#pragma omp for nowait schedule(auto)
 	  for(unsigned int index=0;index<data.size();index++){
 	    auto& v = data[index];	  
 	    
@@ -683,7 +683,7 @@ namespace whiteice
 	    mi += v;
 	  }
 
-#pragma omp critical (mean_covariance_estimate1)
+//#pragma omp critical (mean_covariance_estimate1)
 	  {
 	    m += mi;
 	    R += Ri;
@@ -715,7 +715,7 @@ namespace whiteice
 	gpu_sync();
 
 	// copies lower triangular elements to upper triangular part of the M matrix
-#pragma omp parallel for schedule(auto)
+//#pragma omp parallel for schedule(auto)
 	for(unsigned int i=0;i<N;i++)
 	  for(unsigned int j=(i+1);j<N;j++)
 	    R(i,j) = R(j,i);
@@ -724,7 +724,7 @@ namespace whiteice
       }
       else if(typeid(T) == typeid(blas_real<double>)){
 
-#pragma omp parallel shared(R) shared(m)
+//#pragma omp parallel shared(R) shared(m)
 	{
 	  matrix<T> Ri;
 	  vertex<T> mi;
@@ -735,7 +735,7 @@ namespace whiteice
 	  mi.resize(N);
 	  mi.zero();
 
-#pragma omp for nowait schedule(auto)
+//#pragma omp for nowait schedule(auto)
 	  for(unsigned int index=0;index<data.size();index++){
 	    auto& v = data[index];
 	    
@@ -751,7 +751,7 @@ namespace whiteice
 	    mi += v;
 	  }
 
-#pragma omp critical (mear_covariance_estimate2)
+//#pragma omp critical (mear_covariance_estimate2)
 	  {
 	    m += mi;
 	    R += Ri;
@@ -783,7 +783,7 @@ namespace whiteice
 
 	gpu_sync();
 
-#pragma omp parallel for schedule(auto)
+//#pragma omp parallel for schedule(auto)
 	// copies lower triangular elements to upper triangular part of the M matrix
 	for(unsigned int i=0;i<N;i++)
 	  for(unsigned int j=(i+1);j<N;j++)
@@ -796,7 +796,7 @@ namespace whiteice
 	double sf;
 	whiteice::math::convert(sf, s);
 
-#pragma omp parallel shared(R) shared(m)
+//#pragma omp parallel shared(R) shared(m)
 	{
 	  matrix<T> Ri;
 	  vertex<T> mi;
@@ -807,7 +807,7 @@ namespace whiteice
 	  mi.resize(N);
 	  mi.zero();
 
-#pragma omp for nowait schedule(auto)
+//#pragma omp for nowait schedule(auto)
 	  for(unsigned int index=0;index<data.size();index++){
 	    auto& v = data[index];
 	    
@@ -824,7 +824,7 @@ namespace whiteice
 	    mi += v;
 	  }
 
-#pragma omp critical (mean_covariance_estimate3)
+//#pragma omp critical (mean_covariance_estimate3)
 	  {
 	    m += mi;
 	    R += Ri;
@@ -857,7 +857,7 @@ namespace whiteice
 	gpu_sync();
 	
 	// copies lower triangular elements to upper triangular part of the M matrix
-#pragma omp parallel for schedule(auto)
+//#pragma omp parallel for schedule(auto)
 	for(unsigned int i=0;i<N;i++)
 	  for(unsigned int j=(i+1);j<N;j++)
 	    R(i,j) = R(j,i);
@@ -866,7 +866,7 @@ namespace whiteice
       }
       else{ // generic code
 
-#pragma omp parallel shared(R) shared(m)
+//#pragma omp parallel shared(R) shared(m)
 	{
 	  matrix<T> Ri;
 	  vertex<T> mi;
@@ -877,7 +877,7 @@ namespace whiteice
 	  mi.resize(N);
 	  mi.zero();
 
-#pragma omp for nowait schedule(auto)
+//#pragma omp for nowait schedule(auto)
 	  for(unsigned int index=0;index<data.size();index++){
 	    auto& v = data[index];
 	    
@@ -885,7 +885,7 @@ namespace whiteice
 	    mi += v;
 	  }
 
-#pragma omp critical (mean_covariance_estimate4)
+//#pragma omp critical (mean_covariance_estimate4)
 	  {
 	    m += mi;
 	    R += Ri;
@@ -900,7 +900,7 @@ namespace whiteice
       
       if(typeid(T) == typeid(blas_real<float>)){	
 
-#pragma omp parallel // shared(m) shared(R)
+//#pragma omp parallel // shared(m) shared(R)
 	{
 	  matrix<T> Ri;
 	  vertex<T> mi;
@@ -911,7 +911,7 @@ namespace whiteice
 	  mi.resize(N);
 	  mi.zero();
 
-#pragma omp for nowait schedule(auto)
+//#pragma omp for nowait schedule(auto)
 	  for(unsigned int index=0;index<data.size();index++){
 	    auto& v = data[index];
 	    
@@ -921,7 +921,7 @@ namespace whiteice
 	    mi += v;
 	  }
 
-#pragma omp critical (mean_covariance_estimate5)
+//#pragma omp critical (mean_covariance_estimate5)
 	  {
 	    m += mi;
 	    R += Ri;
@@ -945,7 +945,7 @@ namespace whiteice
       }
       else if(typeid(T) == typeid(blas_complex<float>)){
 
-#pragma omp parallel shared(m) shared(R)
+//#pragma omp parallel shared(m) shared(R)
 	{
 	  matrix<T> Ri;
 	  vertex<T> mi;
@@ -956,7 +956,7 @@ namespace whiteice
 	  mi.resize(N);
 	  mi.zero();
 
-#pragma omp for nowait schedule(auto)
+//#pragma omp for nowait schedule(auto)
 	  for(unsigned int index=0;index<data.size();index++){
 	    auto& v = data[index];	  
 	    
@@ -965,7 +965,7 @@ namespace whiteice
 	    mi += v;
 	  }
 
-#pragma omp critical (mean_covariance_estimate6)
+//#pragma omp critical (mean_covariance_estimate6)
 	  {
 	    m += mi;
 	    R += Ri;
@@ -990,7 +990,7 @@ namespace whiteice
       }
       else if(typeid(T) == typeid(blas_real<double>)){
 
-#pragma omp parallel shared(R) shared(m)
+//#pragma omp parallel shared(R) shared(m)
 	{
 	  matrix<T> Ri;
 	  vertex<T> mi;
@@ -1001,7 +1001,7 @@ namespace whiteice
 	  mi.resize(N);
 	  mi.zero();
 
-#pragma omp for nowait schedule(auto)
+//#pragma omp for nowait schedule(auto)
 	  for(unsigned int index=0;index<data.size();index++){
 	    auto& v = data[index];
 	    
@@ -1010,7 +1010,7 @@ namespace whiteice
 	    mi += v;
 	  }
 
-#pragma omp critical (mean_covariance_estimate6)
+//#pragma omp critical (mean_covariance_estimate6)
 	  {
 	    m += mi;
 	    R += Ri;
@@ -1035,7 +1035,7 @@ namespace whiteice
       }
       else if(typeid(T) == typeid(blas_complex<double>)){
 
-#pragma omp parallel shared(R) shared(m)
+//#pragma omp parallel shared(R) shared(m)
 	{
 	  matrix<T> Ri;
 	  vertex<T> mi;
@@ -1046,7 +1046,7 @@ namespace whiteice
 	  mi.resize(N);
 	  mi.zero();
 
-#pragma omp for nowait schedule(auto)
+//#pragma omp for nowait schedule(auto)
 	  for(unsigned int index=0;index<data.size();index++){
 	    auto& v = data[index];
 	    
@@ -1055,7 +1055,7 @@ namespace whiteice
 	    mi += v;
 	  }
 
-#pragma omp critical (mean_covariance_estimate7)
+//#pragma omp critical (mean_covariance_estimate7)
 	  {
 	    m += mi;
 	    R += Ri;
@@ -1080,7 +1080,7 @@ namespace whiteice
       }
       else{ // generic code
 
-#pragma omp parallel shared(R) shared(m)
+//#pragma omp parallel shared(R) shared(m)
 	{
 	  matrix<T> Ri;
 	  vertex<T> mi;
@@ -1091,7 +1091,7 @@ namespace whiteice
 	  mi.resize(N);
 	  mi.zero();
 
-#pragma omp for nowait schedule(auto)
+//#pragma omp for nowait schedule(auto)
 	  for(unsigned int index=0;index<data.size();index++){
 	    auto& v = data[index];
 	    
@@ -1099,7 +1099,7 @@ namespace whiteice
 	    mi += v;
 	  }
 
-#pragma omp critical (mean_covariance_estimate8)
+//#pragma omp critical (mean_covariance_estimate8)
 	  {
 	    m += mi;
 	    R += Ri;
@@ -1114,7 +1114,7 @@ namespace whiteice
       
       // removes mean from R = E[xx^t]
       
-#pragma omp parallel for schedule(auto)
+//#pragma omp parallel for schedule(auto)
       for(unsigned int j=0;j<N;j++){
 	for(unsigned int i=0;i<=j;i++){
 	  T tmp = m[j]*m[i];
