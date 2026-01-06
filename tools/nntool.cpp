@@ -1517,7 +1517,7 @@ int main(int argc, char** argv)
 	      grad.zero();
 	      err.zero();							     
 	      
-#pragma omp for nowait schedule(dynamic)
+#pragma omp for nowait schedule(dynamic, 150)
 	      for(unsigned int i=0;i<SAMPLE_SIZE;i++){
 		if(dropout) net.setDropOut(retain_probability);
 		
@@ -1575,7 +1575,7 @@ int main(int argc, char** argv)
 		math::blas_real<float> e = 0.0;
 		nnetwork< math::blas_real<float> > net(*nn);
 		
-#pragma omp for nowait schedule(dynamic)		
+#pragma omp for nowait schedule(dynamic. 150)
 		for(unsigned int i=0;i<dtrain.size(0);i++){
 		  const unsigned int index = i; // rand() % dtrain.size(0);
 		  auto input = dtrain.access(0, index);
@@ -1626,7 +1626,7 @@ int main(int argc, char** argv)
 		math::blas_real<float> e = 0.0;
 		nnetwork< math::blas_real<float> > net(*nn);
 		
-#pragma omp for nowait schedule(dynamic)		
+#pragma omp for nowait schedule(dynamic. 150)
 		for(unsigned int i=0;i<dtest.size(0);i++){
 		  const unsigned int index = i; // rand() % dtest.size(0);
 		  auto input = dtest.access(0, index);

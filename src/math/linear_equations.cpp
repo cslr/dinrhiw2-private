@@ -383,7 +383,7 @@ namespace whiteice
 	my_.zero();
 
 
-#pragma omp for
+#pragma omp for schedule(dynamic, 150)
 	for(unsigned int i=0;i<x.size();i++){
 
 	  if(not_ok) continue;

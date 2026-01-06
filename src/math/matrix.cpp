@@ -242,7 +242,7 @@ namespace whiteice
 
       this->zero(); // cuBLAS optimized
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<diagonal.dataSize;i++){
 	data[i + i*numRows] = diagonal[i];
       }
@@ -402,7 +402,7 @@ namespace whiteice
       }
       else{
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<M.numCols*M.numRows;i++)
 	  R.data[i] = data[i] + M.data[i];
 
@@ -412,7 +412,7 @@ namespace whiteice
 #else
       matrix<T> R(M.numRows, M.numCols);
       
-#pragma omp parallel for schedule(auto)      
+#pragma omp parallel for schedule(dynamic, 150)      
       for(unsigned int i=0;i<M.numCols*M.numRows;i++)
 	R.data[i] = data[i] + M.data[i];
 
@@ -523,7 +523,7 @@ namespace whiteice
       }
       else{
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<M.numCols*M.numRows;i++)
 	  R.data[i] = data[i] - M.data[i];
 
@@ -534,7 +534,7 @@ namespace whiteice
       
       matrix<T> R(M.numRows, M.numCols);
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<M.numCols*M.numRows;i++)
 	R.data[i] = data[i] - M.data[i];
       
@@ -828,7 +828,7 @@ namespace whiteice
       }
       else{
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<M.numCols*M.numRows;i++)
 	  M.data[i] = -data[i];
 
@@ -838,7 +838,7 @@ namespace whiteice
 #else
       matrix<T> M(numRows, numCols);
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<numRows*numCols;i++)
 	M.data[i] = -data[i];
       
@@ -944,7 +944,7 @@ namespace whiteice
       }
       else{
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<M.numCols*M.numRows;i++)
 	  data[i] += M.data[i];
 
@@ -953,7 +953,7 @@ namespace whiteice
       
 #else
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<M.numCols*M.numRows;i++)
 	data[i] += M.data[i];
       
@@ -1060,7 +1060,7 @@ namespace whiteice
       }
       else{
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<M.numCols*M.numRows;i++)
 	  data[i] -= M.data[i];
 
@@ -1068,7 +1068,7 @@ namespace whiteice
       }
       
 #else
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<M.numCols*M.numRows;i++)
 	data[i] -= M.data[i];
       
@@ -1681,7 +1681,7 @@ namespace whiteice
     {
       const unsigned int N = numRows*numCols;
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<N;i++)
 	data[i] = s;
       
@@ -1787,7 +1787,7 @@ namespace whiteice
       else{
 	// SLOW IMPLEMENTATION
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int index=0;index<(M.numCols*M.numRows);index++)
 	  M[index] = a*(*this)[index];
 	
@@ -1816,7 +1816,7 @@ namespace whiteice
       }
       else{ // "normal implementation"
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<MSIZE;i++)
 	  M.data[i] = data[i]*a;
       }
@@ -1925,7 +1925,7 @@ namespace whiteice
       else{
 	// SLOW IMPLEMENTATION
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int index=0;index<(M.numCols*M.numRows);index++)
 	  R[index] = a*M[index];
 	
@@ -1954,7 +1954,7 @@ namespace whiteice
       }
       else{ // "normal implementation"
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<MSIZE;i++)
 	  R.data[i] = M.data[i]*a;
       }
@@ -2100,7 +2100,7 @@ namespace whiteice
       else{
 	// SLOW IMPLEMENTATION
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int index=0;index<(numCols*numRows);index++)
 	  (*this)[index] *= a;
 	
@@ -2128,7 +2128,7 @@ namespace whiteice
       }
       else{ // "normal implementation"
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<MSIZE;i++)
 	  data[i] *= a;
       }
@@ -2289,7 +2289,7 @@ namespace whiteice
       }
       else{
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int k=0;k<r.size();k++){
 	  r[k] = T(0.0f);
 
@@ -2470,7 +2470,7 @@ namespace whiteice
     {
       const unsigned int N = numRows*numCols;
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<N;i++)
 	data[i] = whiteice::math::abs(data[i]);
 	  
@@ -2482,7 +2482,7 @@ namespace whiteice
     {
       const unsigned int N = numRows*numCols;
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<N;i++)
 	data[i] = whiteice::math::real(data[i]);
       
@@ -2494,7 +2494,7 @@ namespace whiteice
     {
       const unsigned int N = numRows*numCols;
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<N;i++)
 	data[i] = whiteice::math::imag(data[i]);
       
@@ -2629,7 +2629,7 @@ namespace whiteice
 	// SLOW IMPLEMENTATION
 	matrix<T> R(numCols, numRows); // transposed matrix
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<numRows;j++)
 	  for(unsigned int i=0;i<numCols;i++)
 	    R(i,j) = (*this)(j,i);
@@ -2838,7 +2838,7 @@ namespace whiteice
 	// SLOW IMPLEMENTATION
 	matrix<T> R(numCols, numRows); // transposed matrix
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<numRows;j++)
 	  for(unsigned int i=0;i<numCols;i++)
 	    R(i,j) = whiteice::math::conj( (*this)(j,i) );
@@ -2882,7 +2882,7 @@ namespace whiteice
 	
 	auto& M = (*this);
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<M.numRows;j++)
 	  for(unsigned int i=0;i<M.numCols;i++)
 	    M(j,i) = whiteice::math::conj(M(j,i));
@@ -3880,7 +3880,7 @@ namespace whiteice
       {
 	T t = T(0.0f);
 
-#pragma omp for schedule(auto) nowait
+#pragma omp for schedule(dynamic, 150) nowait
 	for(unsigned int i=0;i<numCols;i++)
 	  t += data[i*(numRows+1)];
 
@@ -3899,7 +3899,7 @@ namespace whiteice
       {
 	T t = T(0.0f);
 
-#pragma omp for schedule(auto) nowait
+#pragma omp for schedule(dynamic, 150) nowait
 	for(unsigned int i=0;i<numRows;i++){
 	  t += data[i*(numCols+1)];
 	}
@@ -3925,7 +3925,7 @@ namespace whiteice
 
 #ifdef CUBLAS
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<diagonal.size();i++){
 	diagonal[i] = data[i*(numRows+1)];
       }
@@ -3948,7 +3948,7 @@ namespace whiteice
 
       const unsigned int N = (numRows<numCols) ? numRows : numCols;
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<N;i++)
 	data[i*(numRows+1)] = T(1.0f);
 
@@ -3959,7 +3959,7 @@ namespace whiteice
       
       const unsigned int N = (numRows<numCols) ? numRows : numCols;
       
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<N;i++)
 	data[i*(numRows+1)] = T(1.0f);
       
@@ -4081,7 +4081,7 @@ namespace whiteice
       }
       else{
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<numCols*numRows;i++)
 	  data[i] = T(0.0f);
 
@@ -4456,7 +4456,7 @@ namespace whiteice
 	{
 	  T l = T(0.0f);
 
-#pragma omp for schedule(auto) nowait
+#pragma omp for schedule(dynamic, 150) nowait
 	  for(unsigned int i=x1;i<=x2;i++)
 	    l += data[y*numCols + i]*whiteice::math::conj(data[y*numCols + i]);
 
@@ -4490,7 +4490,7 @@ namespace whiteice
 	{
 	  T l = T(0.0f);
 
-#pragma omp for schedule(auto) nowait
+#pragma omp for schedule(dynamic, 150) nowait
 	  for(unsigned int i=x1;i<x2;i++)
 	    l += data[y + i*numRows]*whiteice::math::conj(data[y + i*numRows]);
 
@@ -4588,7 +4588,7 @@ namespace whiteice
 	{
 	  T l = T(0.0f);
 
-#pragma omp for schedule(auto) nowait
+#pragma omp for schedule(dynamic, 150) nowait
 	  for(unsigned int i=y1;i<y2;i++)
 	    l += data[i + x*numRows]*whiteice::math::conj(data[i + x*numRows]);
 
@@ -4622,7 +4622,7 @@ namespace whiteice
 	{
 	  T l = T(0.0f);
 	  
-#pragma omp for schedule(auto) nowait
+#pragma omp for schedule(dynamic, 150) nowait
 	  for(unsigned int i=y1;i<=y2;i++)
 	    l += data[x + i*numCols] * data[x + i*numCols];
 
@@ -4713,7 +4713,7 @@ namespace whiteice
 	
       }
       else{
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=x1;i<x2;i++)
 	  v[i - x1] = data[y + i*numRows];
       }
@@ -4741,7 +4741,7 @@ namespace whiteice
       }
       else{ // generic vector copy
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=x1;i<=x2;i++)
 	  v[i - x1] = data[y*numCols + i];
 	
@@ -4824,7 +4824,7 @@ namespace whiteice
 	
       }
       else{
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=y1;i<y2;i++)
 	  v[i - y1] = data[i + x*numRows];
       }
@@ -4849,7 +4849,7 @@ namespace whiteice
       }
       else{ // generic copy
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=y1;i<=y2;i++)
 	  v[i - y1] = data[x + i*numCols];
 	
@@ -4935,7 +4935,7 @@ namespace whiteice
 	
       }
       else{
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=x1;i<x2;i++)
 	  data[y + i*numRows] = v[i - x1];
       }
@@ -4956,7 +4956,7 @@ namespace whiteice
       }
       else{ // generic vector copy
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=x1;i<=x2;i++)
 	  data[y*numCols + i] = v[i - x1];
 	
@@ -5034,7 +5034,7 @@ namespace whiteice
 	
       }
       else{
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=y1;i<y2;i++)
 	  data[i + x*numRows] = v[i - y1];
       }
@@ -5055,7 +5055,7 @@ namespace whiteice
       }
       else{ // generic length calculation
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=y1;i<=y2;i++)
 	  data[x + i*numCols] = v[i - y1];
 	
@@ -5574,7 +5574,7 @@ namespace whiteice
       }
       else{ // generic normalization of rows
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<numRows;j++){
 	  T len = T(0.0);
 	  

@@ -1194,7 +1194,7 @@ namespace whiteice
       outputdata.resize(inputdata.size());
 
       // processes data in parallel
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<inputdata.size();i++){
 	auto out = W[l]*inputdata[i] + b[l];
 	for(unsigned int n=0;n<out.size();n++)
@@ -1276,7 +1276,7 @@ namespace whiteice
       outputdata.resize(inputdata.size());
       
       // processes data in parallel
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<inputdata.size();i++){
 	auto out = W[l]*inputdata[i] + b[l];
 	for(unsigned int n=0;n<out.size();n++)
@@ -2218,7 +2218,7 @@ namespace whiteice
 	index -= W[l].ysize()*W[l].xsize() + b[l].size() + 2*b[l].size(); // adds LayerNorm parameters
 
 	// weight matrix gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<W[l].ysize();j++){
 	  const unsigned int jindex = index + j*W[l].xsize();
 	  
@@ -2236,7 +2236,7 @@ namespace whiteice
 	index += W[l].ysize()*W[l].xsize();
 
 	// bias vector gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<b[l].size();j++){
 	  const unsigned int bindex = index + j;
 	  
@@ -2257,7 +2257,7 @@ namespace whiteice
 	    if(layerNorm[l]){
 	      has_layer_norm = true;
 	      
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	      for(unsigned int j=0;j<grad_gamma.size();j++){
 		const unsigned int gindex = index + j;
 		
@@ -2275,7 +2275,7 @@ namespace whiteice
 
 	  if(has_layer_norm == false){
 	    // bias vector gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	    for(unsigned int j=0;j<b[l].size();j++){
 	      const unsigned int bindex = index + j;
 	      
@@ -2298,7 +2298,7 @@ namespace whiteice
 	    if(layerNorm[l]){
 	      has_layer_norm = true;
 	      
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	      for(unsigned int j=0;j<grad_beta.size();j++){
 		const unsigned int gindex = index + j;
 		
@@ -2316,7 +2316,7 @@ namespace whiteice
 
 	  if(has_layer_norm == false){
 	    // bias vector gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	    for(unsigned int j=0;j<b[l].size();j++){
 	      const unsigned int bindex = index + j;
 	      
@@ -2348,7 +2348,7 @@ namespace whiteice
 	auto temp = lgrad * W[l];
 	lgrad.resize(temp.ysize(), getNeurons(l-1));
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<lgrad.xsize();i++){
 	  const auto Df = Dnonlin(v[l-1][i], l-1, i);
 	  for(unsigned int j=0;j<lgrad.ysize();j++){
@@ -2381,7 +2381,7 @@ namespace whiteice
 	
 	temp += lgrad_prev[1];
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<lgrad.xsize();i++){
 	  const auto Df = Dnonlin(v[l-1][i], l-1, i);
 	  for(unsigned int j=0;j<lgrad.ysize();j++){
@@ -2422,7 +2422,7 @@ namespace whiteice
 	// printf("LAYER ZERO INDEX: %d\n", (int)index);
 
 	// weight matrix gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<W[0].ysize();j++){
 	  const unsigned int jindex = index + j*W[0].xsize();
 	  for(unsigned int i=0, iindex=jindex;i<W[0].xsize();i++,iindex++){
@@ -2437,7 +2437,7 @@ namespace whiteice
 	index += W[0].ysize()*W[0].xsize();
 
 	// bias vector gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<b[0].size();i++){
 	  const unsigned int bindex = index + i;
 	  
@@ -2459,7 +2459,7 @@ namespace whiteice
 	    if(layerNorm[l]){
 	      has_layer_norm = true;
 	      
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	      for(unsigned int j=0;j<grad_gamma.size();j++){
 		const unsigned int gindex = index + j;
 		
@@ -2477,7 +2477,7 @@ namespace whiteice
 
 	  if(has_layer_norm == false){
 	    // bias vector gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	    for(unsigned int j=0;j<b[l].size();j++){
 	      const unsigned int bindex = index + j;
 	      
@@ -2500,7 +2500,7 @@ namespace whiteice
 	    if(layerNorm[l]){
 	      has_layer_norm = true;
 	      
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	      for(unsigned int j=0;j<grad_beta.size();j++){
 		const unsigned int gindex = index + j;
 		
@@ -2518,7 +2518,7 @@ namespace whiteice
 
 	  if(has_layer_norm == false){
 	    // bias vector gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	    for(unsigned int j=0;j<b[l].size();j++){
 	      const unsigned int bindex = index + j;
 	      
@@ -2648,7 +2648,7 @@ namespace whiteice
 	index -= W[l].ysize()*W[l].xsize() + b[l].size() + 2*b[l].size(); // adds LayerNorm parameters
 
 	// weight matrix gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<W[l].ysize();j++){
 	  const unsigned int jindex = index + j*W[l].xsize();
 	  
@@ -2667,7 +2667,7 @@ namespace whiteice
 	index += W[l].ysize()*W[l].xsize();
 
 	// bias vector gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<b[l].size();j++){
 	  const unsigned int bindex = index + j;
 	  
@@ -2687,7 +2687,7 @@ namespace whiteice
 	    if(layerNorm[l]){
 	      has_layer_norm = true;
 	      
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	      for(unsigned int j=0;j<grad_gamma.size();j++){
 		const unsigned int gindex = index + j;
 		
@@ -2705,7 +2705,7 @@ namespace whiteice
 
 	  if(has_layer_norm == false){
 	    // bias vector gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	    for(unsigned int j=0;j<b[l].size();j++){
 	      const unsigned int bindex = index + j;
 	      
@@ -2728,7 +2728,7 @@ namespace whiteice
 	    if(layerNorm[l]){
 	      has_layer_norm = true;
 	      
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	      for(unsigned int j=0;j<grad_beta.size();j++){
 		const unsigned int gindex = index + j;
 		
@@ -2746,7 +2746,7 @@ namespace whiteice
 
 	  if(has_layer_norm == false){
 	    // bias vector gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	    for(unsigned int j=0;j<b[l].size();j++){
 	      const unsigned int bindex = index + j;
 	      
@@ -2777,7 +2777,7 @@ namespace whiteice
 	auto temp = lgrad * W[l];
 	lgrad.resize(temp.ysize(), getNeurons(l-1));
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<lgrad.xsize();i++){
 	  const auto Df = dropout[l-1][i] ? T(0.0f) : Dnonlin_nodropout(v[l-1][i], l-1, i);
 	  for(unsigned int j=0;j<lgrad.ysize();j++){
@@ -2808,7 +2808,7 @@ namespace whiteice
 	
 	temp += lgrad_prev[1];
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<lgrad.xsize();i++){
 	  const auto Df = dropout[l-1][i] ? T(0.0f) : Dnonlin_nodropout(v[l-1][i], l-1, i);
 	  for(unsigned int j=0;j<lgrad.ysize();j++){
@@ -2845,7 +2845,7 @@ namespace whiteice
 	index -= W[0].ysize()*W[0].xsize() + b[0].size() + 2*b[0].size(); // adds LayerNorm parameters
 
 	// weight matrix gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<W[0].ysize();j++){
 	  const unsigned int jindex = index + j*W[0].xsize();
 	  for(unsigned int i=0, iindex=jindex;i<W[0].xsize();i++,iindex++){
@@ -2860,7 +2860,7 @@ namespace whiteice
 	index += W[0].ysize()*W[0].xsize();
 
 	// bias vector gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<b[0].size();i++){
 	  const unsigned int bindex = index + i;
 	  
@@ -2881,7 +2881,7 @@ namespace whiteice
 	    if(layerNorm[l]){
 	      has_layer_norm = true;
 	      
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	      for(unsigned int j=0;j<grad_gamma.size();j++){
 		const unsigned int gindex = index + j;
 		
@@ -2899,7 +2899,7 @@ namespace whiteice
 
 	  if(has_layer_norm == false){
 	    // bias vector gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	    for(unsigned int j=0;j<b[l].size();j++){
 	      const unsigned int bindex = index + j;
 	      
@@ -2922,12 +2922,12 @@ namespace whiteice
 	    if(layerNorm[l]){
 	      has_layer_norm = true;
 	      
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	      for(unsigned int j=0;j<grad_beta.size();j++){
 		const unsigned int gindex = index + j;
 		
 		// TODO optimize with vector math
-		//#pragma omp parallel for schedule(auto)
+		//#pragma omp parallel for schedule(dynamic, 150)
 		for(unsigned int k=0;k<grad.ysize();k++)
 		  grad(k, gindex) = grad_beta[j];
 	      }
@@ -2940,12 +2940,12 @@ namespace whiteice
 
 	  if(has_layer_norm == false){
 	    // bias vector gradient
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	    for(unsigned int j=0;j<b[l].size();j++){
 	      const unsigned int bindex = index + j;
 	      
 	      // TODO optimize with vector math
-	      //#pragma omp parallel for schedule(auto)
+	      //#pragma omp parallel for schedule(dynamic, 150)
 	      for(unsigned int k=0;k<grad.ysize();k++)
 		grad(k, bindex) = T(0.0f);
 	    }
@@ -5099,7 +5099,7 @@ namespace whiteice
 	  }
 	}
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<hgrad.ysize();j++){
 	  for(unsigned int i=0;i<hgrad.xsize();i++){
 	    hgrad(j,i) *= Dnonlin(x[j], l, j);
@@ -5107,7 +5107,7 @@ namespace whiteice
 	}
 
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<x.size();i++){
 	  x[i] = nonlin(x[i], l, i);
 	}
@@ -5139,14 +5139,14 @@ namespace whiteice
 	  }
 	}
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<hgrad.ysize();j++){
 	  for(unsigned int i=0;i<hgrad.xsize();i++){
 	    hgrad(j,i) *= Dnonlin(x[j], l, j);
 	  }
 	}
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<x.size();i++){
 	  x[i] = nonlin(x[i], l, i);
 	}
@@ -5179,14 +5179,14 @@ namespace whiteice
 	}
 	
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<hgrad.ysize();j++){
 	  for(unsigned int i=0;i<hgrad.xsize();i++){
 	    hgrad(j,i) *= Dnonlin(x[j], l, j);
 	  }
 	}
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<x.size();i++){
 	  x[i] = nonlin(x[i], l, i);
 	}
@@ -5264,7 +5264,7 @@ namespace whiteice
 	  }
 	}
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<hgrad.ysize();j++){
 	  for(unsigned int i=0;i<hgrad.xsize();i++){
 	    if(dropout[l][j]) hgrad(j,i) = T(0.0f);
@@ -5272,7 +5272,7 @@ namespace whiteice
 	  }
 	}
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<x.size();i++){
 	  if(dropout[l][i]) x[i] = T(0.0f);
 	  else x[i] = nonlin_nodropout(x[i], l, i);
@@ -5296,7 +5296,7 @@ namespace whiteice
 	  }
 	}
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<hgrad.ysize();j++){
 	  for(unsigned int i=0;i<hgrad.xsize();i++){
 	    if(dropout[l][j]) hgrad(j,i) = T(0.0f);
@@ -5304,7 +5304,7 @@ namespace whiteice
 	  }
 	}
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<x.size();i++){
 	  if(dropout[l][i]) x[i] = T(0.0f);
 	  else x[i] = nonlin_nodropout(x[i], l, i);
@@ -5329,7 +5329,7 @@ namespace whiteice
 	  }
 	}
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<hgrad.ysize();j++){
 	  for(unsigned int i=0;i<hgrad.xsize();i++){
 	    if(dropout[l][j]) hgrad(j,i) = T(0.0f);
@@ -5337,7 +5337,7 @@ namespace whiteice
 	  }
 	}
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<x.size();i++){
 	  if(dropout[l][i]) x[i] = T(0.0f);
 	  else x[i] = nonlin_nodropout(x[i], l, i);

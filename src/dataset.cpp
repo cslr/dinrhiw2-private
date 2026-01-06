@@ -118,7 +118,7 @@ namespace whiteice
   {
     clusters.resize(d.clusters.size());
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
     for(unsigned int i=0;i<clusters.size();i++){
       clusters[i].cname = d.clusters[i].cname;
       clusters[i].cindex = d.clusters[i].cindex;
@@ -2686,7 +2686,7 @@ namespace whiteice
 	}
 	
 	{
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	  for(unsigned int i=0;i<clusters[index].data.size();i++){
 	    mean_variance_removal(index, clusters[index].data[i]);
 	  }
@@ -2715,7 +2715,7 @@ namespace whiteice
 	
 	// soft max
 	{
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	  for(unsigned int i=0;i<clusters[index].data.size();i++)
 	    soft_max(index, clusters[index].data[i]);
 	}
@@ -2818,7 +2818,7 @@ namespace whiteice
 	// std::cout << "Wxx      = " << clusters[index].Wxx << std::endl;
 	// std::cout << "inv(Wxx) = " << clusters[index].invWxx << std::endl;
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<clusters[index].data.size();i++)
 	  whiten(index, clusters[index].data[i]);
 	
@@ -2856,7 +2856,7 @@ namespace whiteice
 	}
 
 	
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<clusters[index].data.size();i++)
 	  ica(index, clusters[index].data[i]);
 	
@@ -2957,7 +2957,7 @@ namespace whiteice
 
     bool ok = true;
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
     for(unsigned int i=0;i<group.size();i++){
       if(ok == false) continue;
       if(!preprocess(index, group[i])) ok = false;
@@ -3061,7 +3061,7 @@ namespace whiteice
 
     bool ok = true;
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
     for(unsigned int i=0;i<group.size();i++){
       if(ok == false) continue;
       if(!invpreprocess(index, group[i])) ok = false;
@@ -3198,7 +3198,7 @@ namespace whiteice
     for(unsigned int j=0;j<clusters[index].preprocessings.size();j++){
       if(clusters[index].preprocessings[j] == dnMeanVarianceNormalization){
 
-//#pragma omp parallel for schedule(auto)
+//#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<dimension(index);i++)
 	  if(clusters[index].variance[i] > T(10e-8))
 	    for(unsigned int k=0;k<dimension(index);k++)
@@ -3231,7 +3231,7 @@ namespace whiteice
     for(unsigned int j=0;j<clusters[index].preprocessings.size();j++){
       if(clusters[index].preprocessings[j] == dnMeanVarianceNormalization){
 
-//#pragma omp parallel for schedule(auto)
+//#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<dimension(index);i++)
 	  if(clusters[index].variance[i] > T(10e-8))
 	    for(unsigned int k=0;k<dimension(index);k++)

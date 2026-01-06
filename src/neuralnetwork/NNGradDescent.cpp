@@ -678,7 +678,7 @@ namespace whiteice
 	  math::vertex<T> out;
 	  
 	  // calculates error from the testing dataset
-#pragma omp for nowait schedule(dynamic, 25)
+#pragma omp for nowait schedule(dynamic, 150)
 	  for(unsigned int i=0;i<MINIBATCHSIZE;i++){
 	    const unsigned int index = whiteice::rng.rand() % dtest.size(0);
 	    
@@ -735,7 +735,7 @@ namespace whiteice
 	  math::vertex<T> out;
 	  
 	  // calculates error from the testing dataset
-#pragma omp for nowait schedule(dynamic, 25)
+#pragma omp for nowait schedule(dynamic, 150)
 	  for(unsigned int i=0;i<dtest.size(0);i++){
 	    const unsigned int index = i; // rng.rand() % dtest.size(0);
 	    
@@ -1024,7 +1024,7 @@ namespace whiteice
 		math::vertex<T> err;
 		math::vertex<T> output;
 		
-#pragma omp for nowait schedule(dynamic, 25)
+#pragma omp for nowait schedule(dynamic, 150)
 		for(unsigned int i=0;i<MINIBATCHSIZE;i++){
 		  const unsigned int index = rng.rand() % dtrain.size(0);
 		  // const unsigned intnet index = i;
@@ -1096,7 +1096,7 @@ namespace whiteice
 		math::vertex<T> output;
 		math::vertex<T> err;
 		
-#pragma omp for nowait schedule(dynamic, 25)
+#pragma omp for nowait schedule(dynamic, 150)
 		for(unsigned int i=0;i<dtrain.size(0);i++){
 		  const unsigned int index = i;
 		  
@@ -1158,7 +1158,7 @@ namespace whiteice
 	    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
 #endif
 		
-#pragma omp for schedule(dynamic, 25)
+#pragma omp for schedule(dynamic, 150)
 	    for(unsigned int i=0;i<sumgrad.size();i++){
 	      m[i] = beta1 * m[i] + (T(1.0) - beta1)*sumgrad[i];
 	      v[i] = beta2 * v[i] + (T(1.0) - beta2)*sumgrad[i]*sumgrad[i];
@@ -1528,7 +1528,7 @@ namespace whiteice
 		  math::vertex<T> err;
 		  math::vertex<T> output;
 		  
-#pragma omp for nowait schedule(dynamic, 25)
+#pragma omp for nowait schedule(dynamic, 150)
 		  for(unsigned int i=0;i<MINIBATCHSIZE;i++){
 		    const unsigned int index = rng.rand() % dtrain.size(0);
 		    // const unsigned intnet index = i;
@@ -1602,7 +1602,7 @@ namespace whiteice
 		  math::vertex<T> output;
 		  math::vertex<T> err;
 		  
-#pragma omp for nowait schedule(dynamic, 25)
+#pragma omp for nowait schedule(dynamic, 150)
 		  for(unsigned int i=0;i<dtrain.size(0);i++){
 		    const unsigned int index = i;
 		    

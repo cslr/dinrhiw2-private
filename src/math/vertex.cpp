@@ -1084,7 +1084,7 @@ namespace whiteice
     {
       if(dataSize <= 0) return;
       
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<dataSize;i++)
 	data[i] = whiteice::math::conj(data[i]);
       
@@ -1474,7 +1474,7 @@ namespace whiteice
       else{
 	const T alpha = T(-1.0f);
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<dataSize;i++)
 	  r.data[i] *= alpha;
 
@@ -1613,7 +1613,7 @@ namespace whiteice
       else{
 	// *NO* CBLAS
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<dataSize;i++)
 	  data[i] += v.data[i];
       }
@@ -1731,7 +1731,7 @@ namespace whiteice
       else{
 	// *NO* CBLAS
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<dataSize;i++)
 	  data[i] -= v.data[i];
       }
@@ -1886,7 +1886,7 @@ namespace whiteice
 	  {
 	    T rvalue = T(0.0f);
 
-#pragma omp for schedule(auto) nowait
+#pragma omp for schedule(dynamic, 150) nowait
 	    for(unsigned int i=0;i<v.dataSize;i++)
 	      rvalue += data[i]*v.data[i];
 
@@ -1975,7 +1975,7 @@ namespace whiteice
 	{
 	  T rvalue = T(0.0f);
 
-#pragma omp for nowait schedule(auto)
+#pragma omp for nowait schedule(dynamic, 150)
 	  for(unsigned int i=0;i<v.dataSize;i++)
 	    rvalue += data[i]*v.data[i];
 
@@ -2371,13 +2371,13 @@ namespace whiteice
     {
 #ifdef CUBLAS
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<dataSize;i++)
 	data[i] = whiteice::math::abs(data[i]);
       
 #else
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<dataSize;i++)
 	data[i] = whiteice::math::abs(data[i]);
 
@@ -2391,13 +2391,13 @@ namespace whiteice
     {
 #ifdef CUBLAS
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<dataSize;i++)
 	data[i] = whiteice::math::real(data[i]);
       
 #else
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<dataSize;i++)
 	data[i] = whiteice::math::real(data[i]);
       
@@ -2411,13 +2411,13 @@ namespace whiteice
     {
 #ifdef CUBLAS
       
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<dataSize;i++)
 	data[i] = whiteice::math::imag(data[i]);
       
 #else
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<dataSize;i++)
 	data[i] = whiteice::math::imag(data[i]);
 
@@ -2436,7 +2436,7 @@ namespace whiteice
     vertex<T>& vertex<T>::operator=(const T& s)
       
     {
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<dataSize;i++)
 	data[i] = s;
       
@@ -2513,7 +2513,7 @@ namespace whiteice
       else{
 	// *NO* CBLAS
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<dataSize;i++)
 	  r.data[i] = ss*data[i];
       }
@@ -2543,7 +2543,7 @@ namespace whiteice
       }
       else{ // "normal implementation"
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<dataSize;i++)
 	  r.data[i] = data[i]*ss;
       }
@@ -2622,7 +2622,7 @@ namespace whiteice
       else{
 	// *NO* CBLAS
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<dataSize;i++)
 	  r.data[i] = data[i]*invs;
       }
@@ -2730,7 +2730,7 @@ namespace whiteice
       }
       else{
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<dataSize;i++)
 	  data[i] *= s;
 
@@ -2835,7 +2835,7 @@ namespace whiteice
       }
       else{
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<dataSize;i++)
 	  data[i] *= invs;
 
@@ -2943,7 +2943,7 @@ namespace whiteice
       else{
 	// *NO* CBLAS
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int i=0;i<v.dataSize;i++)
 	  r.data[i] = s*v.data[i];
 
@@ -3113,7 +3113,7 @@ namespace whiteice
       }
       else{
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
 	for(unsigned int j=0;j<M.numCols;j++){
 	  for(unsigned int i=0;i<M.numRows;i++)
 	    r.data[j] += data[i]*M(i,j);
@@ -3507,7 +3507,7 @@ namespace whiteice
 
       matrix<T> m(v0.dataSize, v1.dataSize);
       
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<v0.dataSize;i++)
 	for(unsigned int j=0;j<v1.dataSize;j++)
 	  m(i,j) = v0.data[i]*whiteice::math::conj(v1.data[j]);
@@ -3518,7 +3518,7 @@ namespace whiteice
       
       matrix<T> m(v0.dataSize, v1.dataSize);
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<v0.dataSize;i++)
 	for(unsigned int j=0;j<v1.dataSize;j++)
 	  m(i,j) = v0.data[i]*whiteice::math::conj(v1.data[j]);
@@ -3543,7 +3543,7 @@ namespace whiteice
 
       // should be optimized
 
-#pragma omp parallel for schedule(auto)
+#pragma omp parallel for schedule(dynamic, 150)
       for(unsigned int i=0;i<dataSize;i++)
 	data[i] *= v.data[i];
       
