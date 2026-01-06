@@ -729,9 +729,9 @@ AC_ARG_ENABLE([cppdebug],
 	AS_HELP_STRING([--enable-cppdebug],[Enable C++ debugging flags (stdc++)]))
 
 AS_IF([test "x$enable_cppdebug" = "xyes"],[
-  optimization_flags="$optimization_flags -D_GLIBCXX_DEBUG -fsanitize=address -fsanitize=undefined"
+  optimization_flags="$optimization_flags -D_GLIBCXX_DEBUG -fsanitize=address -fsanitize=undefined -fsanitize=leak"
 dnl  optimization_flags="$optimization_flags -D_GLIBCXX_DEBUG -fsanitize=address"
-  conf_flags="$conf_flags -D_GLIBCXX_DEBUG -fsanitize=address -fsanitize=undefined"
+  conf_flags="$conf_flags -D_GLIBCXX_DEBUG -fsanitize=address -fsanitize=undefined -fsanitize=leak"
 ])
 
 AC_ARG_ENABLE([threadsdebug],

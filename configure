@@ -5725,8 +5725,8 @@ fi
 if test "x$enable_cppdebug" = "xyes"
 then :
 
-  optimization_flags="$optimization_flags -D_GLIBCXX_DEBUG -fsanitize=address -fsanitize=undefined"
-  conf_flags="$conf_flags -D_GLIBCXX_DEBUG -fsanitize=address -fsanitize=undefined"
+  optimization_flags="$optimization_flags -D_GLIBCXX_DEBUG -fsanitize=address -fsanitize=undefined -fsanitize=leak"
+  conf_flags="$conf_flags -D_GLIBCXX_DEBUG -fsanitize=address -fsanitize=undefined -fsanitize=leak"
 
 fi
 
