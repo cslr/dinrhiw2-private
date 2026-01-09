@@ -1,3 +1,7 @@
+// FIXME: join() blocks in pca()/ica() calculations which take time so shutdown is SLOW.
+// TODO: should check inside pca() and ica() and symmetric_eig() if flag to STOP has been set and
+//       return immediately. (lots of stupid code)
+
 
 #include "NARX.h"
 
@@ -19,16 +23,17 @@ namespace whiteice
   {
     std::unique_lock<std::mutex> lock(compute_mutex);
     
-    sgd.stopComputation();
-
     optimize_running = false;
     
     if(optimize_thread){
-      //if(optimize_thread->joinable())
-      //optimize_thread->join(); // waits for optimization to stop
+      if(optimize_thread->joinable())
+	optimize_thread->join();
+      
       delete optimize_thread;
       optimize_thread = nullptr;
     }
+
+    sgd.stopComputation();
   }
   
   
@@ -80,18 +85,34 @@ namespace whiteice
     // starts optimization thread (PCA+ICA+SGD.start())
 
     try{
-      optimize_running = true;
+      optimize_running = false;
 
-      if(optimize_thread) delete optimize_thread;
+      if(optimize_thread){
+	if(optimize_thread->joinable())
+	  optimize_thread->join();
+	
+	delete optimize_thread;
+	optimize_thread = nullptr;
+      }
+      
+      optimize_running = true;
       
       optimize_thread = new std::thread(&NARX<T>::optimize_function, this);
-      optimize_thread->detach();
+      //optimize_thread->detach();
 
       return true;
     }
     catch(std::exception& e){
       optimize_running = false;
-      optimize_thread = nullptr;
+
+      if(optimize_thread){
+	if(optimize_thread->joinable())
+	  optimize_thread->join();
+	
+	delete optimize_thread;
+	optimize_thread = nullptr;
+      }
+      
       return false;
     }
 
@@ -194,7 +215,7 @@ namespace whiteice
   bool NARX<T>::getSolution(whiteice::math::vertex<T>& params,
 			    T& solution_error)
   {
-    if(optimize_running) return false;
+    // if(optimize_running) return false; // THIS IS WRONG???
     
     std::lock_guard<std::mutex> lock(compute_mutex);
 
@@ -221,9 +242,11 @@ namespace whiteice
   {
     std::unique_lock<std::mutex> lock(compute_mutex);
 
+    optimize_running = false;
+
     if(optimize_thread){
-      //if(optimize_thread->joinable())
-      //optimize_thread->join(); // waits for optimization to stop
+      if(optimize_thread->joinable())
+	optimize_thread->join();
       
       delete optimize_thread;
       optimize_thread = nullptr;
@@ -352,7 +375,8 @@ namespace whiteice
 
 
     std::vector< whiteice::math::vertex<T> > reduced_data;    
-    
+
+    if(optimize_running == false) return;
 
     if(data.dimension(0) > REDUCED_DIM + (FUTURELEN-1)*pdata.dimension(0)){
       std::vector< whiteice::math::vertex<T> > listdata;
@@ -374,6 +398,8 @@ namespace whiteice
       
       // This calculates linear ICA from the measurements.
       // FIXME: should calculate convolutional ICA instead with different time-delays to measurement points..
+
+      if(optimize_running == false) return;
       
       if(whiteice::math::pca(listdata, REDUCED_DIM, PCA, m, orig_var, redu_var, true, true) == false){
 	return; // cannot compute PCA!!!! (error)
@@ -391,7 +417,8 @@ namespace whiteice
 	  
 	}
       }
-      
+
+      if(optimize_running == false) return;
       
       whiteice::math::matrix<T> ICA;
       
@@ -413,6 +440,8 @@ namespace whiteice
 	ICA_mean_reduce = ICA*PCA*m;
       }
 
+      if(optimize_running == false) return;
+
       {
 	params_mutex.lock();
 
@@ -422,6 +451,9 @@ namespace whiteice
 	params_mutex.unlock();
 	
 	for(unsigned int i=0;i<data.size(0);i++){
+
+	  if(optimize_running == false) return;
+	  
 	  whiteice::math::vertex<T> v;
 	  v.resize(REDUCED_DIM + (FUTURELEN-1)*pdata.dimension(0));
 	  v.zero();
@@ -463,7 +495,12 @@ namespace whiteice
 	ICA_mean_reduce.zero();
       }
 
+      if(optimize_running == false) return;
+
       for(unsigned int i=0;i<data.size(0);i++){
+
+	if(optimize_running == false) return;
+	
 	whiteice::math::vertex<T> v;
 	v.resize(REDUCED_DIM + (FUTURELEN-1)*pdata.dimension(0));
 	v.zero();
@@ -484,7 +521,7 @@ namespace whiteice
       }
     }
 
-
+    if(optimize_running == false) return;
 
     whiteice::dataset<T> rdata;
     
@@ -495,6 +532,8 @@ namespace whiteice
 
     for(unsigned int i=0;i<data.size(1);i++)
       rdata.add(1, data.access(1, i));
+
+    if(optimize_running == false) return;
 
 
     // now dimension reduction (if needed) is computed
@@ -898,10 +937,13 @@ namespace whiteice
       this->net = net;
       this->ICA_reduce = ICA;
       this->ICA_mean_reduce = mean;
-
+      
       this->optimize_running = false;
+      
       if(optimize_thread){
-	optimize_thread->join();
+	if(optimize_thread->joinable())
+	  optimize_thread->join();
+	
 	delete optimize_thread;
 	optimize_thread = nullptr;
       }
