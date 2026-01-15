@@ -1747,10 +1747,10 @@ namespace whiteice
   {
     // number of iteratios to use per epoch for optimization
     const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 20; // WAS: 1000, 5, 1000, 50
-    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 20; // WAS: 100, 5, 50, 50
+    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 50; // WAS: 20, (100, 5, 50, 50)
 
     const unsigned int Q_OPTIMIZE_ITERATIONS = 20; // 3; // WAS: 1000, 5, 1000
-    const unsigned int P_OPTIMIZE_ITERATIONS = 20; // 3; // WAS: 50, 5, 50
+    const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 20, (50, 5, 50)
     
     // tau = 1.0 => no lagged neural networks [don't work]
     // const T tau = T(0.001); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
@@ -1775,7 +1775,7 @@ namespace whiteice
     whiteice::CreateRIFL4dataset<T>* dataset_q2_thread = nullptr;
     whiteice::Policy4GradAscent<T> grad2(*this, deep);   // policy(state)=action model optimizer
     whiteice::math::NNGradDescent<T> q2grad; // Q2(state, action) model optimizer
-
+    
     whiteice::linear_ETA<double> eta, eta2; // estimates how long single epoch of optimization takes
     
     std::vector<unsigned int> epoch;
@@ -2211,8 +2211,9 @@ namespace whiteice
 	    
 	    for(const auto& e : episode)
 	      total_reward += e.reinforcement_pure;
-	    
-	    total_reward /= T(episode.size());
+
+	    if(episode.size())
+	      total_reward /= T(episode.size());
 
 	    T episode_weight = T(0.0f);
 		  

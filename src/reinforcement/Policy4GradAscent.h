@@ -47,7 +47,7 @@ namespace whiteice
      * Executes NTHREADS in parallel when looking for
      * the optimal solution and goes max to 
      * MAXITERS iterations when looking for gradient
-     * descent solution
+     * ascend solution
      * 
      * dropout - whether to use dropout heuristics when training
      */
