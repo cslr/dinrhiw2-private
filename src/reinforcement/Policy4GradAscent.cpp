@@ -1227,8 +1227,8 @@ namespace whiteice
 	  }
 
 
-	  // gradient clipping
-	  {
+	  // gradient clipping [NO GOOD]
+	  if(0){
 	    const T max_grad_norm = T(0.25);
 	    const T norm = sumgrad.norm()/sumgrad.size();
 
@@ -1259,15 +1259,15 @@ namespace whiteice
 	    
 #pragma omp parallel for schedule(dynamic, 25)
 	    for(unsigned int i=0;i<sumgrad.size();i++){
-	      // should ASCEND the error.. (-sumgrad goes to larger values)
+	      // should ASCEND the error.. (sumgrad goes to larger values)
 	      
-	      m[i] = beta1 * m[i] + (T(1.0) - beta1)*(-sumgrad[i]);
+	      m[i] = beta1 * m[i] + (T(1.0) - beta1)*(sumgrad[i]);
 	      v[i] = beta2 * v[i] + (T(1.0) - beta2)*sumgrad[i]*sumgrad[i];
 	      
 	      const T m_hat = m[i] / (T(1.0) - whiteice::math::pow(beta1[0], T(iterations+1)[0]));
 	      const T v_hat = v[i] / (T(1.0) - whiteice::math::pow(beta2[0], T(iterations+1)[0]));
-	      
-	      weights[i] -= (alpha / (whiteice::math::sqrt(v_hat) + epsilon)) * m_hat;
+
+	      weights[i] += (alpha / (whiteice::math::sqrt(v_hat) + epsilon)) * m_hat;
 	    }
 	    
 	    policy->importdata(weights);
