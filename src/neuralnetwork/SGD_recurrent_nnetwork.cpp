@@ -9,7 +9,8 @@ namespace whiteice
   template <typename T>
   SGD_recurrent_nnetwork<T>::SGD_recurrent_nnetwork(const nnetwork<T>& nn,
 						    const dataset<T>& d,
-						    bool overfit):
+						    bool overfit,
+						    const unsigned int STEP_HORIZON):
     whiteice::math::SGD<T>(overfit),
     net(nn), data(d)
   {
@@ -130,12 +131,12 @@ namespace whiteice
 	math::vertex<T> range;
 	range.resize(2);
 
-	const unsigned int c = data.size(0)/100 + 1;
+	const unsigned int c = data.size(0)*STEP_HORIZON + 1;
 
 	for(unsigned int i=0;i<c;i++){
 	
-	  range[0] = (i*100);
-	  range[1] = ((i+1)*100);
+	  range[0] = (i*STEP_HORIZON);
+	  range[1] = ((i+1)*STEP_HORIZON);
 
 	  if(range[0] > data.size(0)){
 	    range[0] = data.size(0);
@@ -185,12 +186,12 @@ namespace whiteice
       math::vertex<T> range;
       range.resize(2);
       
-      const unsigned int c = data.size(0)/100 + 1;
+      const unsigned int c = data.size(0)/STEP_HORIZON + 1;
       
       for(unsigned int i=0;i<c;i++){
 	
-	range[0] = (i*data.size(0))/100;
-	range[1] = ((i+1)*data.size(0))/100;
+	range[0] = (i*data.size(0))/STEP_HORIZON;
+	range[1] = ((i+1)*data.size(0))/STEP_HORIZON;
 	
 	if(range[0] > data.size(0)){
 	  range[0] = data.size(0);

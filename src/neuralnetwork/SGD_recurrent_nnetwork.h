@@ -24,7 +24,8 @@ namespace whiteice
     public:
       SGD_recurrent_nnetwork(const nnetwork<T>& net,
 			     const dataset<T>& d,
-			     bool overfit=false);
+			     bool overfit=false,
+			     const unsigned int STEP_HORIZON=100);
       
       virtual ~SGD_recurrent_nnetwork();
     
