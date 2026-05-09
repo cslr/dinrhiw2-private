@@ -357,7 +357,7 @@ namespace whiteice
 	err.resize(dtest.dimension(1));
 	
 	// E = SUM 0.5*e(i)^2
-#pragma omp for nowait schedule(auto)
+#pragma omp for nowait schedule(dynamic)
 	for(unsigned int episode=0;episode<dtest.size(2);episode++){
 
 	  math::vertex<T> range = dtest.access(2,episode);
@@ -444,7 +444,7 @@ namespace whiteice
 	err.resize(dtrain.dimension(1));
 	
 	// E = SUM 0.5*e(i)^2
-#pragma omp for nowait schedule(auto)
+#pragma omp for nowait schedule(dynamic)
 	for(unsigned int episode=0;episode<dtrain.size(2);episode++){
 
 	  math::vertex<T> range = dtrain.access(2,episode);
@@ -559,7 +559,7 @@ namespace whiteice
 	math::matrix<T> FGRADTMP;
 	FGRADTMP.resize(dtrain.dimension(1)+RDIM, RDIM);
 
-#pragma omp for nowait schedule(auto)
+#pragma omp for nowait schedule(dynamic)
 	for(unsigned int episode=0;episode<dtrain.size(2);episode++){
 	  
 	  math::vertex<T> range = dtrain.access(2,episode);
