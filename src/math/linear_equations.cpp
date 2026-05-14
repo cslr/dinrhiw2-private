@@ -398,9 +398,9 @@ namespace whiteice
 	    not_ok = true;
 	  }
 
-	  if((i % 1000) == 0){
-	    std::cout << i << std::endl;
-	  }
+	  //if((i % 1000) == 0){
+	  //  std::cout << i << std::endl;
+	  //}
 	  
 	  mx_ += x[i];
 	  my_ += y[i];
@@ -433,7 +433,7 @@ namespace whiteice
       T l = T(0.0);
 
       do{
-	std::cout << "calculating matrix-inverse: " << l << std::endl;
+	//std::cout << "calculating matrix-inverse: " << l << std::endl;
 	INV = Cxx;
 
 	T trace = T(0.0f);
