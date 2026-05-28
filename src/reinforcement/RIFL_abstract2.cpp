@@ -532,6 +532,7 @@ namespace whiteice
   template <typename T>
   bool RIFL_abstract2<T>::executionStatistics(T& percent_change,
 					      T& distances_percent_change,
+					      T& average_change, 
 					      const bool rescale_to_min_value,
 					      const bool use_only_most_recent,
 					      unsigned int history_size) const
@@ -541,6 +542,7 @@ namespace whiteice
     std::lock_guard<std::mutex> lock(reinforcements_mutex);
     
     percent_change = T(0.0f);
+    average_change = T(0.0f);
     
     if(reinforcements.size() <= 10 || reinforcements_random.size() <= 10)
       return false;
@@ -669,6 +671,8 @@ namespace whiteice
       // percent_change = (mean-stdev - (mean_random+stdev_random))/(mean+stdev);
 
       percent_change = T(100.0)*(mean - mean_random)/(mean_random - min_random); // percentages
+      
+      average_change = mean;
     }
 
     // distances
