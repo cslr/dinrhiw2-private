@@ -201,6 +201,7 @@ namespace whiteice
     // how many percent smaller is reinforcement value with random actions vs policy actions
     bool executionStatistics(T& percent_change, T& distances_percent_change,
 			     T& average_change,
+			     T& linear_curve_distance_percent_change,
 			     const bool rescale_to_min_value = false,
 			     const bool use_only_most_recent = false,
 			     unsigned int history_size = 0) const;
