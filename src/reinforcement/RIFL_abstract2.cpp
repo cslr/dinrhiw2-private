@@ -544,6 +544,7 @@ namespace whiteice
     
     percent_change = T(0.0f);
     average_change = T(0.0f);
+    linear_curve_distance_percent_change = T(0.0f);
     
     if(reinforcements.size() <= 10 || reinforcements_random.size() <= 10)
       return false;
@@ -682,9 +683,24 @@ namespace whiteice
       T mean_random = T(0.0), stdev_random = T(0.0);
       
       if(use_only_most_recent == false){
+
+	std::vector< whiteice::math::vertex<> > x, y;
+	unsigned int index = 0;
+	
 	for(const auto& r : distances){
 	  mean += r;
 	  stdev += r*r;
+
+	  whiteice::math::vertex<> v;
+	  v.resize(1);
+	  
+	  v[0] = (float)(index+1);
+	  x.push_back(v);
+
+	  v[0] = r;
+	  y.push_back(v);
+
+	  index++;
 	}
 	
 	mean /= distances.size();
@@ -695,6 +711,36 @@ namespace whiteice
 	  stdev = T(0.0);
 	
 	stdev = sqrt(stdev/distances.size()); // mean's stdev
+	
+	whiteice::math::matrix<> A;
+	whiteice::math::vertex<> b;
+	whiteice::math::blas_real<float> error;
+	
+	if(whiteice::math::linear_optimization<>(x, y, A, b, error) == false)
+	  return false;
+	
+	// 1d model is y = a*x + b
+	
+	// IMPORTANT: assumes distance is between [0,1]
+	
+	float y0 = A(0,0).c[0]*x[0][0].c[0] + b[0].c[0];
+	float y1 = A(0,0).c[0]*x[x.size()-1][0].c[0] + b[0].c[0];
+	
+	if(y0 < 0.0f) y0 = 0.0f;
+	else if(y0 >= 1.0f){
+	  linear_curve_distance_percent_change = 0.0f;
+	  // return false; // => zero division
+	}
+	else{
+	  
+	  if(y1 < 0.0f) y1 = 0.0f;
+	  else if(y1 >= 1.0f) y1 = 1.0f;
+	  
+	  const float p = 100.0f*(y0-y1)/(1.0f - y0);
+	  
+	  linear_curve_distance_percent_change = p;
+	  //percent_measure_growth = p;
+	}
       }
       else{
 	int SAMPLES = 1;
