@@ -550,7 +550,13 @@ AC_ARG_ENABLE([amdblis],
 	AS_HELP_STRING([--disable-amdblis],[Disable AMD BLIS (BLAS) library (must be installed in /opt/amd-blis/ directory)]))
  
 AC_MSG_CHECKING([for AMD BLIS library])
-`gcc -o openblastest openblastest.c -DAMDBLIS -I/opt/amd-blis/include/LP64/ -L/opt/amd-blis/lib/LP64/ -lblis-mt > /dev/null 2> /dev/null`
+
+PKG_BLIS_CFLAGS=`pkg-config blis --cflags 2> /dev/null`
+PKG_BLIS_LIBS=`pkg-config blis --libs 2> /dev/null`
+
+echo "g++ -o openblastest openblastest.c -DAMDBLIS $PKG_BLIS_CFLAGS $PKG_BLIS_LIBS"
+
+`g++ -o openblastest openblastest.c -DAMDBLIS $PKG_BLIS_CFLAGS $PKG_BLIS_LIBS`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_amdblis" == "xno"],[
@@ -559,16 +565,33 @@ if [[ $? -eq 0 ]]; then
   ],
   [
      AMDBLIS="yes"
-     BLAS_CFLAGS="-DAMDBLIS -I/opt/amd-blis/include/LP64/"
-     BLAS_LIBS="-lblis-mt -L/opt/amd-blis/lib/LP64/"
-     AC_MSG_RESULT([yes, headers in /opt/amd-blis/include/])
+     BLAS_CFLAGS="-DAMDBLIS `pkg-config blis --cflags`"
+     BLAS_LIBS="`pkg-config blis --libs`"
+     AC_MSG_RESULT([yes, (pkg-config)])
   ])
 else
-  AC_MSG_RESULT([no AMD BLIS detected])
-  if [[ "x$AMDBLIS" != "xyes" ]]; then
-     AMDBLIS="no"
+  `g++ -o openblastest openblastest.c -DAMDBLIS -I/opt/amd-blis/include/LP64/ -L/opt/amd-blis/lib/LP64/ -lblis-mt > /dev/null 2> /dev/null`
+
+  if [[ $? -eq 0 ]]; then
+    AS_IF([test "x$enable_amdblis" == "xno"],[
+       AMDBLIS="no"
+       AC_MSG_RESULT([yes, but DISABLED])
+    ],
+    [
+       AMDBLIS="yes"
+       BLAS_CFLAGS="-DAMDBLIS -I/opt/amd-blis/include/LP64/"
+       BLAS_LIBS="-lblis-mt -L/opt/amd-blis/lib/LP64/"
+       AC_MSG_RESULT([yes, headers in /opt/amd-blis/include/])
+    ])
+  else
+    AC_MSG_RESULT([no AMD BLIS detected])
+    if [[ "x$AMDBLIS" != "xyes" ]]; then
+       AMDBLIS="no"
+    fi
   fi
 fi
+
+
  
 dnl    AC_MSG_RESULT([AMD BLIS currently doesn't support full CBLAS!])
 dnl   if [[ "x$AMDBLIS" != "xyes" ]]; then
