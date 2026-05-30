@@ -200,7 +200,7 @@ AC_ARG_ENABLE([openblas],
 	AS_HELP_STRING([--disable-openblas],[Disable OpenBLAS library]))
  
 AC_MSG_CHECKING([for OpenBLAS library (1)])
-`gcc -o openblastest openblastest.c -DOPENBLAS -I/usr/local/include/ -L/usr/local/lib/ -lopenblas > /dev/null 2> /dev/null`
+`gcc -o openblastest openblastest.cpp -DOPENBLAS -I/usr/local/include/ -L/usr/local/lib/ -lopenblas > /dev/null 2> /dev/null`
  
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_openblas" == "xno"],[
@@ -224,7 +224,7 @@ else
 fi
 
 AC_MSG_CHECKING([for OpenBLAS library (2)])
-`gcc -o openblastest openblastest.c -DOPENBLAS -I/include/ -L/lib/ -lopenblas > /dev/null 2> /dev/null`
+`gcc -o openblastest openblastest.cpp -DOPENBLAS -I/include/ -L/lib/ -lopenblas > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_openblas" == "xno"],[
@@ -249,7 +249,7 @@ fi
 
 
 AC_MSG_CHECKING([for OpenBLAS library (3)])
-`gcc -o openblastest openblastest.c -DOPENBLAS -I/usr/include/openblas -L/lib/ -lopenblas > /dev/null 2> /dev/null`
+`gcc -o openblastest openblastest.cpp -DOPENBLAS -I/usr/include/openblas -L/lib/ -lopenblas > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_openblas" == "xno"],[
@@ -273,7 +273,7 @@ else
 fi
 
 AC_MSG_CHECKING([for OpenBLAS library (4)])
-`gcc -o openblastest openblastest.c -DOPENBLAS -I/usr/local/include/openblas -L/lib/ -lopenblas > /dev/null 2> /dev/null`
+`gcc -o openblastest openblastest.cpp -DOPENBLAS -I/usr/local/include/openblas -L/lib/ -lopenblas > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_openblas" == "xno"],[
@@ -298,7 +298,7 @@ fi
 
 
 AC_MSG_CHECKING([for OpenBLAS library (5)])
-`gcc -o openblastest openblastest.c -DOPENBLAS -I/opt/OpenBLAS/include/ -L/opt/OpenBLAS/bin/ -lopenblas > /dev/null 2> /dev/null`
+`gcc -o openblastest openblastest.cpp -DOPENBLAS -I/opt/OpenBLAS/include/ -L/opt/OpenBLAS/bin/ -lopenblas > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_openblas" == "xno"],[
@@ -323,7 +323,7 @@ fi
 
 
 AC_MSG_CHECKING([for OpenBLAS library (6)])
-`gcc -o openblastest openblastest.c -DOPENBLAS -I/opt/include/ -L/opt/lib/ -lopenblas > /dev/null 2> /dev/null`
+`gcc -o openblastest openblastest.cpp -DOPENBLAS -I/opt/include/ -L/opt/lib/ -lopenblas > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_openblas" == "xno"],[
@@ -349,7 +349,7 @@ fi
 AC_MSG_CHECKING([for OpenBLAS library (7)])
 obcflags=`pkg-config openblas --cflags 2> /dev/null`
 oblibs=`pkg-config openblas --libs 2> /dev/null`
-`gcc -o openblastest openblastest.c -DOPENBLAS $obcflags $oblibs > /dev/null 2> /dev/null`
+`gcc -o openblastest openblastest.cpp -DOPENBLAS $obcflags $oblibs > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_openblas" == "xno"],[
@@ -374,7 +374,7 @@ fi
 
 
 AC_MSG_CHECKING([for OpenBLAS library (8)])
-`gcc -o openblastest openblastest.c -DOPENBLAS -I/ucrt64/include/openblas/ -L/ucrt64/lib/ -lopenblas > /dev/null 2> /dev/null`
+`gcc -o openblastest openblastest.cpp -DOPENBLAS -I/ucrt64/include/openblas/ -L/ucrt64/lib/ -lopenblas > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_openblas" == "xno"],[
@@ -401,7 +401,7 @@ fi
 AC_MSG_CHECKING([for OpenBLAS library (9)])
 obcflags=`pkg-config openblas64 --cflags > /dev/null 2> /dev/null`
 oblibs=`pkg-config openblas64 --libs > /dev/null 2> /dev/null`
-`gcc -o openblastest openblastest.c -DOPENBLAS $obcflags $oblibs > /dev/null 2> /dev/null`
+`gcc -o openblastest openblastest.cpp -DOPENBLAS $obcflags $oblibs > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_openblas" == "xno"],[
@@ -431,7 +431,7 @@ AC_ARG_ENABLE([mkl],
 
 MKLROOT="/opt/intel/compilers_and_libraries/linux/mkl"
 AC_MSG_CHECKING([for Intel MKL library (1) (Linux)])
-`g++ -o openblastest openblastest.c -DINTELMKL -I$MKLROOT/include/ -L$MKLROOT/lib/intel64_lin -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lm > /dev/null 2> /dev/null`
+`g++ -o openblastest openblastest.cpp -DINTELMKL -I$MKLROOT/include/ -L$MKLROOT/lib/intel64_lin -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lm > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_mkl" == "xno"],[
@@ -455,7 +455,7 @@ fi
 AC_MSG_CHECKING([for Intel MKL library (2) (Linux, pkg-config)])
 PKG_MKL_CFLAGS=`pkg-config mkl-sdl-lp64 --cflags 2> /dev/null`
 PKG_MKL_LIBS=`pkg-config mkl-sdl-lp64 --libs 2> /dev/null`
-`g++ -o openblastest openblastest.c -DINTELMKL $PKG_MKL_CFLAGS $PKG_MKL_LIBS > /dev/null 2> /dev/null`
+`g++ -o openblastest openblastest.cpp -DINTELMKL $PKG_MKL_CFLAGS $PKG_MKL_LIBS > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_mkl" == "xno"],[
@@ -478,7 +478,7 @@ fi
 
 MKLROOT="/opt/intel/psxe_runtime/linux/mkl"
 AC_MSG_CHECKING([for Intel MKL library (3) (Linux)])
-`g++ -o openblastest openblastest.c -DINTELMKL -I$MKLROOT/include/ -L$MKLROOT/lib/intel64_lin -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lm > /dev/null 2> /dev/null`
+`g++ -o openblastest openblastest.cpp -DINTELMKL -I$MKLROOT/include/ -L$MKLROOT/lib/intel64_lin -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lm > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_mkl" == "xno"],[
@@ -501,7 +501,7 @@ fi
 
 MKLROOT="/opt/intel/oneapi/mkl/latest"
 AC_MSG_CHECKING([for Intel MKL library (4) (Linux)])
-`g++ -o openblastest openblastest.c -DINTELMKL -I$MKLROOT/include/ -L$MKLROOT/lib/ -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lm > /dev/null 2> /dev/null`
+`g++ -o openblastest openblastest.cpp -DINTELMKL -I$MKLROOT/include/ -L$MKLROOT/lib/ -lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lgomp -lm > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_mkl" == "xno"],[
@@ -525,7 +525,7 @@ dnl Intel MKL in Windows
 MKLROOT=/c/Program\ Files\ \(x86\)/IntelSWTools/compilers_and_libraries/windows/mkl
 
 AC_MSG_CHECKING([for Intel MKL library (Windows)])
-`g++ -o openblastest openblastest.c -DINTELMKL -I$MKLROOT/include/ -L$MKLROOT/lib/intel64_win -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lgomp -lm > /dev/null 2> /dev/null`
+`g++ -o openblastest openblastest.cpp -DINTELMKL -I$MKLROOT/include/ -L$MKLROOT/lib/intel64_win -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lgomp -lm > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_mkl" == "xno"],[
@@ -554,9 +554,7 @@ AC_MSG_CHECKING([for AMD BLIS library])
 PKG_BLIS_CFLAGS=`pkg-config blis --cflags 2> /dev/null`
 PKG_BLIS_LIBS=`pkg-config blis --libs 2> /dev/null`
 
-echo "g++ -o openblastest openblastest.c -DAMDBLIS $PKG_BLIS_CFLAGS $PKG_BLIS_LIBS"
-
-`g++ -o openblastest openblastest.c -DAMDBLIS $PKG_BLIS_CFLAGS $PKG_BLIS_LIBS`
+`g++ -o openblastest openblastest.cpp -DAMDBLIS $PKG_BLIS_CFLAGS $PKG_BLIS_LIBS > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_amdblis" == "xno"],[
@@ -570,7 +568,7 @@ if [[ $? -eq 0 ]]; then
      AC_MSG_RESULT([yes, (pkg-config)])
   ])
 else
-  `g++ -o openblastest openblastest.c -DAMDBLIS -I/opt/amd-blis/include/LP64/ -L/opt/amd-blis/lib/LP64/ -lblis-mt > /dev/null 2> /dev/null`
+  `g++ -o openblastest openblastest.cpp -DAMDBLIS -I/opt/amd-blis/include/LP64/ -L/opt/amd-blis/lib/LP64/ -lblis-mt > /dev/null 2> /dev/null`
 
   if [[ $? -eq 0 ]]; then
     AS_IF([test "x$enable_amdblis" == "xno"],[
@@ -685,7 +683,7 @@ cublasdir=`ls -1 -Art "$CUBLASROOT" 2> /dev/null | tail -n 1`
 CUBLASROOT="$CUBLASROOT/$cublasdir"
 
 AC_MSG_CHECKING([for NVIDIA NVBLAS library with CBLAS inteface (don't exist)])
-`g++ -o openblastest openblastest.c -DNVBLAS "-I$CUBLASROOT/include/" "-L$CUBLASROOT/lib/x64/" -lnvblas > /dev/null 2> /dev/null`
+`g++ -o openblastest openblastest.cpp -DNVBLAS "-I$CUBLASROOT/include/" "-L$CUBLASROOT/lib/x64/" -lnvblas > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   AS_IF([test "x$enable_nvblas" == "xno"],[
