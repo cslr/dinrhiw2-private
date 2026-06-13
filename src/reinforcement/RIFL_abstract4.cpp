@@ -1746,11 +1746,11 @@ namespace whiteice
   void RIFL_abstract4<T>::loop()
   {
     // number of iteratios to use per epoch for optimization
-    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 20; // WAS: 1000, 5, 1000, 50
-    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 50; // WAS: 20, (100, 5, 50, 50)
+    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 50; // WAS: 20*, 1000, 5, 1000, 50
+    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 50; // WAS: 20*, (100, 5, 50, 50)
 
-    const unsigned int Q_OPTIMIZE_ITERATIONS = 20; // 3; // WAS: 1000, 5, 1000
-    const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 20, (50, 5, 50)
+    const unsigned int Q_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 20*, 1000, 5, 1000
+    const unsigned int P_OPTIMIZE_ITERATIONS = 50; // 3; // WAS: 20*, (50, 5, 50)
     
     // tau = 1.0 => no lagged neural networks [don't work]
     // const T tau = T(0.001); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
@@ -1792,7 +1792,7 @@ namespace whiteice
     const unsigned long DATASIZE = 1000000; // 1M history of samples
     // assumes each episode length is 100 so this is ~ equal to 1.000.000 samples
     const unsigned long EPISODES_MAX_SIZE = 100000; // 100.000 episodes
-    const unsigned long MINIMUM_EPISODE_SIZE = 15; // was: 25
+    // const unsigned long MINIMUM_EPISODE_SIZE = 15; // was: 25
     const unsigned long MINIMUM_DATASIZE = 500; // samples required to start learning, was:500
     // const unsigned long SAMPLESIZE = 4000; // number of samples used in learning, was: 2000, 3500, 5000=(10bins^3variables*5samples = 5000)
     unsigned long database_counter = 0;
@@ -1999,7 +1999,7 @@ namespace whiteice
 	    
 	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
 
-	    u += T(1.00f)*noise; // was 0.1, 0.3*, 0.6
+	    u += T(0.666f)*noise; // was 0.1, 0.3, 0.6, 1.0*
 
 	    for(unsigned int i=0;i<u.size();i++){ // action is [0,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);

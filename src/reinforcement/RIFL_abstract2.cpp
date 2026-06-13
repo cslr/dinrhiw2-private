@@ -1757,7 +1757,7 @@ namespace whiteice
     const unsigned long DATASIZE = 1000000; // was: 100K / 1M history of samples
     // assumes each episode length is 100 so this is ~ equal to 1.000.000 samples
     const unsigned long EPISODES_MAX_SIZE = 100000;
-    const unsigned long MINIMUM_EPISODE_SIZE = 15;// was: 25
+    // const unsigned long MINIMUM_EPISODE_SIZE = 15;// was: 25
     // const unsigned long MINIMUM_DATASIZE = 500; // samples required to start learning, was:1000
     // const unsigned long SAMPLESIZE = 4000; // number of samples used in learning, was: 5000,*2000*,1000,4000,8000
     unsigned long database_counter = 0;
@@ -1942,7 +1942,7 @@ namespace whiteice
 	    
 	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
 
-	    u += T(1.00f)*noise; // was 0.1, 0.3*, 0.6
+	    u += T(0.666f)*noise; // was 0.1, 0.3, 0.6, *1.0
 
 	    for(unsigned int i=0;i<u.size();i++){ // action is [-1,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
