@@ -187,6 +187,18 @@ namespace whiteice
       return true;
     }
 
+    int getMinimumDataSize(){
+      return MINIMUM_DATASIZE;
+    }
+
+    bool setMinimumDataSize(unsigned int size){
+      if(size <= 0) return false;
+
+      MINIMUM_DATASIZE = size;
+
+      return true;
+    }
+
     unsigned long long getAfterEffectsDelayMS() const{
       return AFTER_EFFECT_DELAY_MS;
     }
@@ -278,6 +290,8 @@ namespace whiteice
     std::atomic<bool> learningMode, sleepMode;
 
     std::atomic<unsigned int> SAMPLESIZE = 4000;
+
+    std::atomic<unsigned int> MINIMUM_DATASIZE = 500;
     
     T epsilon;
     mutable std::mutex epsilon_mutex;
