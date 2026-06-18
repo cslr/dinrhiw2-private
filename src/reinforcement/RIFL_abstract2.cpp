@@ -22,12 +22,16 @@ namespace whiteice
   RIFL_abstract2<T>::RIFL_abstract2(unsigned int numActions_,
 				    unsigned int numStates_,
 				    const bool alsoNegativeQValues,
-				    const int sequentialRandomMoves_) :
+				    const int sequentialRandomMoves_,
+				    const unsigned int stateHistoryLen) :
     numActions(numActions_),
-    numStates(numStates_)
+    numStates(numStates_*stateHistoryLen),
+    STATE_HISTORY_LEN(stateHistoryLen)
   {
     // initializes parameters
     {
+      assert(STATE_HISTORY_LEN >= 1);
+      
       // zero = learn pure Q(state,action) = x function which action=policy(state) is optimized
       gamma = T(0.95); // how much weight future values Q() have: was 0.95 WAS: 0.80
       SAMPLESIZE = 4000; // dataset size used to learning
@@ -194,8 +198,11 @@ namespace whiteice
 				    const bool alsoNegativeQValues,
 				    std::vector<unsigned int> Q_arch,
 				    std::vector<unsigned int> policy_arch,
-				    const int sequentialRandomMoves_) :
-    numActions(numActions_), numStates(numStates_)
+				    const int sequentialRandomMoves_,
+				    const unsigned int stateHistoryLen) :
+    numActions(numActions_),
+    numStates(numStates_*stateHistoryLen),
+    STATE_HISTORY_LEN(stateHistoryLen)
   {
     // initializes parameters
     {
@@ -1726,7 +1733,7 @@ namespace whiteice
     FILE* episodesFile = fopen("episodes-result.txt", "w");    
 
     bool endFlag = false; // did the simulation end during this time step?
-    
+
     whiteice::dataset<T> data;
     whiteice::CreateRIFL2dataset<T>* dataset_thread = nullptr;
     whiteice::CreateRIFL2dataset<T>* dataset_q2_thread = nullptr;
@@ -1768,8 +1775,20 @@ namespace whiteice
     latestError = 0.0f;
     
     bool firstTime = true;
-    whiteice::math::vertex<T> state;
+    whiteice::math::vertex<T> state(numStates);
     whiteice::math::vertex<T> action(numActions);
+
+    state.zero();
+
+    std::vector< whiteice::math::vertex<T> > state_history;
+
+    state_history.resize(STATE_HISTORY_LEN);
+
+    for(unsigned int i=0;i<STATE_HISTORY_LEN;i++){
+      state_history[i].resize(state.size()/STATE_HISTORY_LEN);
+      state_history[i].zero();
+    }
+
 
     {
       std::lock_guard<std::mutex> lockr(reinforcements_mutex);
@@ -1871,12 +1890,26 @@ namespace whiteice
       // 1. gets current state
       if(performActionFailed == 0){
 	auto oldstate = state;
+
+	whiteice::math::vertex<T> s;
       
-	if(getState(state) == false){
+	if(getState(s) == false){
 	  state = oldstate;
 	  if(firstTime) continue;
 
 	  whiteice::logging.error("ERROR: RIFL_abstact2::getState() FAILED.");
+	}
+	else{ // got new state
+	  state_history.push_back(s);
+	  state_history.erase(state_history.begin()); // state_history.pop_front();
+
+	  unsigned int index = 0;
+
+	  for(unsigned int j=0;j<state_history.size();j++){
+	    for(unsigned int i=0;i<state_history[j].size();i++,index++){
+	      state[index] = state_history[state_history.size()-1-j][i];
+	    }
+	  }
 	}
 
 	firstTime = false;
@@ -1971,11 +2004,14 @@ namespace whiteice
 	  std::lock_guard<std::mutex> lockh(has_model_mutex);
 	  
 	  if(hasModel[0] == 0 || hasModel[1] == 0 || hasModel[2] == 0){
-	    auto noise = u;
-		    
-	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
+	    //auto noise = u;		    
+	    //rng.normal(noise); // Normal E[n]=0 StDev[n]=1
+	    //u += T(1.00f)*noise; // was 0.1, 0.3*, 0.6
 
-	    u += T(1.00f)*noise; // was 0.1, 0.3*, 0.6
+	    rng.uniform(u); // [0,1] valued actions!
+	    
+	    for(unsigned int i=0;i<u.size();i++)
+	      u[i] = T(2.0f)*u[i] - T(1.0f);
 
 	    for(unsigned int i=0;i<u.size();i++){ // action is [-1,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
@@ -2008,14 +2044,14 @@ namespace whiteice
       //std::cout << "action = " << action << " ";
       //std::cout << "random = " << random << std::endl;
 
-      whiteice::math::vertex<T> newstate;
+      whiteice::math::vertex<T> newstate, ns;
       T reinforcement = T(0.0);
       T distance = T(0.0f);
 
       // 3. perform action and get newstate and reinforcement
       {
 	
-	if(performAction(action, newstate, reinforcement, distance, endFlag) == false){
+	if(performAction(action, ns, reinforcement, distance, endFlag) == false){
 	  //std::cout << "ERROR: RIFL_abstract2::performAction() FAILED." << std::endl;
 	  whiteice::logging.error("ERROR: RIFL_abstact::performAction() FAILED.");
 	  performActionFailed++;
@@ -2023,6 +2059,24 @@ namespace whiteice
 	}
 	else{
 	  performActionFailed = 0;
+
+	  // construct newstate from ns and history_state
+
+	  auto history = state_history;
+
+	  history.push_back(ns);
+	  history.erase(history.begin()); //  history.pop_front();
+
+	  unsigned int index = 0;
+
+	  newstate.resize(numStates);
+
+	  for(unsigned int j=0;j<history.size();j++){
+	    for(unsigned int i=0;i<history[j].size();i++,index++){
+	      newstate[index] = history[history.size()-1-j][i];
+	    }
+	  }
+	  
 
 	  // did actual random action so reduce random_counter by one
 	  random_counter--;

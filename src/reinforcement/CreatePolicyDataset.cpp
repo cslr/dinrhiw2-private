@@ -170,7 +170,7 @@ namespace whiteice
       T total_weight = T(0.0f);
 
       for(unsigned int i=0;i<database.size();i++){
-	total_weight += whiteice::math::abs(database[i].reinforcement);
+	total_weight += whiteice::math::pow(whiteice::math::abs(database[i].reinforcement), T(2.0f));
       }
       
       // assert(total_weight > T(0.0f));
@@ -181,13 +181,13 @@ namespace whiteice
       T sump = T(0.0f);
 
       if(rifl.use_smart_weights)
-	mixing_factor = T(1.0f);
+	mixing_factor = T(0.0f);
       
       for(unsigned int i=0;i<database.size();i++){
 	std::pair<T, unsigned int> p;
 
 	// sump += episodes_weights[i]/total_weight;
-	sump += (T(1.0f) - mixing_factor)*(whiteice::math::abs(database[i].reinforcement)/total_weight) +
+	sump += (T(1.0f) - mixing_factor)*whiteice::math::pow(whiteice::math::abs(database[i].reinforcement), T(2.0f))/total_weight +
 	  mixing_factor*(T(1.0f)/T(database.size()));
 
 	p.first = sump;

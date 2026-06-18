@@ -70,13 +70,15 @@ namespace whiteice
     // parameters are dimensions of vectors dimActions and dimStates: R^d
     RIFL_abstract2(unsigned int numActions, unsigned int numStates,
 		   const bool alsoNegativeQValues = false,
-		   const int sequentialRandomMoves = 1);
+		   const int sequentialRandomMoves = 1,
+		   const unsigned int stateHistoryLen = 1);
     
     RIFL_abstract2(unsigned int numActions, unsigned int numStates,
 		   const bool alsoNegativeQValues, 
 		   std::vector<unsigned int> Q_arch,
 		   std::vector<unsigned int> policy_arch,
-		   const int sequentialRandomMoves = 1);
+		   const int sequentialRandomMoves = 1,
+		   const unsigned int stateHistoryLen = 1);
 
     ~RIFL_abstract2() ;
 
@@ -158,8 +160,7 @@ namespace whiteice
       return use_smart_weights;
     }
 
-   
-     bool setQTau(const T tau){
+    bool setQTau(const T tau){
       if(tau <= T(0.0) || tau >= T(1.0)) return false;
       this->tau = tau;
       return true;
@@ -288,6 +289,8 @@ namespace whiteice
     
     std::atomic<float> latestError;
     std::atomic<bool> learningMode, sleepMode;
+
+    const unsigned int STATE_HISTORY_LEN = 1;
 
     std::atomic<unsigned int> SAMPLESIZE = 4000;
 

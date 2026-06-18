@@ -283,7 +283,7 @@ namespace whiteice
 	T esum = T(0.0f);
 
 	for(const auto& ei : episodes[e]){
-	  esum += whiteice::math::abs(ei.reinforcement);
+	  esum += whiteice::math::pow(whiteice::math::abs(ei.reinforcement), T(2.0f));
 	}
 
 	if(episodes[e].size())
@@ -313,7 +313,7 @@ namespace whiteice
 	T sump = T(0.0f);
 
 	if(rifl.use_smart_weights)
-	  mixing_factor = T(1.0f);
+	  mixing_factor = T(0.0f);
 	
 	for(unsigned int i=0;i<episodes_weights.size();i++){
 	  std::pair<T, unsigned int> p;

@@ -2041,25 +2041,20 @@ namespace whiteice
 	  if(hasModel[0] == 0 || hasModel[1] == 0 || hasModel[2] == 0){
 	    recurrent.zero();
 	    // recurrent_new.zero();
+	    
+	    //auto noise = u;	    
+	    //rng.normal(noise); // Normal E[n]=0 StDev[n]=1	    
+	    //u += T(1.00f)*noise; // was 0.1, 0.3*, 0.6
 
-	    
-	    auto noise = u;
-	    
-	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
-	    
-	    u += T(1.00f)*noise; // was 0.1, 0.3*, 0.6
+	    rng.uniform(u); // [0,1] valued actions!
+
+	    for(unsigned int i=0;i<u.size();i++)
+	      u[i] = T(2.0f)*u[i] - T(1.0f);
 	    
 	    for(unsigned int i=0;i<u.size();i++){ // action is [0,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
 	      else if(u[i] > T(1.0f)) u[i] = T(1.0f);
 	    }
-	    
-#if 0
-	    rng.uniform(u); // [0,1] valued actions!
-
-	    for(unsigned int i=0;i<u.size();i++)
-	      u[i] = T(2.0f)*u[i] - T(1.0f); // [-1,+1]
-#endif
 	    
 	    random = true;
 	  }
