@@ -24,8 +24,6 @@ namespace whiteice
     best_q_value = T(-INFINITY);
     iterations = 0;
 
-    Q = NULL;
-    Q_preprocess = NULL;
     policy = NULL;
     heuristics = false;
     dropout = false;
@@ -62,17 +60,26 @@ namespace whiteice
     best_q_value = grad.best_q_value;
     iterations = grad.iterations;
 
-    if(grad.Q)
-      this->Q = new whiteice::nnetwork<T>(*grad.Q);
-    else
-      this->Q = NULL;
+    if(grad.Q.size()){
+      this->Q.resize(grad.Q.size());
+      for(unsigned int i=0;i<Q.size();i++){
+	this->Q[i] = new whiteice::nnetwork<T>(*(grad.Q[i]));
+      }
+    }
+    else{
+      this->Q.resize(0);
+    }
+
+    if(grad.Q_preprocess.size()){
+      this->Q_preprocess.resize(grad.Q_preprocess.size());
+      for(unsigned int i=0;i<Q_preprocess.size();i++)
+	this->Q_preprocess[i] = new whiteice::dataset<T>(*(grad.Q_preprocess[i]));
+    }
+    else{
+      this->Q_preprocess.resize(0);
+    }
 
     data = grad.data;
-
-    if(grad.Q_preprocess)
-      this->Q_preprocess = new whiteice::dataset<T>(*grad.Q_preprocess);
-    else
-      this->Q_preprocess = NULL;
 
     if(grad.policy)
       this->policy = new whiteice::nnetwork<T>(*grad.policy);
@@ -123,12 +130,18 @@ namespace whiteice
     {
       std::lock_guard<std::mutex> lock(solution_lock);
       
-      if(Q) delete Q;
-      if(Q_preprocess) delete Q_preprocess;
+      if(Q.size())
+	for(unsigned int i=0;i<Q.size();i++)
+	  if(Q[i]) delete Q[i];
+      
+      if(Q_preprocess.size())
+	for(unsigned int i=0;i<Q_preprocess.size();i++)
+	  if(Q_preprocess[i]) delete Q_preprocess[i];
+      
       if(policy) delete policy;
       
-      Q = NULL;
-      Q_preprocess = NULL;
+      Q.resize(0);
+      Q_preprocess.resize(0);
       policy = NULL;
     }
 
@@ -146,8 +159,8 @@ namespace whiteice
    */
   template <typename T>
   bool PolicyGradAscent<T>::startOptimize(const whiteice::dataset<T>* data_,
-					  const whiteice::nnetwork<T>& Q_,
-					  const whiteice::dataset<T>& Q_preprocess_,
+					  const std::vector< whiteice::nnetwork<T> >& Q_,
+					  const std::vector< whiteice::dataset<T> >& Q_preprocess_,
 					  // optimized policy
 					  const whiteice::nnetwork<T>& policy_, 
 					  unsigned int NTHREADS,
@@ -176,12 +189,12 @@ namespace whiteice
     }
     
     if(data_->dimension(0) != policy_.input_size() ||
-       data_->dimension(0) + policy_.output_size() != Q_.input_size())
+       data_->dimension(0) + policy_.output_size() != Q_[0].input_size())
     {
       char buf[256];
       snprintf(buf, 256, "PolicyGradAscent:startOptimize(): dimensions error: %d %d %d %d",
 	       data_->dimension(0), policy_.input_size(), policy_.output_size(),
-	       Q_.input_size());
+	       Q_[0].input_size());
       
       logging.error(buf);
       
@@ -221,15 +234,19 @@ namespace whiteice
 
     // FIXME can run out of memory and throw exception!
     {
-      auto newQ = new nnetwork<T>(Q_); // copies network (settings)      
-      auto newpreprocess = new dataset<T>(Q_preprocess_);
+      for(unsigned int i=0;i<Q.size();i++)
+	if(Q[i]) delete Q[i];
       
-      if(this->Q) delete this->Q;
-      if(this->Q_preprocess) delete this->Q_preprocess;
-      
-      this->Q = newQ;
-      this->Q_preprocess = newpreprocess;
+      for(unsigned int i=0;i<Q_preprocess.size();i++)
+	if(Q_preprocess[i]) delete Q_preprocess[i];
 
+      Q.resize(Q_.size());
+      Q_preprocess.resize(Q_preprocess_.size());
+
+      for(unsigned int i=0;i<Q.size();i++){
+	Q[i] = new nnetwork<T>(Q_[i]);
+	Q_preprocess[i] = new dataset<T>(Q_preprocess_[i]);
+      }
 
       auto newpolicy = new nnetwork<T>(policy_);
       
@@ -249,7 +266,7 @@ namespace whiteice
       
       
       whiteice::logging.info("PolicyGradAscent: input Q weights diagnostics");
-      this->Q->diagnosticsInfo();
+      this->Q[0]->diagnosticsInfo();
 
       whiteice::logging.info("PolicyGradAscent: input policy weights diagnostics");
       this->policy->diagnosticsInfo();
@@ -439,12 +456,18 @@ namespace whiteice
     
     
     if(policy) delete policy;
-    if(Q) delete Q;
-    if(Q_preprocess) delete Q_preprocess;
+
+    for(unsigned int i=0;i<Q.size();i++)
+      if(Q[i]) delete Q[i];
+
+    for(unsigned int i=0;i<Q_preprocess.size();i++){
+      if(Q_preprocess[i]) delete Q_preprocess[i];
+    }
+
 
     policy = nullptr;
-    Q = nullptr;
-    Q_preprocess = nullptr;
+    Q.resize(0);
+    Q_preprocess.resize(0);
 
     first_time = true;
     iterations = 0;
@@ -460,10 +483,11 @@ namespace whiteice
   //////////////////////////////////////////////////////////////////////
   
   // calculates mean Q-value of the policy in dtest dataset (states are inputs)
+  // function is J = mean(Qi) - beta*stdev(Qi)
   template <typename T>
   T PolicyGradAscent<T>::getValue(const whiteice::nnetwork<T>& policy,
-				  const whiteice::nnetwork<T>& Q,
-				  const whiteice::dataset<T>& Q_preprocess,
+				  const std::vector< whiteice::nnetwork<T>* >& Q,
+				  const std::vector< whiteice::dataset<T>* >& Q_preprocess,
 				  const whiteice::dataset<T>& dtest) const
   {
     T value = T(0.0);
@@ -472,7 +496,7 @@ namespace whiteice
 
     if(0){
       logging.info("getValue() Q:");
-      Q.diagnosticsInfo();
+      Q[0]->diagnosticsInfo();
     }
 
 #if 0
@@ -513,14 +537,30 @@ namespace whiteice
 	if(in.write_subvertex(state, 0) == false) assert(0);
 	if(in.write_subvertex(action, state.size()) == false) assert(0);
 
-	if(Q_preprocess.preprocess(0, in) == false) assert(0);
+	T mean = T(0.0f);
+	T var = T(0.0f);
 
-	if(Q.calculate(in, q) == false) assert(0);
-	// if(Q.calculate_logged(in, q) == false) assert(0);
+	for(unsigned int k=0;k<Q.size();k++){
 
-	if(Q_preprocess.invpreprocess(1, q) == false) assert(0);
-	
-	vsum += q[0];
+	  if(Q_preprocess[k]->preprocess(0, in) == false) assert(0);
+	  
+	  if(Q[k]->calculate(in, q) == false) assert(0);
+	  // if(Q.calculate_logged(in, q) == false) assert(0);
+	  
+	  if(Q_preprocess[k]->invpreprocess(1, q) == false) assert(0);
+
+	  mean += q[0];
+	  var += q[0]*q[0];
+
+	  vsum += q[0]/T(Q.size());
+	}
+
+	mean /= T(Q.size());
+	var /= T(Q.size());
+
+	const T stdev = whiteice::math::sqrt(whiteice::math::abs(var - mean*mean));
+
+	vsum -= stdev;
       }
 	
       vsum /= T((double)dtest.size(0));
@@ -691,7 +731,7 @@ namespace whiteice
 #endif
 
       {
-	value = getValue(*policy, *Q, *Q_preprocess, dtest);
+	value = getValue(*policy, Q, Q_preprocess, dtest);
 
 	solution_lock.lock();
 	
@@ -799,31 +839,92 @@ namespace whiteice
 		
 		dtrain.invpreprocess(0, state); // original state for Q network
 		// dtrain.invpreprocess(1, action);
+
+		std::vector< whiteice::math::matrix<T> > gradQs;
+		std::vector< whiteice::math::vertex<T> > Qv;
+		whiteice::math::vertex<T> mean, x2;
+
+		mean.resize(1);
+		x2.resize(1);
 		
+		mean.zero();
+		x2.zero();
+		
+		for(unsigned int k=0;k<Q.size();k++)
 		{
 		  in.write_subvertex(state, 0);
 		  in.write_subvertex(action, state.size());
 		  
-		  this->Q_preprocess->preprocess(0, in);
+		  this->Q_preprocess[k]->preprocess(0, in);
 		  
-		  this->Q->calculate(in, Qvalue);
+		  this->Q[k]->calculate(in, Qvalue);
 		  
-		  this->Q->gradient_value(in, full_gradQ);
+		  this->Q[k]->gradient_value(in, full_gradQ);
 		  
-		  this->Q_preprocess->preprocess_grad(0, Qpreprocess_grad_full);
-		  this->Q_preprocess->invpreprocess_grad(1, Qpostprocess_grad);
+		  this->Q_preprocess[k]->preprocess_grad(0, Qpreprocess_grad_full);
+		  this->Q_preprocess[k]->invpreprocess_grad(1, Qpostprocess_grad);
 		  
 		  Qpreprocess_grad_full.submatrix(Qpreprocess_grad,
 						  state.size(), 0,
 						  action.size(),
 						  Qpreprocess_grad_full.ysize());
-		  
-		  
-		  gradQ = Qpostprocess_grad * full_gradQ * Qpreprocess_grad;
-		  
+
+		  const auto gQ = Qpostprocess_grad * full_gradQ * Qpreprocess_grad;
+
+		  if(k)
+		    gradQ += gQ;
+		  else
+		    gradQ = gQ;
+
+		  Qv.push_back(Qvalue);
+		  gradQs.push_back(gQ);
+
+		  mean += Qvalue;
+		  x2[0] += Qvalue[0]*Qvalue[0];
 		}
+
+		mean /= T(Q.size());
+		x2 /= T(Q.size());
+
+		for(unsigned int i=0;i<mean.size();i++){
+		  x2[i] = whiteice::math::sqrt(whiteice::math::abs(x2[i] - mean[i]*mean[i]));
+		}
+
+		gradQ /= T(Q.size());
 		
 		grad = gradQ * gradP;
+
+		// calculate derivate of stdev(Q):
+		// now we have gradients in gradQs, Qvalues in Qv and mean and standard deviation of Q
+
+		whiteice::math::vertex<T> stdev_grad;
+		whiteice::math::matrix<T> mean_grad, grad2;
+		
+		mean_grad = gradQs[0]; 
+
+		for(unsigned int j=1;j<Q.size();j++){
+		  mean_grad += gradQs[j];
+		}
+
+		mean_grad /= T(Q.size());
+
+		for(unsigned int k=0;k<Q.size();k++){
+
+		  if(k == 0)
+		    grad2 = (Qv[k] - mean)*(gradQs[k] - mean_grad);
+		  else
+		    grad2 += (Qv[k] - mean)*(gradQs[k] - mean_grad);
+		}
+
+		grad2 /= T(Q.size());
+		stdev_grad = grad2 * gradP;
+
+		const T epsilon = T(1e-6f);
+
+		stdev_grad /= (x2[0] + epsilon);
+
+		grad -= beta*stdev_grad;
+
 		
 		//sgrad += ninv*grad;
 		sgrad += grad;
@@ -853,31 +954,95 @@ namespace whiteice
 		
 		dtrain.invpreprocess(0, state); // original state for Q network
 		// dtrain.invpreprocess(1, action);
+
+		std::vector< whiteice::math::matrix<T> > gradQs;
+		std::vector< whiteice::math::vertex<T> > Qv;
+		whiteice::math::vertex<T> mean, x2;
+
+		mean.resize(1);
+		x2.resize(1);
 		
+		mean.zero();
+		x2.zero();
+
+		
+		for(unsigned int k=0;k<Q.size();k++)
 		{
 		  in.write_subvertex(state, 0);
 		  in.write_subvertex(action, state.size());
 		  
-		  this->Q_preprocess->preprocess(0, in);
+		  this->Q_preprocess[k]->preprocess(0, in);
 		  
-		  this->Q->calculate(in, Qvalue);
+		  this->Q[k]->calculate(in, Qvalue);
 		  
-		  this->Q->gradient_value(in, full_gradQ);
+		  this->Q[k]->gradient_value(in, full_gradQ);
 
-		  this->Q_preprocess->preprocess_grad(0, Qpreprocess_grad_full);
-		  this->Q_preprocess->invpreprocess_grad(1, Qpostprocess_grad);
+		  this->Q_preprocess[k]->preprocess_grad(0, Qpreprocess_grad_full);
+		  this->Q_preprocess[k]->invpreprocess_grad(1, Qpostprocess_grad);
 		  
 		  Qpreprocess_grad_full.submatrix(Qpreprocess_grad,
 						  state.size(), 0,
 						  action.size(),
 						  Qpreprocess_grad_full.ysize());
+
+		  const auto gQ = Qpostprocess_grad * full_gradQ * Qpreprocess_grad;
 		  
-		  
-		  gradQ = Qpostprocess_grad * full_gradQ * Qpreprocess_grad;
-		  
+
+		  if(k)
+		    gradQ += gQ;
+		  else
+		    gradQ = gQ;
+
+		  Qv.push_back(Qvalue);
+		  gradQs.push_back(gQ);
+
+		  mean += Qvalue;
+		  x2[0] += Qvalue[0]*Qvalue[0];
 		}
+
+		mean /= T(Q.size());
+		x2 /= T(Q.size());
+
+		for(unsigned int i=0;i<mean.size();i++){
+		  x2[i] = whiteice::math::sqrt(whiteice::math::abs(x2[i] - mean[i]*mean[i]));
+		}
+
+		gradQ /= T(Q.size());
 		
 		grad = gradQ * gradP;
+
+		
+		// calculate derivate of stdev(Q):
+		// now we have gradients in gradQs, Qvalues in Qv and mean and standard deviation of Q
+
+		whiteice::math::vertex<T> stdev_grad;
+		whiteice::math::matrix<T> mean_grad, grad2;
+		
+		mean_grad = gradQs[0]; 
+
+		for(unsigned int j=1;j<Q.size();j++){
+		  mean_grad += gradQs[j];
+		}
+
+		mean_grad /= T(Q.size());
+
+		for(unsigned int k=0;k<Q.size();k++){
+
+		  if(k == 0)
+		    grad2 = (Qv[k] - mean)*(gradQs[k] - mean_grad);
+		  else
+		    grad2 += (Qv[k] - mean)*(gradQs[k] - mean_grad);
+		}
+
+		grad2 /= T(Q.size());
+		stdev_grad = grad2 * gradP;
+
+		const T epsilon = T(1e-6f);
+		
+		stdev_grad /= (x2[0] + epsilon);
+		
+		grad -= beta*stdev_grad;
+		
 		
 		//sgrad += ninv*grad;
 		sgrad += grad;
@@ -966,7 +1131,7 @@ namespace whiteice
 	      normalize_weights_to_unity(*policy);
 	    }
 
-	    value = getValue(*policy, *Q, *Q_preprocess, dtest);
+	    value = getValue(*policy, Q, Q_preprocess, dtest);
 	  }
 
 	  

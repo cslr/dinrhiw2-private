@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 
   srand(time(0));
 
-  whiteice::logging.setOutputFile("debug.log");
+  //whiteice::logging.setOutputFile("debug.log");
 
 #ifndef WINOS
 #ifndef USE_SDL
@@ -37,9 +37,8 @@ int main(int argc, char** argv)
 #endif
 #endif
 
-#ifndef USE_SDL
+
   whiteice::logging.setOutputFile("cartpole2.log");
-#endif
 
   bool useFlag = false;
   bool loadFlag = false;
@@ -82,6 +81,7 @@ int main(int argc, char** argv)
     while(system.physicsIsRunning()){
       
       if(system.getHasModel() >= 2){
+	
 	// 95% are selected according to model
 	// system.setEpsilon(0.95);
       }
@@ -90,6 +90,11 @@ int main(int argc, char** argv)
       if((counter % 180) == 0){ // saved model file every 3 minutes
 	if(system.save("rifl.dat"))
 	  printf("MODEL FILE SAVED\n");
+      }
+
+      if((counter % 10) == 0){ // every 10 secs
+
+	printf("HAS MODEL: %d\n", system.getHasModel());
       }
       
       counter++;

@@ -16,10 +16,10 @@ namespace whiteice
 {
 
   template <typename T = math::blas_real<float> >
-    class CreateRIFL2dataset
-    {
-    public:
-      
+  class CreateRIFL2dataset
+  {
+  public:
+    
     // calculates reinforcement learning training dataset from database
     // using database_lock
     CreateRIFL2dataset(RIFL_abstract2<T> const & rifl, 
@@ -46,15 +46,14 @@ namespace whiteice
     // (warning: if calculations are running then dataset can change during use)
     const whiteice::dataset<T>& getDataset() const;
 
-    private:
+  private:
 
     whiteice::dataset<T> policy_preprocess;
     whiteice::bayesian_nnetwork<T> lagged_policy;
 
     whiteice::dataset<T> Q_preprocess;
-    whiteice::bayesian_nnetwork<T> lagged_Q;
-    whiteice::bayesian_nnetwork<T> lagged_Q2;
-
+    std::vector< whiteice::bayesian_nnetwork<T> > lagged_Q;
+    
     whiteice::RNG<T> rng;
   
     RIFL_abstract2<T> const & rifl;

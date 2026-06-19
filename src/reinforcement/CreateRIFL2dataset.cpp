@@ -47,7 +47,6 @@ namespace whiteice
 	std::lock_guard<std::mutex> lock(rifl.Q_mutex);
 	
 	this->lagged_Q = rifl.lagged_Q;
-	this->lagged_Q2 = rifl.lagged_Q2;
 	this->Q_preprocess = rifl.Q_preprocess;
       }
     }
@@ -180,7 +179,7 @@ namespace whiteice
 
     {
       logging.info("CreateRIFL2dataset debug, lagged_Q network diagnostics");
-      this->lagged_Q.diagnosticsInfo();
+      this->lagged_Q[0].diagnosticsInfo();
       
       logging.info("CreateRIFL2dataset debug, lagged_policy network diagnostics");
       this->lagged_policy.diagnosticsInfo();
@@ -397,12 +396,15 @@ namespace whiteice
 	  out.zero();
 	  
 	  // calculates updated utility value
-	  whiteice::math::vertex<T> y(1);
-	  y.zero();
 
-	  whiteice::math::vertex<T> y2(1);
-	  y2.zero();
-	  
+	  std::vector< whiteice::math::vertex<T> > y;
+	  y.resize(lagged_Q.size());
+
+	  for(unsigned int i=0;i<lagged_Q.size();i++){
+	    y[i].resize(1);
+	    y[i].zero();
+	  }
+
 	  T maxvalue = T(-INFINITY);
 	  
 	  {
@@ -471,29 +473,26 @@ namespace whiteice
 	      
 	      logging.info(line.c_str());
 	    }
-	    
-	    if(this->lagged_Q.calculate(tmp, y, 1, 0) == false)
-	      assert(0);
 
-	    if(this->lagged_Q2.calculate(tmp, y2, 1, 0) == false)
-	      assert(0);
-	    
-	    this->Q_preprocess.invpreprocess(1, y);
-	    this->Q_preprocess.invpreprocess(1, y2);
-	    
-	    if(maxvalue < abs(y[0]))
-	      maxvalue = abs(y[0]);
+	    for(unsigned int i=0;i<lagged_Q.size();i++){
+	      if(this->lagged_Q[i].calculate(tmp, y[i], 1, 0) == false)
+		assert(0);
 
-	    if(maxvalue < abs(y2[0]))
-	      maxvalue = abs(y2[0]);
+	      this->Q_preprocess.invpreprocess(1, y[i]);
+	      
+	      if(maxvalue < abs(y[i][0]))
+		maxvalue = abs(y[i][0]);
+	    }
+	    
 	    
 	    if(epoch >= 2 && datum.lastStep == false){
-	      if(y[0] < y2[0]){
-		out[0] = rifl.gamma*y[0] + datum.reinforcement;
+	      auto qmin = y[0][0];
+	      
+	      for(unsigned int i=0;i<y.size();i++){
+		if(y[i][0] < qmin) qmin = y[i][0];
 	      }
-	      else{
-		out[0] = rifl.gamma*y2[0] + datum.reinforcement;
-	      }
+	      
+	      out[0] = rifl.gamma*qmin + datum.reinforcement;
 	    }
 	    else{ // the first iteration of reinforcement learning do not use Q or if this is last step
 	      out[0] = datum.reinforcement;
@@ -605,11 +604,14 @@ namespace whiteice
 	out.zero();
 	
 	// calculates updated utility value
-	whiteice::math::vertex<T> y(1);
-	y.zero();
-
-	whiteice::math::vertex<T> y2(1);
-	y2.zero();
+	
+	std::vector< whiteice::math::vertex<T> > y;
+	y.resize(lagged_Q.size());
+	
+	for(unsigned int i=0;i<lagged_Q.size();i++){
+	  y[i].resize(1);
+	  y[i].zero();
+	}
 	
 	T maxvalue = T(-INFINITY);
 	
@@ -679,39 +681,38 @@ namespace whiteice
 
 	  {
 	    char buf[80];
-	    snprintf(buf, 80, "CreateRIFL2dataset: y.before=%f", y[0].real());
+	    snprintf(buf, 80, "CreateRIFL2dataset: y.before=%f", y[0][0].real());
 	    logging.info(buf);
 	  }
-	  
-	  if(this->lagged_Q.calculate(tmp, y, 1, 0) == false)
-	    assert(0);
 
-	  if(this->lagged_Q2.calculate(tmp, y2, 1, 0) == false)
-	    assert(0);
+	  for(unsigned int i=0;i<lagged_Q.size();i++){
+	    
+	    if(this->lagged_Q[i].calculate(tmp, y[i], 1, 0) == false)
+	      assert(0);
+
+	    this->Q_preprocess.invpreprocess(1, y[i]);
+	    
+	    if(maxvalue < abs(y[i][0]))
+	      maxvalue = abs(y[i][0]);
+	  }
 	  
 
 	  {
 	    char buf[80];
-	    snprintf(buf, 80, "CreateRIFL2dataset: y.after=%f", y[0].real());
+	    snprintf(buf, 80, "CreateRIFL2dataset: y.after=%f", y[0][0].real());
 	    logging.info(buf);
 	  }
-	  
-	  this->Q_preprocess.invpreprocess(1, y);
-	  this->Q_preprocess.invpreprocess(1, y2);
-	  
-	  if(maxvalue < abs(y[0]))
-	    maxvalue = abs(y[0]);
 
-	  if(maxvalue < abs(y2[0]))
-	    maxvalue = abs(y2[0]);
 	  
 	  if(epoch >= 2 && datum.lastStep == false){
-	    if(y[0] < y2[0]){
-	      out[0] = rifl.gamma*y[0] + datum.reinforcement;
+	    auto qmin = y[0][0];
+
+	    for(unsigned int i=0;i<y.size();i++){
+	      if(y[i][0] < qmin) qmin = y[i][0];
 	    }
-	    else{
-	      out[0] = rifl.gamma*y2[0] + datum.reinforcement;
-	    }
+	    
+	    out[0] = rifl.gamma*qmin + datum.reinforcement;
+
 	  }
 	  else{ // the first iteration of reinforcement learning do not use Q or if this is last step
 	    out[0] = datum.reinforcement;

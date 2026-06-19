@@ -48,8 +48,8 @@ namespace whiteice
      * dropout - whether to use dropout heuristics when training
      */
     bool startOptimize(const whiteice::dataset<T>* data,
-		       const whiteice::nnetwork<T>& Q,
-		       const whiteice::dataset<T>& Q_preprocess,
+		       const std::vector< whiteice::nnetwork<T> >& Q,
+		       const std::vector< whiteice::dataset<T> >& Q_preprocess,
 		       const whiteice::nnetwork<T>& policy, // optimized policy
 		       unsigned int NTHREADS,
 		       unsigned int MAXITERS = 10000,
@@ -107,14 +107,16 @@ namespace whiteice
   private:
     // calculates mean Q-value of the policy in dtest dataset (states are inputs)
     T getValue(const whiteice::nnetwork<T>& policy,
-	       const whiteice::nnetwork<T>& Q,
-	       const whiteice::dataset<T>& Q_preprocess,
+	       const std::vector< whiteice::nnetwork<T>* >& Q,
+	       const std::vector< whiteice::dataset<T>* >& Q_preprocess,
 	       const whiteice::dataset<T>& dtest) const;
 
 
-    const whiteice::nnetwork<T>* Q;
-    const whiteice::dataset<T>* Q_preprocess;
+    std::vector< whiteice::nnetwork<T>*> Q;
+    std::vector< whiteice::dataset<T>*> Q_preprocess;
     whiteice::dataset<T> data; // copy of own dataset
+
+    const T beta = T(0.50f); // optimized function is now: J = mean(Qi) - beta*stdev(Qi)
     
     whiteice::nnetwork<T>* policy; // network architecture and settings
 

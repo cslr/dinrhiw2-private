@@ -51,11 +51,11 @@ namespace whiteice
 
       {
 	std::lock_guard<std::mutex> lockh(has_model_mutex);
-	
-	hasModel.resize(3);
-	hasModel[0] = 0; // Q-network
-	hasModel[1] = 0; // Q2-network
-	hasModel[2] = 0; // policy-network
+
+	hasModel.resize(NUM_Q_NNETWORKS + 1);
+
+	for(unsigned int i=0;i<(NUM_Q_NNETWORKS + 1);i++)
+	  hasModel[i] = 0; // Q-network... + policy-network
       }
 	
       latestError = 0.0f;
@@ -110,19 +110,24 @@ namespace whiteice
 	  //  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // ([0,1])
 	  //}
 	  
-	  nn.randomize(2, T(0.5)); // was 1.0
+	  // nn.randomize(2, T(0.5)); // was 1.0
 	  nn.setResidual(true);
 	  nn.setBatchNorm(false); // WAS: Q didn't have batch norm (NNGradDescent iteratively support batchnorm)
-	  
-	  Q.importNetwork(nn);
-	  lagged_Q.importNetwork(nn);
 
-	  nn.randomize(2, T(0.5)); // was 1.0
-	  Q2.importNetwork(nn);
-	  lagged_Q2.importNetwork(nn);
+	  Q.resize(NUM_Q_NNETWORKS);
+	  lagged_Q.resize(NUM_Q_NNETWORKS);
+
+	  for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++){
+	    nn.randomize(2, T(0.5)); // was 1.0
+	    Q[i].importNetwork(nn);
+	    lagged_Q[i].importNetwork(nn);
+	  }
 
 	  whiteice::logging.info("RIFL_abstract2: ctor Q diagnostics");
-	  lagged_Q.diagnosticsInfo();
+	  for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++){
+	    Q[i].diagnosticsInfo();
+	    lagged_Q[i].diagnosticsInfo();
+	  }
 
 	  Q_preprocess.createCluster("input-state", numStates + numActions);
 	  Q_preprocess.createCluster("output-state", 1); // q-value
@@ -171,7 +176,7 @@ namespace whiteice
 	  
 	  nn.randomize(2, T(0.9)); // was 1.0
 	  nn.setResidual(true);
-	  nn.setBatchNorm(true);
+	  nn.setBatchNorm(false); // was: true
 	  
 	  policy.importNetwork(nn);
 	  lagged_policy.importNetwork(nn);
@@ -226,10 +231,11 @@ namespace whiteice
       {
 	std::lock_guard<std::mutex> lockh(has_model_mutex);
 	
-	hasModel.resize(3);
-	hasModel[0] = 0; // Q-network
-	hasModel[1] = 0; // Q2-network
-	hasModel[2] = 0; // policy-network
+	hasModel.resize(NUM_Q_NNETWORKS + 1);
+
+	for(unsigned int i=0;i<(NUM_Q_NNETWORKS + 1);i++)
+	  hasModel[i] = 0; // Q-network... + policy-network
+	
       }
 
       latestError = 0.0f;
@@ -277,20 +283,25 @@ namespace whiteice
 	  //  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // [-1,+1]
 	  //}
 	  
-	  nn.randomize(2, T(0.5)); // was 1.0
+	  // nn.randomize(2, T(0.5)); // was 1.0
 	  nn.setResidual(true);
 	  nn.setBatchNorm(false); // BatchNorm wasn't enabled for Q network
-	  
-	  Q.importNetwork(nn);
-	  lagged_Q.importNetwork(nn);
 
-	  nn.randomize(2, T(0.5)); // was 1.0
-	  Q2.importNetwork(nn);
-	  lagged_Q2.importNetwork(nn);
+	  	  Q.resize(NUM_Q_NNETWORKS);
+	  lagged_Q.resize(NUM_Q_NNETWORKS);
+
+	  for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++){
+	    nn.randomize(2, T(0.5)); // was 1.0
+	    Q[i].importNetwork(nn);
+	    lagged_Q[i].importNetwork(nn);
+	  }
 
 	  whiteice::logging.info("RIFL_abstract2: ctor Q diagnostics");
-	  lagged_Q.diagnosticsInfo();
-
+	  for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++){
+	    Q[i].diagnosticsInfo();
+	    lagged_Q[i].diagnosticsInfo();
+	  }
+	  
 	  Q_preprocess.createCluster("input-state", numStates + numActions);
 	  Q_preprocess.createCluster("output-state", 1); // q-value
 	  
@@ -317,7 +328,7 @@ namespace whiteice
 	  
 	  nn.randomize(2, T(0.9)); // was 1.0
 	  nn.setResidual(true);
-	  nn.setBatchNorm(true);
+	  nn.setBatchNorm(false); // was: true for policy
 	  
 	  policy.importNetwork(nn);
 
@@ -484,10 +495,9 @@ namespace whiteice
   void RIFL_abstract2<T>::setHasModel(unsigned int hasModel) 
   {
     std::lock_guard<std::mutex> lockh(has_model_mutex);
-    
-    this->hasModel[0] = hasModel;
-    this->hasModel[1] = hasModel;
-    this->hasModel[2] = hasModel;
+
+    for(unsigned int i=0;i<(NUM_Q_NNETWORKS+1);i++)
+      this->hasModel[i] = hasModel;
   }
 
   template <typename T>
@@ -497,8 +507,8 @@ namespace whiteice
 
     unsigned int min = hasModel[0];
 
-    if(min > hasModel[1]) min = hasModel[1];
-    if(min > hasModel[2]) min = hasModel[2];
+    for(unsigned int i=1;i<(NUM_Q_NNETWORKS+1);i++)
+      if(min > hasModel[i]) min = hasModel[i];
     
     return min;
   }
@@ -905,34 +915,26 @@ namespace whiteice
     {
       std::lock_guard<std::mutex> lock1(Q_mutex);
       std::lock_guard<std::mutex> lock2(policy_mutex);
-      
-      snprintf(buffer, 256, "%s-q", filename.c_str());    
-      if(Q.save(buffer) == false){
-	logging.error("RIFL_abstract2::save() saving Q failed");
-	return false;
-      }
 
-      snprintf(buffer, 256, "%s-q2", filename.c_str());    
-      if(Q2.save(buffer) == false){
-	logging.error("RIFL_abstract2::save() saving Q2 failed");
-	return false;
+      for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++){
+	snprintf(buffer, 256, "%s-q%d", filename.c_str(), i);
+	
+	if(Q[i].save(buffer) == false){
+	  logging.error("RIFL_abstract2::save() saving Q failed");
+	  return false;
+	}
+
+	snprintf(buffer, 256, "%s-lagged-q%d", filename.c_str(), i);
+	
+	if(lagged_Q[i].save(buffer) == false){
+	  logging.error("RIFL_abstract2::save() saving lagged-q failed");
+	  return false;
+	}
       }
-      
+            
       snprintf(buffer, 256, "%s-policy", filename.c_str());
       if(policy.save(buffer) == false){
 	logging.error("RIFL_abstract2::save() saving policy failed");
-	return false;
-      }
-      
-      snprintf(buffer, 256, "%s-lagged-q", filename.c_str());    
-      if(lagged_Q.save(buffer) == false){
-	logging.error("RIFL_abstract2::save() saving lagged-q failed");
-	return false;
-      }
-
-      snprintf(buffer, 256, "%s-lagged-q2", filename.c_str());    
-      if(lagged_Q2.save(buffer) == false){
-	logging.error("RIFL_abstract2::save() saving lagged-q2 failed");
 	return false;
       }
       
@@ -960,19 +962,17 @@ namespace whiteice
 
       whiteice::dataset<T> db;
 
-      db.createCluster("has_model", 3);
+      db.createCluster("has_model", NUM_Q_NNETWORKS+1);
 
       whiteice::math::vertex<T> v;
-      v.resize(3);
+      v.resize(NUM_Q_NNETWORKS+1);
       v.zero();
 
       std::lock_guard<std::mutex> lockh(has_model_mutex);
+
+      for(unsigned int i=0;i<(NUM_Q_NNETWORKS+1);i++)
+	v[i] = T(hasModel[i]);
       
-      if(hasModel.size() == 3){
-	v[0] = T(hasModel[0]);
-	v[1] = T(hasModel[1]);
-	v[2] = T(hasModel[2]);
-      }
 
       if(db.add(0, v) == false){
 	logging.error("RIFL_abstract2::save(): saving hasModel data failed.");
@@ -1258,10 +1258,9 @@ namespace whiteice
     reinforcements_mutex.lock();
 
     auto Q_load = Q;
-    auto Q2_load = Q2;
-    auto policy_load = policy;
     auto lagged_Q_load = lagged_Q;
-    auto lagged_Q2_load = lagged_Q2;
+    
+    auto policy_load = policy;
     auto lagged_policy_load = lagged_policy;
     auto Q_preprocess_load = Q_preprocess;
     auto policy_preprocess_load = policy_preprocess;
@@ -1278,36 +1277,31 @@ namespace whiteice
     has_model_mutex.unlock();
     policy_mutex.unlock();
     Q_mutex.unlock();
-    
-    
+       
     {
-      snprintf(buffer, 256, "%s-q", filename.c_str());    
-      if(Q_load.load(buffer) == false){
-	logging.error("RIFL_abstract2::load() loading Q failed");
-	return false;
-      }
+      Q_load.resize(NUM_Q_NNETWORKS);
+      lagged_Q_load.resize(NUM_Q_NNETWORKS);
+      
+      for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++){
 
-      snprintf(buffer, 256, "%s-q2", filename.c_str());    
-      if(Q2_load.load(buffer) == false){
-	logging.error("RIFL_abstract2::load() loading Q2 failed");
-	return false;
+	snprintf(buffer, 256, "%s-q%d", filename.c_str(), i);
+	
+	if(Q_load[i].load(buffer) == false){
+	  logging.error("RIFL_abstract2::load() loading Q failed");
+	  return false;
+	}
+	
+	snprintf(buffer, 256, "%s-lagged-q%d", filename.c_str(), i);
+	
+	if(lagged_Q_load[i].load(buffer) == false){
+	  logging.error("RIFL_abstract2::load() loading lagged-q failed");
+	  return false;
+	}
       }
       
       snprintf(buffer, 256, "%s-policy", filename.c_str());
       if(policy_load.load(buffer) == false){
 	logging.error("RIFL_abstract2::load() loading policy failed");
-	return false;
-      }
-      
-      snprintf(buffer, 256, "%s-lagged-q", filename.c_str());    
-      if(lagged_Q_load.load(buffer) == false){
-	logging.error("RIFL_abstract2::load() loading lagged-q failed");
-	return false;
-      }
-
-      snprintf(buffer, 256, "%s-lagged-q2", filename.c_str());    
-      if(lagged_Q2_load.load(buffer) == false){
-	logging.error("RIFL_abstract2::load() loading lagged-q2 failed");
 	return false;
       }
       
@@ -1340,26 +1334,21 @@ namespace whiteice
 	return false;
       }
 
-      if(db.size(0) != 1 && db.dimension(0) != 3){
+      if(db.size(0) != 1 && db.dimension(0) != (NUM_Q_NNETWORKS+1)){
 	logging.error("RIFL_abstract2::load() loading hasModel dataset file failed (2)");
 	return false;
       }
 
       whiteice::math::vertex<T> v;
-      v.resize(3);
+      v.resize(NUM_Q_NNETWORKS+1);
       v.zero();
 
       v = db.access(0,0);
 
-      if(v.size() == 3){
-	hasModel_load.resize(3);
-	hasModel_load[0] = (int)v[0].c[0];
-	hasModel_load[1] = (int)v[1].c[0];
-	hasModel_load[2] = (int)v[2].c[0];
-      }
-      else{
-	logging.error("RIFL_abstract2::load() loading hasModel dataset file failed (3)");
-	return false;
+      hasModel_load.resize(NUM_Q_NNETWORKS+1);
+
+      for(unsigned int i=0;i<(NUM_Q_NNETWORKS+1);i++){
+	hasModel_load[i] = (int)v[i].c[0];
       }
     }
 
@@ -1627,10 +1616,8 @@ namespace whiteice
       std::lock_guard<std::mutex> lockr(reinforcements_mutex);
       
       Q = Q_load;
-      Q2 = Q2_load;
-      policy = policy_load;
       lagged_Q = lagged_Q_load;
-      lagged_Q2 = lagged_Q2_load;
+      policy = policy_load;
       lagged_policy = lagged_policy_load;
       Q_preprocess = Q_preprocess_load;
       policy_preprocess = policy_preprocess_load;
@@ -1717,8 +1704,8 @@ namespace whiteice
     // const unsigned int P_OPTIMIZE_ITERATIONS = 100; // 10, was 1 (dont work), 5, 10, WAS: 1000
 
     // number of iteratios to use per epoch for optimization
-    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 20; // WAS: 1000,20
-    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 20; // WAS: 100,20
+    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 1000,20
+    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 100,20
 
     const unsigned int Q_OPTIMIZE_ITERATIONS = 20; // 3; // WAS: 500
     const unsigned int P_OPTIMIZE_ITERATIONS = 20; // 3; // WAS: 100
@@ -1734,11 +1721,22 @@ namespace whiteice
 
     bool endFlag = false; // did the simulation end during this time step?
 
-    whiteice::dataset<T> data;
-    whiteice::CreateRIFL2dataset<T>* dataset_thread = nullptr;
-    whiteice::CreateRIFL2dataset<T>* dataset_q2_thread = nullptr;
-    whiteice::math::NNGradDescent<T> grad; // Q(state,action) model optimizer
-    whiteice::math::NNGradDescent<T> q2grad; // Q2(state,action) model optimizer
+    std::vector< whiteice::dataset<T> > data;
+    std::vector< whiteice::CreateRIFL2dataset<T>* > dataset_thread;
+    std::vector< whiteice::math::NNGradDescent<T> > grad;
+
+    data.resize(NUM_Q_NNETWORKS);
+    dataset_thread.resize(NUM_Q_NNETWORKS);
+    grad.resize(NUM_Q_NNETWORKS);
+
+    for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++)
+      dataset_thread[i] = NULL;
+    
+    
+    //whiteice::CreateRIFL2dataset<T>* dataset_thread = nullptr;
+    //whiteice::CreateRIFL2dataset<T>* dataset_q2_thread = nullptr;
+    //whiteice::math::NNGradDescent<T> grad; // Q(state,action) model optimizer
+    //whiteice::math::NNGradDescent<T> q2grad; // Q2(state,action) model optimizer
     
     // deep pretraining using stacked RBMs
     // (requires sigmoidal nnetwork and training
@@ -1748,18 +1746,25 @@ namespace whiteice
     whiteice::CreatePolicyDataset<T>* dataset2_thread = nullptr;
     whiteice::PolicyGradAscent<T> grad2(deep);   // policy(state)=action model optimizer
 
-    whiteice::linear_ETA<double> eta, eta2; // estimates how long single epoch of optimization takes
+    std::vector< whiteice::linear_ETA<double> > eta; // estimates how long single epoch of optimization takes
+    whiteice::linear_ETA<double> eta2; // estimates how long single epoch of optimization takes
+
+    eta.resize(NUM_Q_NNETWORKS);
     
     std::vector<unsigned int> epoch;
 
-    epoch.resize(3);
-    epoch[0] = 0;
-    epoch[1] = 0;
-    epoch[2] = 0;
+    epoch.resize(NUM_Q_NNETWORKS + 1);
 
-    int old_grad_iterations = -1;
-    int old_grad_q2_iterations = -1;
-    int old_grad2_iterations = -1;
+    for(unsigned int i=0;i<(NUM_Q_NNETWORKS + 1);i++)
+      epoch[i] = 0;
+
+    std::vector<int> grad_iterations;
+
+    grad_iterations.resize(NUM_Q_NNETWORKS + 1);
+
+    for(unsigned int i=0;i<(NUM_Q_NNETWORKS + 1);i++)
+      grad_iterations[i] = -1;
+    
 
     const unsigned long DATASIZE = 1000000; // was: 100K / 1M history of samples
     // assumes each episode length is 100 so this is ~ equal to 1.000.000 samples
@@ -1817,7 +1822,7 @@ namespace whiteice
       std::lock_guard<std::mutex> lock1(Q_mutex), lock2(policy_mutex);
       
       whiteice::logging.info("RIFL_abstract2: initial Q diagnostics");
-      lagged_Q.diagnosticsInfo();
+      lagged_Q[0].diagnosticsInfo();
       
       whiteice::logging.info("RIFL_abstract2: initial policy diagnostics");
       lagged_policy.diagnosticsInfo();
@@ -1831,27 +1836,22 @@ namespace whiteice
 
       
       if(learningMode == false){
-	if(dataset_thread){
-	  delete dataset_thread;
-	  dataset_thread = nullptr;
+
+	for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++){
+	  if(dataset_thread[i]){
+	    delete dataset_thread[i];
+	    dataset_thread[i] = nullptr;
+	  }
+	    
+	  grad[i].stopComputation();
+	  grad[i].reset();
 	}
 
-	if(dataset_q2_thread){
-	  delete dataset_q2_thread;
-	  dataset_q2_thread = nullptr;
-	}
-	
 	if(dataset2_thread){
 	  delete dataset2_thread;
 	  dataset2_thread = nullptr;
 	}
-
-	grad.stopComputation();
-	grad.reset();
-
-	q2grad.stopComputation();
-	q2grad.reset();
-
+	
 	grad2.stopComputation();
 	grad2.reset();
       }
@@ -1962,29 +1962,133 @@ namespace whiteice
 	    random_counter = sequentialRandomMoves;
 	  }
 
-	  if(random_counter > 0){ // 1-epsilon % are chosen randomly
-	    // rng.normal(u); // Normal E[n]=0 StDev[n]=1
+	  bool no_model = false;
 
+	  {
+	    std::lock_guard<std::mutex> lockh(has_model_mutex);
+	    
+	    for(unsigned int i=0;i<hasModel.size();i++)
+	      if(hasModel[i] == 0) no_model = true;
+	  }
+
+	  if(random_counter > 0 && no_model == false) // 1-epsilon % are chosen randomly [requires models]
 #if 0
-	    rng.uniform(u); // [0,1] valued actions!
-
-	    for(unsigned int i=0;i<u.size();i++)
-	      u[i] = T(2.0f)*u[i] - T(1.0f); // [-1,+1]
-#endif
+	  {
 	    auto noise = u;
 	    
 	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
+	    
+	    u = u + T(0.666f)*noise; // was 0.1, 0.3, 0.6, *1.0
 
-	    u += T(0.666f)*noise; // was 0.1, 0.3, 0.6, *1.0
+	    for(unsigned int j=0;j<u.size();j++){ // action is [-1,1]^D valued vector
+	      if(u[j] < T(-1.0f)) u[j] = T(-1.0f);
+	      else if(u[j] > T(1.0f)) u[j] = T(1.0f);
+	    }
+	  }
+#endif
+#if 1
+	  {
+	    std::vector< whiteice::math::vertex<T> > actions;
+	    std::vector< T > stdev, absw;
 
-	    for(unsigned int i=0;i<u.size();i++){ // action is [-1,1]^D valued vector
-	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
-	      else if(u[i] > T(1.0f)) u[i] = T(1.0f);
+	    actions.resize(5); // 5, 25 random samples from which to choose
+
+	    for(unsigned int i=0;i<actions.size();i++){
+	      auto noise = u;
+	      
+	      rng.normal(noise); // Normal E[n]=0 StDev[n]=1
+	      
+	      actions[i] = u + T(0.666f)*noise; // was 0.1, 0.3, 0.6, *1.0
+	      
+	      for(unsigned int j=0;j<actions[i].size();j++){ // action is [-1,1]^D valued vector
+		if(actions[i][j] < T(-1.0f)) actions[i][j] = T(-1.0f);
+		else if(actions[i][j] > T(1.0f)) actions[i][j] = T(1.0f);
+	      }
+	      
+	      
+	      T mean = T(0.0f);
+	      T absmean = T(0.0f);
+	      T var  = T(0.0f); 
+
+	      for(unsigned int k=0;k<lagged_Q.size();k++){
+		whiteice::math::vertex<T> y;
+		y.resize(1);
+		y.zero();
+
+		whiteice::math::vertex<T> tmp(numStates + numActions);
+		tmp.zero();
+
+		tmp.write_subvertex(state, 0);
+		tmp.write_subvertex(actions[i], numStates);
+
+		data[k].preprocess(0, tmp);
+		lagged_Q[k].calculate(tmp, y, 1, 0);
+		data[k].invpreprocess(1, y);
+
+		mean += y[0];
+		absmean += whiteice::math::abs(y[0]);
+		var  += y[0]*y[0];
+	      }
+
+	      mean /= lagged_Q.size();
+	      absmean /= lagged_Q.size();
+	      var  /= lagged_Q.size();
+	      
+	      var = whiteice::math::sqrt(whiteice::math::abs(var - mean*mean));
+
+	      stdev.push_back(var); // this actions st.dev in Q with current state
+	      absw.push_back(absmean);
 	    }
 	    
+	    std::map<T, unsigned int> weights;
+	    
+	    T total_weights = T(0.0f);
+	    T total_weights2 = T(0.0f);
+
+	    for(unsigned int k=0;k<stdev.size();k++){
+	      total_weights += stdev[k];
+	      total_weights2 += absw[k];
+	    }
+
+	    if(total_weights <= T(0.0f))
+	      total_weights = T(1.0f);
+
+	    if(total_weights2 <= T(0.0f))
+	      total_weights2 = T(1.0f);
+
+	    T sump = T(0.0f);
+	    const T mixing_factor = T(1.0f); // WAS: 60% stdev weight, 40% absolute value weight, now: 100% stdev
+	    const T epsilon = T(1e-6);
+	    
+	    for(unsigned int k=0;k<stdev.size();k++){
+	      std::pair<T, unsigned int> p;
+
+	      sump += mixing_factor*((stdev[k]+epsilon)/(total_weights + T(stdev.size())*epsilon)) +
+		(T(1.0f)-mixing_factor)*((absw[k]+epsilon)/(total_weights2 + T(absw.size())*epsilon));
+
+	      p.first = sump;
+	      p.second = k;
+
+	      weights.insert(p);
+	    }
+
+	    // now we have weights, pick weighted random sample
+
+	    const T r = rng.uniform();
+
+	    auto iter = weights.upper_bound(r);
+
+	    unsigned int index = 0;
+
+	    if(iter != weights.end())
+	      index = iter->second;
+
+	    u = actions[index];
 	    
 	    random = true;
 	  }
+#endif
+
 	  else{ // just adds random noise to action [mini-exploration]
 	    auto noise = u;
 	    rng.normal(noise); // Normal EX[n]=0 StDev[n]=1
@@ -1995,15 +2099,18 @@ namespace whiteice
 	      else if(u[i] > T(1.0f)) u[i] = T(1.0f);
 	    }
 	  }
-	  
 	}
 
 	// if there's no model then make random selection (normally distributed)
-#if 1
 	{
 	  std::lock_guard<std::mutex> lockh(has_model_mutex);
 	  
-	  if(hasModel[0] == 0 || hasModel[1] == 0 || hasModel[2] == 0){
+	  bool no_model = false;
+
+	  for(unsigned int i=0;i<hasModel.size();i++)
+	    if(hasModel[i] == 0) no_model = true;
+	  
+	  if(no_model){
 	    //auto noise = u;		    
 	    //rng.normal(noise); // Normal E[n]=0 StDev[n]=1
 	    //u += T(1.00f)*noise; // was 0.1, 0.3*, 0.6
@@ -2011,7 +2118,7 @@ namespace whiteice
 	    rng.uniform(u); // [0,1] valued actions!
 	    
 	    for(unsigned int i=0;i<u.size();i++)
-	      u[i] = T(2.0f)*u[i] - T(1.0f);
+	      u[i] = T(2.0f)*u[i] - T(1.0f); // [-1,+1] range
 
 	    for(unsigned int i=0;i<u.size();i++){ // action is [-1,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
@@ -2023,7 +2130,6 @@ namespace whiteice
 	    random = true;
 	  }
 	}
-#endif
 	
 	action = u;
 
@@ -2194,9 +2300,9 @@ namespace whiteice
 	      
 	      std::lock_guard<std::mutex> lockh(has_model_mutex);
 	      
-	      snprintf(buffer, 80, "Episode %d avg reward: %f (%d moves) [%d %d models]",
+	      snprintf(buffer, 80, "Episode %d avg reward: %f (%d moves) [%d %d models, policy %d]",
 		       (int)episodes_counter, total_reward.c[0], (int)episode.size(),
-		       hasModel[0], hasModel[1]);
+		       hasModel[0], hasModel[1], hasModel[NUM_Q_NNETWORKS]);
 	      
 	      whiteice::logging.info(buffer);
 	    }
@@ -2250,28 +2356,22 @@ namespace whiteice
     optimization_step:
 
       if(learningMode == false){
-	
-	if(dataset_thread){
-	  delete dataset_thread;
-	  dataset_thread = nullptr;
+
+	for(unsigned int i=0;i<dataset_thread.size();i++){
+	  if(dataset_thread[i]){
+	    delete dataset_thread[i];
+	    dataset_thread[i] = nullptr;
+	  }
+
+	  grad[i].stopComputation();
+	  grad[i].reset();
 	}
 
-	if(dataset_q2_thread){
-	  delete dataset_q2_thread;
-	  dataset_q2_thread = nullptr;
-	}
-	
 	if(dataset2_thread){
 	  delete dataset2_thread;
 	  dataset2_thread = nullptr;
 	}
 
-	grad.stopComputation();
-	grad.reset();
-
-	q2grad.stopComputation();
-	q2grad.reset();
-	
 	grad2.stopComputation();
 	grad2.reset();
 
@@ -2290,48 +2390,58 @@ namespace whiteice
       // activates batch learning if it is not running
       if(database.size() >= MINIMUM_DATASIZE)
       {
-	
-	// skip if other optimization step (policy network)
-	// is behind us
-	if(epoch[0] > epoch[1])
-	  goto q2_optimization;
+	unsigned int q_index = NUM_Q_NNETWORKS, max_q = epoch[0];
 
-	// skip if other optimization step (policy network)
-	// is behind us
-	if(epoch[1] > epoch[2])
+	for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++){
+	  if(epoch[i] > max_q) max_q = epoch[i];
+	}
+
+	  
+	for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++){
+	  if(epoch[i] < max_q){
+	    q_index = i;
+	    break;
+	  }
+	}
+
+	if(q_index == NUM_Q_NNETWORKS && epoch[NUM_Q_NNETWORKS] < max_q){
 	  goto q_optimization_done;
-	
+	}
+	else if(q_index == NUM_Q_NNETWORKS){
+	  q_index = 0; // starts new round of optimizations from Q[0] nnetwork
+	}
+
 	
 	T error;
 	unsigned int iters;
 
-	if(grad.isRunning() == false){
-
-	  if(grad.getSolutionStatistics(error, iters) == false){
+	if(grad[q_index].isRunning() == false){
+	  
+	  if(grad[q_index].getSolutionStatistics(error, iters) == false){
 	    // grad is reset()ed having no solution anymore (read once it) 
 	  }
 	  else{
 	    // gradient have stopped running
-
-	    if(dataset_thread == nullptr){
-
+	    
+	    if(dataset_thread[q_index] == nullptr){
+	      
 	      char buffer[128];
 	      double tmp = 0.0;
 	      whiteice::math::convert(tmp, error);
 	      snprintf(buffer, 128,
 		       "RIFL_abstract2: new optimized Q-model (%f error, %d iters, epoch %d)",
-		       tmp, iters, epoch[0]);
+		       tmp, iters, epoch[q_index]);
 	      whiteice::logging.info(buffer);
 	      
 	      {
 		logging.info("========> Q RESULT LOADING");
 		
-		if(grad.getSolution(nn) == false) assert(0);
+		if(grad[q_index].getSolution(nn) == false) assert(0);
 		
 		std::lock_guard<std::mutex> lock(Q_mutex);
-		Q.importNetwork(nn);
-
-		Q_preprocess = data;
+		Q[q_index].importNetwork(nn);
+		
+		Q_preprocess = data[q_index];
 		
 		Q_preprocess.clearData(0);
 		Q_preprocess.clearData(1);
@@ -2340,12 +2450,12 @@ namespace whiteice
 		std::vector< math::vertex<T> > lagged_weights;
 		std::vector< math::vertex<T> > lagged_bndata;
 		
-		if(lagged_Q.getBatchNorm()){
-		  if(lagged_Q.exportSamples(nn2, lagged_weights, lagged_bndata, 1) == false)
+		if(lagged_Q[q_index].getBatchNorm()){
+		  if(lagged_Q[q_index].exportSamples(nn2, lagged_weights, lagged_bndata, 1) == false)
 		    assert(0);
 		}
 		else{
-		  if(lagged_Q.exportSamples(nn2, lagged_weights, 1) == false)
+		  if(lagged_Q[q_index].exportSamples(nn2, lagged_weights, 1) == false)
 		    assert(0);
 		}
 
@@ -2360,7 +2470,7 @@ namespace whiteice
 		  {
 		    std::lock_guard<std::mutex> lockh(has_model_mutex);
 		    
-		    if(hasModel[0] == 0){
+		    if(hasModel[q_index] == 0){
 		      // don't lag results with the first update
 		      lagged_weights[0] = weights;
 		      if(nn.getBatchNorm()) lagged_bndata[0] = bndata;
@@ -2372,81 +2482,81 @@ namespace whiteice
 		  
 		  if(nn2.importdata(lagged_weights[0]) == false) assert(0);
 		  if(nn.getBatchNorm()) if(nn.importBNdata(lagged_bndata[0]) == false) assert(0);
-		  if(lagged_Q.importNetwork(nn2) == false) assert(0);
+		  if(lagged_Q[q_index].importNetwork(nn2) == false) assert(0);
 		}
 		else{
 		  logging.info("lagged_Q updated: NO LAG");
 		  
-		  lagged_Q.importNetwork(nn); 
+		  lagged_Q[q_index].importNetwork(nn); 
 		}
 #endif
 		
 		whiteice::logging.info("RIFL_abstract2: new Q diagnostics");
-		lagged_Q.diagnosticsInfo();
+		lagged_Q[q_index].diagnosticsInfo();
 		whiteice::logging.info("RIFL_abstract2: new Q-model imported");
 	      }
-
-	      grad.reset(); // resets gradient to empty gradient descent
-
-	      epoch[0]++;
+	      
+	      grad[q_index].reset(); // resets gradient to empty gradient descent
+	      
+	      epoch[q_index]++;
 	      
 	      {
 		std::lock_guard<std::mutex> lockh(has_model_mutex);
-		hasModel[0]++;
+		hasModel[q_index]++;
 	      }
 	    }
 	  }
 
-
-	  // skip if other optimization step (policy network)
-	  // is behind us
-	  if(epoch[0] > epoch[1])
-	    goto q2_optimization;
+	  
+	  if(epoch[q_index] > epoch[q_index+1])
+	    goto q_optimization_done;
 
 	  
-	  // const unsigned int NUMSAMPLES = database.size(); // was 1000
-	  // const unsigned int NUMSAMPLES = 2000; // was 1000, 128
-	  
-	  
-	  if(dataset_thread == nullptr){
-
+	  if(dataset_thread[q_index] == nullptr){
+	    
 	    {
 	      std::lock_guard<std::mutex> lock(database_mutex);
 	      std::lock_guard<std::mutex> lockh(has_model_mutex);
 	      
-	      data.clear();
+	      data[q_index].clear();
 	      //data.createCluster("input-state", numStates + numActions);
 	      //data.createCluster("output-qvalue", 1);
+
+	      if(dataset_thread[q_index]){
+		dataset_thread[q_index]->stop();
+		delete dataset_thread[q_index];
+		dataset_thread[q_index] = nullptr;
+	      }
 	      
 	      
-	      dataset_thread = new CreateRIFL2dataset<T>(*this,
-							 database,
-							 episodes,
-							 database_mutex,
-							 hasModel[0]);
+	      dataset_thread[q_index] = new CreateRIFL2dataset<T>(*this,
+								  database,
+								  episodes,
+								  database_mutex,
+								  hasModel[q_index]);
 	    }
 	    
-	    dataset_thread->start(SAMPLESIZE, useEpisodes);
-	      
+	    dataset_thread[q_index]->start(SAMPLESIZE, useEpisodes);
+	    
 	    whiteice::logging.info("RIFL_abstract2: new dataset_thread started (Q)");
 	    
 	    continue;
-      
+	    
 	  }
 	  else{
-	    if(dataset_thread->isCompleted() != true){
+	    if(dataset_thread[q_index]->isCompleted() != true){
 	      continue; // we havent computed proper dataset yet..
 	    }
 	    else{
-	      data = dataset_thread->getDataset();
+	      data[q_index] = dataset_thread[q_index]->getDataset();
 	    }
 	  }
 	  
-	  if(dataset_thread){
+	  if(dataset_thread[q_index]){
 	    whiteice::logging.info("RIFL_abstract2: dataset_thread finished (Q)");
-	    dataset_thread->stop();
-	    delete dataset_thread;
-	    dataset_thread = nullptr;
+	    dataset_thread[q_index]->stop();
+	    delete dataset_thread[q_index];
+	    dataset_thread[q_index] = nullptr;
 	  }
 
 
@@ -2459,13 +2569,13 @@ namespace whiteice
 	    
 	    std::lock_guard<std::mutex> lock(Q_mutex);
 	    
-	    if(Q.getBatchNorm()){
-	      if(Q.exportSamples(qnn, weights, bndatas, 1) == false){ // was: lagged_Q
+	    if(Q[q_index].getBatchNorm()){
+	      if(Q[q_index].exportSamples(qnn, weights, bndatas, 1) == false){ // was: lagged_Q
 		assert(0);
 	      }
 	    }
 	    else{
-	      if(Q.exportSamples(qnn, weights, 1) == false){ // was: lagged_Q
+	      if(Q[q_index].exportSamples(qnn, weights, 1) == false){ // was: lagged_Q
 		assert(0);
 	      }
 	    }
@@ -2487,345 +2597,77 @@ namespace whiteice
 	  const bool dropout = false;
 	  const bool useInitialNN = true; // WAS: start from scratch everytime
 	  
-	  grad.setRegularizer(T(0.0f)); // DISABLE REGULARIZER FOR Q-NETWORK (was: 0.001f)
-	  grad.setNormalizeError(false); // calculate real error values	  
+	  grad[q_index].setRegularizer(T(0.0f)); // DISABLE REGULARIZER FOR Q-NETWORK (was: 0.001f)
+	  grad[q_index].setNormalizeError(false); // calculate real error values	  
 	  
 	  {
 	    std::lock_guard<std::mutex> lockh(has_model_mutex);
 	    
-	    if(hasModel[0] >= 1){
-	      eta.start(0.0, Q_OPTIMIZE_ITERATIONS);
+	    if(hasModel[q_index] >= 1){
+	      eta[q_index].start(0.0, Q_OPTIMIZE_ITERATIONS);
 	      
-	      grad.setUseMinibatch(false);
-	      grad.setSGD(T(-1.0f)); // disable stochastic gradient descent
+	      grad[q_index].setUseMinibatch(false);
+	      grad[q_index].setSGD(T(-1.0f)); // disable stochastic gradient descent
 	      
-	      if(grad.startOptimize(data, qnn, 1, Q_OPTIMIZE_ITERATIONS,
+	      if(grad[q_index].startOptimize(data[q_index], qnn, 1, Q_OPTIMIZE_ITERATIONS,
 				    dropout, useInitialNN) == true)
 		logging.info("========> Q OPTIMIZATION STARTED");
 	      else
 		logging.info("========> Q OPTIMIZATION STARTED FAILED");
 	    }
 	    else{
-	      eta.start(0.0, Q_OPTIMIZE_ITERATIONS_FIRST);
+	      eta[q_index].start(0.0, Q_OPTIMIZE_ITERATIONS_FIRST);
 	      
-	      grad.setUseMinibatch(false);
-	      grad.setSGD(T(-1.0f)); // disable stochastic gradient descent
+	      grad[q_index].setUseMinibatch(false);
+	      grad[q_index].setSGD(T(-1.0f)); // disable stochastic gradient descent
 	      
-	      if(grad.startOptimize(data, qnn, 1, Q_OPTIMIZE_ITERATIONS_FIRST, dropout, useInitialNN) == true)
+	      if(grad[q_index].startOptimize(data[q_index], qnn, 1, Q_OPTIMIZE_ITERATIONS_FIRST, dropout, useInitialNN) == true)
 		logging.info("========> Q OPTIMIZATION STARTED");
 	      else
 		logging.info("========> Q OPTIMIZATION STARTED FAILED");
 	    }
 	  }
 	  
-
-	  old_grad_iterations = -1;
+	  grad_iterations[q_index] = -1;
+	  // old_grad_iterations = -1;
 	}
 	else{
 	  T error = T(0.0);
 	  unsigned int iters = 0;
 
-	  if(grad.getSolutionStatistics(error, iters)){
-	    if(((signed int)iters) > old_grad_iterations){
+	  if(grad[q_index].getSolutionStatistics(error, iters)){
+	    if(((signed int)iters) > grad_iterations[q_index]){
 	      {
 		std::lock_guard<std::mutex> lockh(has_model_mutex);
 		
 		char buffer[128];
 		
-		eta.update(iters);
+		eta[q_index].update(iters);
 		
 		double e;
 		whiteice::math::convert(e, error);
 		
 		snprintf(buffer, 128,
 			 "RIFL_abstract2: Q-optimizer epoch %d iter %d error %.12f hasmodel %d [ETA %.2f mins]",
-			 epoch[0], iters, e, hasModel[0], eta.estimate()/60.0);
+			 epoch[q_index], iters, e, hasModel[q_index], eta[q_index].estimate()/60.0);
 		
 		whiteice::logging.info(buffer);
 	      }
 		
-	      old_grad_iterations = (int)iters;
+	      grad_iterations[q_index] = (int)iters;
 	    }
 	  }
 	  else{
 	    char buffer[80];
 	    snprintf(buffer, 80,
 		     "RIFL_abstract2: epoch %d grad.getSolution() FAILED",
-		     epoch[0]);
+		     epoch[q_index]);
 	    
 	    whiteice::logging.error(buffer);
 	  }
 	}
       }
-
       
-    q2_optimization:
-
-
-      if(database.size() >= MINIMUM_DATASIZE)
-      {
-	
-	// skip if other optimization step (policy network)
-	// is behind us
-	if(epoch[1] > epoch[2] || epoch[0] == epoch[1])
-	  goto q_optimization_done;
-
-	T error;
-	unsigned int iters;
-	
-	
-	if(q2grad.isRunning() == false){
-
-	  if(q2grad.getSolutionStatistics(error, iters) == false){
-	    // grad is reset()ed having no solution anymore (read once it) 
-	  }
-	  else{
-	    // gradient have stopped running
-
-	    if(dataset_q2_thread == nullptr){
-
-	      char buffer[128];
-	      double tmp = 0.0;
-	      whiteice::math::convert(tmp, error);
-	      snprintf(buffer, 128,
-		       "RIFL_abstract2: new optimized Q2-model (%f error, %d iters, epoch %d)",
-		       tmp, iters, epoch[1]);
-	      whiteice::logging.info(buffer);
-	      
-	      {
-		logging.info("========> Q2 RESULT LOADING");
-		
-		if(q2grad.getSolution(nn) == false) assert(0);
-		
-		std::lock_guard<std::mutex> lock(Q_mutex);
-		Q2.importNetwork(nn);
-		
-		Q_preprocess = data;
-		
-		Q_preprocess.clearData(0);
-		Q_preprocess.clearData(1);
-
-#if 1
-		whiteice::nnetwork<T> nn2;
-		std::vector< math::vertex<T> > lagged_weights;
-		std::vector< math::vertex<T> > lagged_bndata;
-		
-		if(lagged_Q2.getBatchNorm()){
-		  if(lagged_Q2.exportSamples(nn2, lagged_weights, lagged_bndata, 1) == false)
-		    assert(0);
-		}
-		else{
-		  if(lagged_Q2.exportSamples(nn2, lagged_weights, 1) == false)
-		    assert(0);
-		}
-
-		if(lagged_weights.size() > 0){
-
-		  math::vertex<T> weights;
-		  math::vertex<T> bndata;
-		  
-		  if(nn.exportdata(weights) == false) assert(0);
-		  if(nn.getBatchNorm()) if(nn.exportBNdata(bndata) == false) assert(0);
-
-		  {
-		    std::lock_guard<std::mutex> lockh(has_model_mutex);
-		    
-		    if(hasModel[1] == 0){
-		      // don't lag results with the first update
-		      lagged_weights[0] = weights;
-		      if(nn.getBatchNorm()) lagged_bndata[0] = bndata;
-		    }
-		  }
-		  
-		  lagged_weights[0] = tau*weights + (T(1.0)-tau)*lagged_weights[0];
-		  if(nn.getBatchNorm()) lagged_bndata[0]  = tau*bndata  + (T(1.0)-tau)*lagged_bndata[0];
-		  
-		  if(nn2.importdata(lagged_weights[0]) == false) assert(0);
-		  if(nn.getBatchNorm()) if(nn.importBNdata(lagged_bndata[0]) == false) assert(0);
-		  if(lagged_Q2.importNetwork(nn2) == false) assert(0);
-		}
-		else{
-		  logging.info("lagged_Q updated: NO LAG");
-		  
-		  lagged_Q2.importNetwork(nn); 
-		}
-#endif
-		
-		whiteice::logging.info("RIFL_abstract2: new Q diagnostics");
-		lagged_Q2.diagnosticsInfo();
-		whiteice::logging.info("RIFL_abstract2: new Q-model imported");
-	      }
-
-	      q2grad.reset(); // resets gradient to empty gradient descent
-
-	      epoch[1]++;
-	      
-	      {
-		std::lock_guard<std::mutex> lockh(has_model_mutex);
-		hasModel[1]++;
-	      }
-	    }
-	  }
-
-	  // skip if other optimization step (policy network)
-	  // is behind us
-	  if(epoch[1] > epoch[2])
-	    goto q_optimization_done;
-
-	  // const unsigned int NUMSAMPLES = database.size(); // was 1000
-	  // const unsigned int NUMSAMPLES = 2000; // was 1000, 128
-	  
-#if 0
-	  if(dataset_q2_thread == nullptr){
-
-	    {
-	      std::lock_guard<std::mutex> lock(database_mutex);
-	      std::lock_guard<std::mutex> lockh(has_model_mutex);
-	      
-	      data.clear();
-	      //data.createCluster("input-state", numStates + numActions);
-	      //data.createCluster("output-qvalue", 1);
-	      
-	      
-	      dataset_q2_thread = new CreateRIFL2dataset<T>(*this,
-							 database,
-							 episodes,
-							 database_mutex,
-							 hasModel[0]);
-	    }
-	    
-	    dataset_q2_thread->start(SAMPLESIZE, useEpisodes);
-	      
-	    whiteice::logging.info("RIFL_abstract2: new dataset_thread started (Q)");
-	    
-	    continue;
-      
-	  }
-	  else{
-	    if(dataset_q2_thread->isCompleted() != true){
-	      continue; // we havent computed proper dataset yet..
-	    }
-	    else{
-	      data = dataset_q2_thread->getDataset();
-	    }
-	  }
-#endif
-	  
-	  if(dataset_q2_thread){
-	    whiteice::logging.info("RIFL_abstract2: dataset_q2_thread finished (Q)");
-	    dataset_q2_thread->stop();
-	    delete dataset_q2_thread;
-	    dataset_q2_thread = nullptr;
-	  }
-
-
-	  // fetch NN parameters from model
-	  whiteice::nnetwork<T> qnn;
-	  
-	  {
-	    std::vector< math::vertex<T> > weights;
-	    std::vector< math::vertex<T> > bndatas;
-	    
-	    std::lock_guard<std::mutex> lock(Q_mutex);
-	    
-	    if(Q2.getBatchNorm()){
-	      if(Q2.exportSamples(qnn, weights, bndatas, 1) == false){ // was: lagged_Q
-		assert(0);
-	      }
-	    }
-	    else{
-	      if(Q2.exportSamples(qnn, weights, 1) == false){ // was: lagged_Q
-		assert(0);
-	      }
-	    }
-
-	    if(weights.size() <= 0)
-	      assert(0);
-
-	    if(qnn.importdata(weights[0]) == false){
-	      assert(0);
-	    }
-
-	    if(qnn.getBatchNorm()){
-	      if(qnn.importBNdata(bndatas[0]) == false){
-		assert(0);
-	      }
-	    }
-	  }
-	  
-	  const bool dropout = false;
-	  const bool useInitialNN = true; // WAS: start from scratch everytime
-	  
-	  q2grad.setRegularizer(T(0.0f)); // DISABLE REGULARIZER FOR Q-NETWORK (was: 0.001f)
-	  q2grad.setNormalizeError(false); // calculate real error values	  
-	  
-	  {
-	    std::lock_guard<std::mutex> lockh(has_model_mutex);
-	    
-	    if(hasModel[1] >= 1){
-	      eta.start(0.0, Q_OPTIMIZE_ITERATIONS);
-	      
-	      q2grad.setUseMinibatch(false);
-	      q2grad.setSGD(T(-1.0f)); // disable stochastic gradient descent
-	      
-	      if(q2grad.startOptimize(data, qnn, 1, Q_OPTIMIZE_ITERATIONS,
-				      dropout, useInitialNN) == true)
-		logging.info("========> Q2 OPTIMIZATION STARTED");
-	      else
-		logging.info("========> Q2 OPTIMIZATION STARTED FAILED");
-	    }
-	    else{
-	      eta.start(0.0, Q_OPTIMIZE_ITERATIONS_FIRST);
-	      
-	      q2grad.setUseMinibatch(false);
-	      q2grad.setSGD(T(-1.0f)); // disable stochastic gradient descent
-	      
-	      if(q2grad.startOptimize(data, qnn, 1, Q_OPTIMIZE_ITERATIONS_FIRST, dropout, useInitialNN) == true)
-		logging.info("========> Q2 OPTIMIZATION STARTED");
-	      else
-		logging.info("========> Q2 OPTIMIZATION STARTED FAILED");
-	    }
-	  }
-	  old_grad_q2_iterations = -1;
-	}
-	else{
-	  T error = T(0.0);
-	  unsigned int iters = 0;
-
-	  if(q2grad.getSolutionStatistics(error, iters)){
-	    if(((signed int)iters) > old_grad_q2_iterations){
-	      {
-		std::lock_guard<std::mutex> lockh(has_model_mutex);
-		
-		char buffer[128];
-		
-		eta.update(iters);
-		
-		double e;
-		whiteice::math::convert(e, error);
-		
-		snprintf(buffer, 128,
-			 "RIFL_abstract2: Q2-optimizer epoch %d iter %d error %.12f hasmodel %d [ETA %.2f mins]",
-			 epoch[1], iters, e, hasModel[1], eta.estimate()/60.0);
-		
-		whiteice::logging.info(buffer);
-	      }
-		
-	      old_grad_q2_iterations = (int)iters;
-	    }
-	  }
-	  else{
-	    char buffer[80];
-	    snprintf(buffer, 80,
-		     "RIFL_abstract2: epoch %d grad.getSolution() FAILED",
-		     epoch[0]);
-	    
-	    whiteice::logging.error(buffer);
-	  }
-	}
-      }
-
-	    
     q_optimization_done:
       
       
@@ -2839,7 +2681,20 @@ namespace whiteice
 	// we only start calculating policy after Q() has been optimized..
 	//if(epoch[1] > epoch[0] || epoch[0] == 0)
 	//  goto policy_optimization_done;
-	if(epoch[0] == 0  || epoch[1] == 0 || epoch[1] <= epoch[2])
+
+	bool any_q = false;
+
+	for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++)
+	  if(epoch[i] == 0) any_q = true;
+
+	unsigned int qs_not_ready = 0;
+
+	for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++){
+	  if(epoch[i] <= epoch[NUM_Q_NNETWORKS])
+	    qs_not_ready++;
+	}
+
+	if(any_q || qs_not_ready > 0)
 	  goto policy_optimization_done;
 
 	
@@ -2905,7 +2760,7 @@ namespace whiteice
 		{
 		  std::lock_guard<std::mutex> lockh(has_model_mutex);
 		  
-		  if(hasModel[2] == 0){
+		  if(hasModel[NUM_Q_NNETWORKS] == 0){
 		    // don't lag results with the first update
 		    lagged_weights[0] = weights;
 		    if(nn.getBatchNorm()) lagged_bndatas[0] = bndata;
@@ -2948,23 +2803,26 @@ namespace whiteice
 
 	      grad2.reset();
 
-	      epoch[2]++;
+	      epoch[NUM_Q_NNETWORKS]++;
 
 	      {
 		std::lock_guard<std::mutex> lockh(has_model_mutex);
 		
-		hasModel[2]++;
+		hasModel[NUM_Q_NNETWORKS]++;
 	      }
 	    }
 	    
 	  }
 
 	  
-	  // skip if other optimization step is behind us
-	  // we only start calculating policy after Q() has been optimized..
-	  if(epoch[2] >= epoch[1] || epoch[1] == 0 || epoch[0] == 0)
-	    goto policy_optimization_done;
+	  bool any_q = false;
 	  
+	  for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++)
+	    if(epoch[i] == 0) any_q = true;
+	  
+	  if(any_q || epoch[NUM_Q_NNETWORKS-1] <= epoch[NUM_Q_NNETWORKS])
+	    goto policy_optimization_done;
+	
 	  
 	  // const unsigned int BATCHSIZE = database.size(); // was 1000
 	  // const unsigned int BATCHSIZE = 1000; // was 128
@@ -2996,38 +2854,42 @@ namespace whiteice
 	  
 	  // fetch NN parameters from model
 	  {
-	    whiteice::nnetwork<T> q_nn, nn;
-	    whiteice::dataset<T> Q_preprocess_copy;
+	    whiteice::nnetwork<T> nn;
+	    std::vector< whiteice::nnetwork<T> > q_nn;
+	    std::vector< whiteice::dataset<T> > Q_preprocess_copy;
 
-	    {
+	    q_nn.resize(NUM_Q_NNETWORKS);
+	    Q_preprocess_copy.resize(NUM_Q_NNETWORKS);
+
+	    for(unsigned int k=0;k<q_nn.size();k++){
 	      std::lock_guard<std::mutex> lock(Q_mutex);
 	      std::vector< math::vertex<T> > weights;
 	      std::vector< math::vertex<T> > bndatas;
 	      
-	      if(Q.getBatchNorm()){
-		if(Q.exportSamples(q_nn, weights, bndatas, 1) == false){ // was: lagged_Q
+	      if(Q[k].getBatchNorm()){
+		if(Q[k].exportSamples(q_nn[k], weights, bndatas, 1) == false){ // was: lagged_Q
 		  assert(0);
 		}
 	      }
 	      else{
-		if(Q.exportSamples(q_nn, weights, 1) == false){ // was: lagged_Q
+		if(Q[k].exportSamples(q_nn[k], weights, 1) == false){ // was: lagged_Q
 		  assert(0);
 		}
 	      }
 	      
 	      assert(weights.size() > 0);
 	      
-	      if(q_nn.importdata(weights[0]) == false){
+	      if(q_nn[k].importdata(weights[0]) == false){
 		assert(0);
 	      }
 
-	      if(q_nn.getBatchNorm()){
-		if(q_nn.importBNdata(bndatas[0]) == false){
+	      if(q_nn[k].getBatchNorm()){
+		if(q_nn[k].importBNdata(bndatas[0]) == false){
 		  assert(0);
 		}
 	      }
 
-	      Q_preprocess_copy = Q_preprocess;
+	      Q_preprocess_copy[k] = data[k];
 	    }
 
 	    {
@@ -3069,7 +2931,7 @@ namespace whiteice
 	    {
 	      std::lock_guard<std::mutex> lockh(has_model_mutex);
 	      
-	      if(hasModel[2] >= 1){
+	      if(hasModel[NUM_Q_NNETWORKS] >= 1){
 		eta2.start(0.0, P_OPTIMIZE_ITERATIONS);
 		
 		grad2.setUseMinibatch(false);
@@ -3101,8 +2963,9 @@ namespace whiteice
 	      }
 	    }
 
-	    
-	    old_grad2_iterations = -1;
+
+	    grad_iterations[NUM_Q_NNETWORKS] = -1;
+	    // old_grad2_iterations = -1;
 	    
 	    if(dataset2_thread) delete dataset2_thread;
 	    dataset2_thread = nullptr;
@@ -3112,7 +2975,7 @@ namespace whiteice
 	else{
 	  
 	  if(grad2.getSolutionStatistics(meanq, iters)){
-	    if(((signed int)iters) > old_grad2_iterations){
+	    if(((signed int)iters) > grad_iterations[NUM_Q_NNETWORKS]){
 	      char buffer[128];
 	      
 	      double v;
@@ -3124,12 +2987,12 @@ namespace whiteice
 		std::lock_guard<std::mutex> lockh(has_model_mutex);
 		snprintf(buffer, 128,
 			 "RIFL_abstract2: grad2 policy-optimizer epoch %d hasmodel %d iter %d mean q-value %.12f [ETA %.2f mins]",
-			 epoch[2], hasModel[2], iters, v, eta2.estimate()/60.0);
+			 epoch[NUM_Q_NNETWORKS], hasModel[NUM_Q_NNETWORKS], iters, v, eta2.estimate()/60.0);
 	      }
 	      
 	      whiteice::logging.info(buffer);
 
-	      old_grad2_iterations = (int)iters;
+	      grad_iterations[NUM_Q_NNETWORKS] = (int)iters;
 	    }
 	  }
 	  else{
@@ -3144,21 +3007,25 @@ namespace whiteice
       
     }
 
-    grad.stopComputation();
-    grad2.stopComputation();
+    for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++){
+      if(dataset_thread[i]){
+	delete dataset_thread[i];
+	dataset_thread[i] = nullptr;
+      }
 
-    if(episodesFile) fclose(episodesFile);
-    episodesFile = NULL;
-
-    if(dataset_thread){
-      delete dataset_thread;
-      dataset_thread = nullptr;
+      grad[i].stopComputation();
     }
-
+    
+    
+    grad2.stopComputation();
+    
     if(dataset2_thread){
       delete dataset2_thread;
       dataset2_thread = nullptr;
     }
+
+    if(episodesFile) fclose(episodesFile);
+    episodesFile = NULL;
     
   }
 

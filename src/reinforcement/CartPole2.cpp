@@ -22,13 +22,17 @@ namespace whiteice
 {
 
   template <typename T>
-  CartPole2<T>::CartPole2() : RIFL_abstract2<T>(1, 6)
+  CartPole2<T>::CartPole2() : RIFL_abstract2<T>(1, 6, false, 1, 1)
   {
     {
       this->setSmartEpisodes(true); // gives more weight to reinforcement values when calculating Q
-      this->setGamma(0.95);
       this->setReinforcementWeighting(true);
-      // this->setLearningDatasetSize(10000); // disabled (use default 4000)
+      this->setGamma(0.95);
+      this->setEpsilon(0.80);
+      this->setLearningDatasetSize(10000); // disabled (use default 4000)
+
+      this->setQTau(0.1);
+      this->setPolicyTau(0.1);
     }
     
     
