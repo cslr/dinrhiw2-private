@@ -560,7 +560,7 @@ namespace whiteice
 
 	const T stdev = whiteice::math::sqrt(whiteice::math::abs(var - mean*mean));
 
-	vsum -= stdev;
+	vsum -= beta*stdev;
       }
 	
       vsum /= T((double)dtest.size(0));
