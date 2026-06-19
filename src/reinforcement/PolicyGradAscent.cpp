@@ -871,10 +871,12 @@ namespace whiteice
 
 		  const auto gQ = Qpostprocess_grad * full_gradQ * Qpreprocess_grad;
 
-		  if(k)
+		  if(k != 0){
 		    gradQ += gQ;
-		  else
+		  }
+		  else{
 		    gradQ = gQ;
+		  }
 
 		  Qv.push_back(Qvalue);
 		  gradQs.push_back(gQ);
@@ -910,10 +912,12 @@ namespace whiteice
 
 		for(unsigned int k=0;k<Q.size();k++){
 
-		  if(k == 0)
-		    grad2 = (Qv[k] - mean)*(gradQs[k] - mean_grad);
-		  else
-		    grad2 += (Qv[k] - mean)*(gradQs[k] - mean_grad);
+		  if(k == 0){
+		    grad2 = (gradQs[k] - mean_grad)*(Qv[k][0] - mean[0]);
+		  }
+		  else{
+		    grad2 += (gradQs[k] - mean_grad)*(Qv[k][0] - mean[0]);
+		  }
 		}
 
 		grad2 /= T(Q.size());
@@ -988,10 +992,12 @@ namespace whiteice
 		  const auto gQ = Qpostprocess_grad * full_gradQ * Qpreprocess_grad;
 		  
 
-		  if(k)
+		  if(k != 0){
 		    gradQ += gQ;
-		  else
+		  }
+		  else{
 		    gradQ = gQ;
+		  }
 
 		  Qv.push_back(Qvalue);
 		  gradQs.push_back(gQ);
@@ -1028,10 +1034,12 @@ namespace whiteice
 
 		for(unsigned int k=0;k<Q.size();k++){
 
-		  if(k == 0)
-		    grad2 = (Qv[k] - mean)*(gradQs[k] - mean_grad);
-		  else
-		    grad2 += (Qv[k] - mean)*(gradQs[k] - mean_grad);
+		  if(k == 0){
+		    grad2 = (gradQs[k] - mean_grad)*(Qv[k][0] - mean[0]);
+		  }
+		  else{
+		    grad2 += (gradQs[k] - mean_grad)*(Qv[k][0] - mean[0]);
+		  }
 		}
 
 		grad2 /= T(Q.size());
