@@ -1,6 +1,10 @@
 /*
  * Parallel Policy maximizer (gradient ascent) 
  * (maximizes Q(state, action=policy(state)))
+ *
+ * maximized function J(policy) is now: J = mean(Qi) - beta*stdev(Qi)
+ * => find policy that don't use Q-values that are uncertain
+ *    (by essembly of Q-functions {Qi})
  * 
  */
 
