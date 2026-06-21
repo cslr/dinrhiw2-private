@@ -1391,14 +1391,14 @@ namespace whiteice
 	reinforcements_random_load[i] = v[i];
       
       v.resize(db.dimension(2));
-      v = db.access(1,0); 
+      v = db.access(2,0); 
       distances_load.resize(v.size());
 
       for(unsigned int i=0;i<distances_load.size();i++)
 	distances_load[i] = v[i];
 
       v.resize(db.dimension(3));
-      v = db.access(1,0); 
+      v = db.access(3,0);
       distances_random_load.resize(v.size());
 
       for(unsigned int i=0;i<distances_random_load.size();i++)
