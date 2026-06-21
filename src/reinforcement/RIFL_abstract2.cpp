@@ -2089,10 +2089,65 @@ namespace whiteice
 	  }
 #endif
 
-	  else{ // just adds random noise to action [mini-exploration]
-	    auto noise = u;
+	  else{ // just adds some random noise to action based on Q-value [mini-exploration]
+
+	    auto noise = u, u2 = u;
+	    rng.normal(noise);
+	    u2 += T(0.01)*noise;
+
+	    T mean1 = T(0.0f), mean2 = T(0.0f);
+	    T var1  = T(0.0f), var2 = T(0.0f);
+
+	    for(unsigned int k=0;k<lagged_Q.size();k++){
+	      whiteice::math::vertex<T> y;
+	      y.resize(1);
+	      y.zero();
+	      
+	      whiteice::math::vertex<T> tmp(numStates + numActions);
+	      
+	      tmp.zero();	      
+	      tmp.write_subvertex(state, 0);
+	      tmp.write_subvertex(u, numStates);
+	      
+	      data[k].preprocess(0, tmp);
+	      lagged_Q[k].calculate(tmp, y, 1, 0);
+	      data[k].invpreprocess(1, y);
+	      
+	      mean1 += y[0];
+	      var1  += y[0]*y[0];
+
+	      tmp.zero();	      
+	      tmp.write_subvertex(state, 0);
+	      tmp.write_subvertex(u2, numStates);
+	      
+	      data[k].preprocess(0, tmp);
+	      lagged_Q[k].calculate(tmp, y, 1, 0);
+	      data[k].invpreprocess(1, y);
+	      
+	      mean2 += y[0];
+	      var2  += y[0]*y[0];
+	    }
+	    
+	    mean1 /= lagged_Q.size();
+	    mean2 /= lagged_Q.size();
+	    var1  /= lagged_Q.size();
+	    var2  /= lagged_Q.size();
+	    
+	    var1 = whiteice::math::sqrt(whiteice::math::abs(var1 - mean1*mean1));
+	    var2 = whiteice::math::sqrt(whiteice::math::abs(var2 - mean2*mean2));
+
+	    const T epsilon = T(1e-5);
+
+	    const T uncertainty = (var1+var2)/(mean1+epsilon);
+
+	    const T sigma_min = T(0.025);
+	    const T sigma_max = T(0.333);
+	    
+	    const T sigma = sigma_min + (sigma_max - sigma_min)*uncertainty;
+
+	    noise = u;
 	    rng.normal(noise); // Normal EX[n]=0 StDev[n]=1
-	    u += T(0.025)*noise;
+	    u += sigma*noise; // was: sigma = 0.025
 
 	    for(unsigned int i=0;i<u.size();i++){ // action is [-1,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);

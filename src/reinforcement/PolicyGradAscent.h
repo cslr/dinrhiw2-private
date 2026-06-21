@@ -6,6 +6,10 @@
  * => find policy that don't use Q-values that are uncertain
  *    (by essembly of Q-functions {Qi})
  * 
+ * NOTE: we use *negative* beta = -0.50, to actively search uncertain regions
+ * when Qi:s learn exact value those regions they aren't used anymore unless
+ * they give good results
+ * 
  */
 
 
@@ -120,7 +124,7 @@ namespace whiteice
     std::vector< whiteice::dataset<T>*> Q_preprocess;
     whiteice::dataset<T> data; // copy of own dataset
 
-    const T beta = T(0.50f); // optimized function is now: J = mean(Qi) - beta*stdev(Qi)
+    const T beta = T(-0.50f); // optimized function is now: J = mean(Qi) - beta*stdev(Qi)
     
     whiteice::nnetwork<T>* policy; // network architecture and settings
 
