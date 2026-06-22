@@ -1814,7 +1814,7 @@ namespace whiteice
 
     whiteice::nnetwork<T> nn;
 
-    unsigned long counter = 0; // N:th iteration
+    unsigned long long counter = 0; // N:th iteration
     
     whiteice::logging.info("RIFL_abstract2: starting optimization loop");
 
@@ -1864,10 +1864,17 @@ namespace whiteice
 	const long long microseconds_elapsed =
 	  std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 	
-	const long long microseconds_sleep_time = 1000000/LOOP_UPDATE_HZ;
+	const long long microseconds_sleep_time = 1000000.0/LOOP_UPDATE_HZ;
 	
 	if(microseconds_elapsed > microseconds_sleep_time){
-	  whiteice::logging.warn("RIFL_abstract2::loop(): Warning sampling out of sync!");
+	  char buf[256];
+
+	  const float hz = (float)LOOP_UPDATE_HZ;
+
+	  snprintf(buf, 256, "RIFL_abstract2::loop(): Warning sampling out of sync! (%f secs off) [update %f Hz]",
+		   (microseconds_sleep_time - microseconds_elapsed)/1000000.0, hz);
+	  
+	  whiteice::logging.warn(buf);
 	}
 	else{
 	  std::this_thread::sleep_for
@@ -1879,13 +1886,14 @@ namespace whiteice
 	
 	start = std::chrono::high_resolution_clock::now();
       }
+
+      counter++;
       
       if(sleepMode == true){
 	std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	continue; // we do not do anything and only sleep
       }
 
-      counter++;
 
       // 1. gets current state
       if(performActionFailed == 0){
@@ -1919,7 +1927,7 @@ namespace whiteice
       // (+ random selection if there is no model or in
       //    1-epsilon probability)
       
-            
+      
       if(performActionFailed == 0){
 	std::lock_guard<std::mutex> lock(policy_mutex);
 
@@ -2090,7 +2098,13 @@ namespace whiteice
 #endif
 
 	  else{ // just adds some random noise to action based on Q-value [mini-exploration]
-
+#if 1
+	    auto noise = u;
+	    rng.normal(noise); // Normal EX[n]=0 StDev[n]=1
+	    u += T(0.025)*noise; // was: sigma = 0.025
+#endif
+	    
+#if 0
 	    auto noise = u, u2 = u;
 	    rng.normal(noise);
 	    u2 += T(0.01)*noise;
@@ -2153,6 +2167,8 @@ namespace whiteice
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
 	      else if(u[i] > T(1.0f)) u[i] = T(1.0f);
 	    }
+#endif
+	    
 	  }
 	}
 
