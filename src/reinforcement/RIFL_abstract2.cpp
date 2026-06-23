@@ -287,7 +287,7 @@ namespace whiteice
 	  nn.setResidual(true);
 	  nn.setBatchNorm(false); // BatchNorm wasn't enabled for Q network
 
-	  	  Q.resize(NUM_Q_NNETWORKS);
+	  Q.resize(NUM_Q_NNETWORKS);
 	  lagged_Q.resize(NUM_Q_NNETWORKS);
 
 	  for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++){
@@ -2098,13 +2098,13 @@ namespace whiteice
 #endif
 
 	  else{ // just adds some random noise to action based on Q-value [mini-exploration]
-#if 1
+#if 0
 	    auto noise = u;
 	    rng.normal(noise); // Normal EX[n]=0 StDev[n]=1
 	    u += T(0.025)*noise; // was: sigma = 0.025
 #endif
 	    
-#if 0
+#if 1
 	    auto noise = u, u2 = u;
 	    rng.normal(noise);
 	    u2 += T(0.01)*noise;
@@ -2155,7 +2155,7 @@ namespace whiteice
 	    const T uncertainty = (var1+var2)/(mean1+epsilon);
 
 	    const T sigma_min = T(0.025);
-	    const T sigma_max = T(0.333);
+	    const T sigma_max = T(0.200);
 	    
 	    const T sigma = sigma_min + (sigma_max - sigma_min)*uncertainty;
 
@@ -2552,7 +2552,7 @@ namespace whiteice
 		  if(nn.getBatchNorm()) lagged_bndata[0]  = tau*bndata  + (T(1.0)-tau)*lagged_bndata[0];
 		  
 		  if(nn2.importdata(lagged_weights[0]) == false) assert(0);
-		  if(nn.getBatchNorm()) if(nn.importBNdata(lagged_bndata[0]) == false) assert(0);
+		  if(nn2.getBatchNorm()) if(nn2.importBNdata(lagged_bndata[0]) == false) assert(0);
 		  if(lagged_Q[q_index].importNetwork(nn2) == false) assert(0);
 		}
 		else{
