@@ -29,7 +29,7 @@ namespace whiteice
       this->setReinforcementWeighting(true);
       this->setGamma(0.95);
       this->setEpsilon(0.80);
-      this->setLearningDatasetSize(10000); // disabled (use default 4000)
+      this->setLearningDatasetSize(10000); // disabled (use default 4000), 10.000
 
       this->setQTau(0.1);
       this->setPolicyTau(0.1);
@@ -396,7 +396,7 @@ namespace whiteice
 	  if(reinforcement <= T(0.0)) reinforcement = T(0.0f);
 	  reinforcement /= T(10.0f);
 
-	  reinforcement *= T(0.1f); // reinforcement is in the range of [0, 0.1]
+	  reinforcement *= T(0.01f); // reinforcement is in the range of [0, 0.01]
 
 	  //std::cout << "theta = " << theta << " reinforcement = " << reinforcement << std::endl;
 	  

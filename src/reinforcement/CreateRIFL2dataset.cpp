@@ -486,13 +486,26 @@ namespace whiteice
 	    
 	    
 	    if(epoch >= 2 && datum.lastStep == false){
-	      auto qmin = y[0][0];
-	      
+	      //auto qmin = y[0][0];
+	      //
+	      //for(unsigned int i=0;i<y.size();i++){
+	      //if(y[i][0] < qmin) qmin = y[i][0];
+	      //}
+
+	      auto qmean = T(0.0f);
+	      auto q2    = T(0.0f);
+
 	      for(unsigned int i=0;i<y.size();i++){
-		if(y[i][0] < qmin) qmin = y[i][0];
+		qmean += y[i][0];
+		q2    += y[i][0]*y[i][0];
 	      }
+
+	      qmean /= T(y.size());
+	      q2 /= T(y.size());
+
+	      auto qstdev = whiteice::math::sqrt(whiteice::math::abs(q2 - qmean*qmean));
 	      
-	      out[0] = rifl.gamma*qmin + datum.reinforcement;
+	      out[0] = rifl.gamma*(qmean + T(0.50f)*qstdev) + datum.reinforcement;
 	    }
 	    else{ // the first iteration of reinforcement learning do not use Q or if this is last step
 	      out[0] = datum.reinforcement;

@@ -102,13 +102,16 @@ namespace whiteice
 	{
 	  whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::rectifier);
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::sigmoid); // tanh, sigmoid, halfLinear
+
 	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::pureLinear);
-	  //if(alsoNegativeQValues == false){
-	  //  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid); // ([-1,+1])
-	  //}
-	  //else{
-	  //  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // ([0,1])
-	  //}
+	  /*
+	  if(alsoNegativeQValues == false){
+	    nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid); // ([-1,+1])
+	  }
+	  else{
+	    nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // ([0,1])
+	  }
+	  */
 	  
 	  // nn.randomize(2, T(0.5)); // was 1.0
 	  nn.setResidual(true);
@@ -275,13 +278,17 @@ namespace whiteice
 
 	{
 	  whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::rectifier);
+
 	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::pureLinear); // [0,+1]
-	  //if(alsoNegativeQValues == false){
-	  //  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid); // [0,+1]
-	  //}
-	  //else{
-	  //  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // [-1,+1]
-	  //}
+
+	  /*
+	  if(alsoNegativeQValues == false){
+	    nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid); // [0,+1]
+	  }
+	  else{
+	    nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // [-1,+1]
+	  }
+	  */
 	  
 	  // nn.randomize(2, T(0.5)); // was 1.0
 	  nn.setResidual(true);
@@ -1992,6 +1999,8 @@ namespace whiteice
 	      if(u[j] < T(-1.0f)) u[j] = T(-1.0f);
 	      else if(u[j] > T(1.0f)) u[j] = T(1.0f);
 	    }
+
+	    random = true;
 	  }
 #endif
 #if 1
@@ -1999,7 +2008,7 @@ namespace whiteice
 	    std::vector< whiteice::math::vertex<T> > actions;
 	    std::vector< T > stdev, absw;
 
-	    actions.resize(5); // 5, 25 random samples from which to choose
+	    actions.resize(10); // was: 5 random samples from which to choose
 
 	    for(unsigned int i=0;i<actions.size();i++){
 	      auto noise = u;
@@ -2097,14 +2106,82 @@ namespace whiteice
 	  }
 #endif
 
-	  else{ // just adds some random noise to action based on Q-value [mini-exploration]
 #if 0
+	  {
+	    auto noise = u, u2 = u;
+	    rng.normal(noise);
+	    u2 += T(0.01)*noise;
+
+	    T mean1 = T(0.0f), mean2 = T(0.0f);
+	    T var1  = T(0.0f), var2 = T(0.0f);
+
+	    for(unsigned int k=0;k<lagged_Q.size();k++){
+	      whiteice::math::vertex<T> y;
+	      y.resize(1);
+	      y.zero();
+	      
+	      whiteice::math::vertex<T> tmp(numStates + numActions);
+	      
+	      tmp.zero();	      
+	      tmp.write_subvertex(state, 0);
+	      tmp.write_subvertex(u, numStates);
+	      
+	      data[k].preprocess(0, tmp);
+	      lagged_Q[k].calculate(tmp, y, 1, 0);
+	      data[k].invpreprocess(1, y);
+	      
+	      mean1 += y[0];
+	      var1  += y[0]*y[0];
+
+	      tmp.zero();	      
+	      tmp.write_subvertex(state, 0);
+	      tmp.write_subvertex(u2, numStates);
+	      
+	      data[k].preprocess(0, tmp);
+	      lagged_Q[k].calculate(tmp, y, 1, 0);
+	      data[k].invpreprocess(1, y);
+	      
+	      mean2 += y[0];
+	      var2  += y[0]*y[0];
+	    }
+	    
+	    mean1 /= lagged_Q.size();
+	    mean2 /= lagged_Q.size();
+	    var1  /= lagged_Q.size();
+	    var2  /= lagged_Q.size();
+	    
+	    var1 = whiteice::math::sqrt(whiteice::math::abs(var1 - mean1*mean1));
+	    var2 = whiteice::math::sqrt(whiteice::math::abs(var2 - mean2*mean2));
+
+	    const T epsilon = T(1e-5);
+
+	    const T uncertainty = (var1+var2)/(mean1+epsilon);
+
+	    const T sigma_min = T(0.025);
+	    const T sigma_max = T(0.666);
+	    
+	    const T sigma = sigma_min + (sigma_max - sigma_min)*uncertainty;
+
+	    noise = u;
+	    rng.normal(noise); // Normal EX[n]=0 StDev[n]=1
+	    u += sigma*noise; // was: sigma = 0.025
+
+	    for(unsigned int i=0;i<u.size();i++){ // action is [-1,1]^D valued vector
+	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
+	      else if(u[i] > T(1.0f)) u[i] = T(1.0f);
+	    }
+
+	    random = true;
+	  }
+#endif
+	  else{ // just adds some random noise to action based on Q-value [mini-exploration]
+#if 1
 	    auto noise = u;
 	    rng.normal(noise); // Normal EX[n]=0 StDev[n]=1
 	    u += T(0.025)*noise; // was: sigma = 0.025
 #endif
 	    
-#if 1
+#if 0
 	    auto noise = u, u2 = u;
 	    rng.normal(noise);
 	    u2 += T(0.01)*noise;
