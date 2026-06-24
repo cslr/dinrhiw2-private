@@ -57,7 +57,7 @@ namespace whiteice
     
     std::thread* es_thread = nullptr;
     mutable std::mutex thread_mutex;
-    std::atomic<bool> running = false;
+    std::atomic<bool> running;
     void es_loop();
 
     unsigned int POPULATION_DIMENSIONS;

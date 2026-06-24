@@ -11,11 +11,12 @@
 #include "list_source.h"
 #include "KMeans.h"
 
-using namespace std::chrono_literals;
+//using namespace std::chrono_literals;
 
 
 namespace whiteice
 {
+
   //////////////////////////////////////////////////////////////////////
 
   bool calculate_discretize(const std::vector< std::vector<std::string> >& data,
@@ -98,7 +99,7 @@ namespace whiteice
 	km.startTrain(BINS, data);
 
 	while(km.isRunning()){
-	  std::this_thread::sleep_for(100ms);
+	  std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
 	km.stopTrain();

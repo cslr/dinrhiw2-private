@@ -43,7 +43,7 @@
 
 #include "VAE.h"
 #include "TSNE.h"
-#include "TSNE_BH.h"
+//#include "TSNE_BH.h"
 
 #include "globaloptimum.h"
 
@@ -690,10 +690,10 @@ void mcmc_diffeq_test()
   }
   
   
-  whiteice::SGD_diffeq sgd(net, ds,
-			   parameters,
-			   times, diffeq_starting_point,
-			   SEQUENCE_LENGTH, HISTORY_LEN);
+  whiteice::SGD_diffeq< whiteice::math::blas_complex<double> > sgd(net, ds,
+			     parameters,
+			     times, diffeq_starting_point,
+			     SEQUENCE_LENGTH, HISTORY_LEN);
 
   sgd.setSmartConvergenceCheck(false);
   sgd.setAdamOptimizer(true);
@@ -2724,8 +2724,9 @@ void simple_tsne_test()
       }
     }
 
+
     // calculate dimension reduction
-    whiteice::TSNE_BH<> tsne(false);
+    whiteice::TSNE<> tsne(false);
     std::vector< whiteice::math::vertex<> > ydata;
 
     if(tsne.calculate(data, 3, ydata, true) == false){

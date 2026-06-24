@@ -24,12 +24,16 @@ namespace whiteice
   {
     // absolute value KL divergence should give better results (see TSNE_notes.tm)
     kl_absolute_value = absolute_value;
+
+    calculate_is_running = false;
   }
 
   template <typename T>
   TSNE<T>::TSNE(const TSNE<T>& tsne)
   {
     this->kl_absolute_value = tsne.kl_absolute_value;
+
+    this->calculate_is_running = tsne.calculate_is_running.load();
   }
 
   template <typename T>

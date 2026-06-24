@@ -54,7 +54,7 @@ namespace whiteice
     std::multimap<long long, std::set<Item> > sets;
 
     for(auto& p : patterns){
-      sets.insert(std::pair((long long)p.second, p.first));
+      sets.insert(std::pair<long long, std::set<Item> >((long long)p.second, p.first));
     }
 
     
@@ -178,7 +178,7 @@ namespace whiteice
 	  n = n->parent;
 	}
 
-	s.insert(std::pair(ss,node->count));
+	s.insert(std::pair<std::set<long long>, long long>(ss,node->count));
       }
       else{
 	for(unsigned long long i=0;i<children.size();i++){
@@ -420,7 +420,7 @@ namespace whiteice
 	std::cout << " = " << si.second << std::endl;
       }
 
-      sets.insert(std::pair(i->first, s));
+      sets.insert(std::pair<long long, std::map<std::set<long long>, long long> >(i->first, s));
     }
 
     /*
@@ -445,7 +445,7 @@ namespace whiteice
 	}
 
 	if(total_count >= minfreq){
-	  fsets.insert(std::pair(total_count, pi.first));
+	  fsets.insert(std::pair<long long, std::set<long long> >(total_count, pi.first));
 	}
       }
     }

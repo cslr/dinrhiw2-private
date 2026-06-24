@@ -74,7 +74,7 @@ namespace whiteice
     // calculates ICA dimension reduction and starts NNGRradDescent<> optimizer
     void optimize_function();
 
-    std::atomic<bool> optimize_running = false;
+    std::atomic<bool> optimize_running;
     std::thread* optimize_thread = nullptr;
     
 

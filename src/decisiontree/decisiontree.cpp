@@ -11,6 +11,9 @@
 
 #include "RNG.h"
 
+#ifdef WINOS
+#include <windows.h>
+#endif
 
 
 namespace whiteice

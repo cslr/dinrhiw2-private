@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 
-using namespace std::chrono_literals;
+//using namespace std::chrono_literals;
 
 
 namespace whiteice
@@ -136,7 +136,7 @@ namespace whiteice
       
       while(rotation_processed == false){
 	auto now = std::chrono::system_clock::now();
-	rotation_processed_cond.wait_until(lock, now + 100ms);
+	rotation_processed_cond.wait_until(lock, now + std::chrono::milliseconds(100));
 	if(running == false)
 	  return false;
       }
@@ -181,7 +181,7 @@ namespace whiteice
 	
 	while(rotation_processed == true){
 	  auto now = std::chrono::system_clock::now();
-	  rotation_processed_cond.wait_until(lock, now + 10*100ms);
+	  rotation_processed_cond.wait_until(lock, now + std::chrono::milliseconds(100));
 	  if(running == false) return;
 	}
 

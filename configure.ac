@@ -778,6 +778,7 @@ dnl CFLAGS="-std=gnu++20 $CFLAGS"
 dnl conf_flags="-std=gnu++20 -Wno-strict-aliasing $conf_flags `python3-config --cflags --embed`"
 CFLAGS="$CFLAGS"
 conf_flags="-Wno-strict-aliasing $conf_flags"
+CXXFLAGS="-std=gnu++20 $CXXFLAGS"
 dnl `python3-config --cflags --embed`"
 
 dnl 

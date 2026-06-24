@@ -35,6 +35,11 @@ namespace whiteice
       // zero = learn pure Q(state,action) = x function which action=policy(state) is optimized
       gamma = T(0.95); // how much weight future values Q() have: was 0.95 WAS: 0.80
       SAMPLESIZE = 4000; // dataset size used to learning
+      MINIMUM_DATASIZE = 500;
+
+      LOOP_UPDATE_HZ = 0.0f;
+
+      use_smart_weights = false;
 
       if(sequentialRandomMoves_ >= 1)
 	this->sequentialRandomMoves = sequentialRandomMoves_;
@@ -217,6 +222,11 @@ namespace whiteice
       // zero = learn pure Q(state,action) = x function which action=policy(state) is optimized
       gamma = T(0.95); // how much weight future values Q() have: WAS: 0.95
       SAMPLESIZE = 4000; // dataset size used to learning
+      MINIMUM_DATASIZE = 500;
+
+      LOOP_UPDATE_HZ = 0.0f;
+      use_smart_weights = false;
+      
 
       if(sequentialRandomMoves_ >= 1)
 	this->sequentialRandomMoves = sequentialRandomMoves_;

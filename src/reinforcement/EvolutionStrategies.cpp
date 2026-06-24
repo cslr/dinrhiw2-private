@@ -10,7 +10,9 @@ namespace whiteice
   EvolutionStrategies<T>::EvolutionStrategies()
   {
     sigma = T(0.1);
-    POPULATION_DIMENSIONS = 0;    
+    POPULATION_DIMENSIONS = 0;
+
+    running = false;
   }
 
   

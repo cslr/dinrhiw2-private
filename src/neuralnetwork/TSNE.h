@@ -83,7 +83,7 @@ namespace whiteice
       void calculate_loop();
 
       std::thread* calculate_thread = nullptr;
-      std::atomic<bool> calculate_is_running = false;
+      std::atomic<bool> calculate_is_running;
       mutable std::mutex calculate_mutex;
       
       std::vector< math::vertex<T> > calculate_samples;

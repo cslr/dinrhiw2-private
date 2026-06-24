@@ -268,7 +268,7 @@ namespace whiteice
     std::vector< std::vector< rifl4_datapoint<T> > > episodes;
     std::vector<T> episodes_weights;
 
-    std::atomic<bool> use_smart_weights = false; // does we use weighted sampling in RIFL4?
+    std::atomic<bool> use_smart_weights; // does we use weighted sampling in RIFL4?
     
     mutable std::mutex database_mutex;
 
@@ -288,7 +288,7 @@ namespace whiteice
 
     std::atomic<bool> negativeQ; // is negative Q values enabled q E [-1,+1] instead of [0,+1]
 
-    std::atomic<unsigned int> SAMPLESIZE = 4000;
+    std::atomic<unsigned int> SAMPLESIZE;
     
     T epsilon;
     mutable std::mutex epsilon_mutex;
@@ -305,7 +305,7 @@ namespace whiteice
     std::thread* rifl_thread;
     mutable std::mutex thread_mutex;
 
-    std::atomic<float> LOOP_UPDATE_HZ = 0.0f;
+    std::atomic<float> LOOP_UPDATE_HZ;
     
     void loop();
     

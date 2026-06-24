@@ -15,6 +15,7 @@ namespace whiteice
   template <typename T>
   NARX<T>::NARX()
   {
+    optimize_running = false;
   }
 
   

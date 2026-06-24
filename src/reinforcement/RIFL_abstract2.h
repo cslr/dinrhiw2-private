@@ -287,16 +287,16 @@ namespace whiteice
     std::vector<unsigned int> hasModel;
     mutable std::mutex has_model_mutex;
 
-    std::atomic<bool> use_smart_weights = false; // does we use weighted sampling in RIFL2?
+    std::atomic<bool> use_smart_weights; // does we use weighted sampling in RIFL2?
     
     std::atomic<float> latestError;
     std::atomic<bool> learningMode, sleepMode;
 
     const unsigned int STATE_HISTORY_LEN = 1;
 
-    std::atomic<unsigned int> SAMPLESIZE = 4000;
+    std::atomic<unsigned int> SAMPLESIZE;
 
-    std::atomic<unsigned int> MINIMUM_DATASIZE = 500;
+    std::atomic<unsigned int> MINIMUM_DATASIZE;
     
     T epsilon;
     mutable std::mutex epsilon_mutex;
@@ -313,7 +313,7 @@ namespace whiteice
     std::thread* rifl_thread;
     std::mutex thread_mutex;
 
-    std::atomic<float> LOOP_UPDATE_HZ = 0.0f;
+    std::atomic<float> LOOP_UPDATE_HZ;
     
     void loop();
     

@@ -14,7 +14,7 @@
 #include <SDL.h>
 #endif
 
-using namespace std::chrono_literals;
+//using namespace std::chrono_literals;
 
 namespace whiteice
 {
@@ -315,7 +315,7 @@ namespace whiteice
 
 	while(F_processed == false){
 	  auto now = std::chrono::system_clock::now();
-	  F_processed_cond.wait_until(lock, now + 10*100ms);
+	  F_processed_cond.wait_until(lock, now + std::chrono::milliseconds(100));
 	  if(running == false)
 	    return false;
 	}
@@ -413,7 +413,7 @@ namespace whiteice
 
 	while(F_processed == true){
 	  auto now = std::chrono::system_clock::now();
-	  F_processed_cond.wait_until(lock, now + 10*100ms);
+	  F_processed_cond.wait_until(lock, now + std::chrono::milliseconds(100));
 	  if(running == false) return;
 	}
 	

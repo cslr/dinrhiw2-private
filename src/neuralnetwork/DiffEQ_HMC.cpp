@@ -24,7 +24,7 @@ namespace whiteice
     this->correct_times = correct_times;
 
     for(unsigned int i=0;i<correct_times.size();i++){
-      delta_times.insert(std::pair(correct_times[i], i));
+      delta_times.insert(std::pair<T, unsigned int>(correct_times[i], i));
     }
     
   }

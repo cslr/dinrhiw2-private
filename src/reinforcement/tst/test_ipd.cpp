@@ -34,7 +34,7 @@ int main(int argc, char** argv)
     }
   }
 
-  whiteice::IPD_ES es(TURNS, HISTORY_LENGTH);
+  whiteice::IPD_ES<> es(TURNS, HISTORY_LENGTH);
 
   printf("Iterated Prisoner's Dilemma stategy optimization using evolution strategies using neural networks\n");
   printf("Number of players: %d\n", NUM_PLAYERS);
