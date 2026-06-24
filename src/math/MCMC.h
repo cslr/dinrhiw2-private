@@ -68,7 +68,7 @@ namespace whiteice
 
       bool adapt_stdev = true; // adapt gaussian sampling step length
 
-      std::atomic<float> temperature = 1.0f;
+      std::atomic<float> temperature;
 
       std::vector< math::vertex<T> > samples;
       unsigned int sum_N = 0;

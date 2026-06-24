@@ -20,6 +20,8 @@ namespace whiteice
       sum_mean.zero();
 
       sampling_thread = nullptr;
+
+      temperature = 1.0f;
       
       running = false;
     }

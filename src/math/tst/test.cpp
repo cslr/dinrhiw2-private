@@ -399,7 +399,7 @@ void linear_arx_test()
   xdata.preprocess(); // mean,stdev normalization
   pdata.preprocess();
 
-  whiteice::math::LinearARX arx;
+  whiteice::math::LinearARX<> arx;
 
   if(arx.computeSolution(xdata, pdata, HISTLEN) == false){
     printf("ERROR: computing solution FAILED.\n");
