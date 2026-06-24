@@ -183,7 +183,7 @@ dnl check for GMP integer library
 AC_MSG_CHECKING([for GMP library])
 GMP_LIBRARY="no"
 
-`gcc -o gmp gmptest.c -I/usr/include/ -L/usr/lib/ -I/usr/local/include/ -L/usr/local/lib/ -lgmp > /dev/null 2> /dev/null`
+`gcc -o gmp gmptest.c -I/usr/local/include/ -L/usr/local/lib/ -lgmp > /dev/null 2> /dev/null`
 
 if [[ $? -eq 0 ]]; then
   GMP_LIBRARY="yes"
@@ -791,7 +791,8 @@ dnl
 
 
 EXTRA_INCLUDEPATHS="-I/usr/include/ $EXTRA_INCLUDEPATHS $BLAS_CFLAGS $EXTRA_DEFINES"
-EXTRA_LIBS="-L/usr/lib/ $EXTRA_LIBS $BLAS_LIBS -lstdc++"
+EXTRA_LIBS="$EXTRA_LIBS $BLAS_LIBS -lstdc++"
+dnl EXTRA_LIBS="-L/usr/lib/ $EXTRA_LIBS $BLAS_LIBS -lstdc++"
 dnl `python3-config --libs --embed`"
 
 AC_SUBST([EXTRA_INCLUDEPATHS],[$EXTRA_INCLUDEPATHS])
