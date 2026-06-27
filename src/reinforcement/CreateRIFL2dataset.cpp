@@ -280,9 +280,23 @@ namespace whiteice
 
       for(unsigned int e=0;e<episodes.size();e++){
 	T esum = T(0.0f);
+	T emean = T(0.0f);
+	T evar  = T(0.0f);
 
 	for(const auto& ei : episodes[e]){
-	  esum += whiteice::math::pow(whiteice::math::abs(ei.reinforcement), T(2.0f));
+	  const T w = whiteice::math::pow(whiteice::math::abs(ei.reinforcement), T(2.0f));
+	  emean += w;
+	  evar  += w*w;
+	}
+
+	emean /= episodes[e].size();
+	evar /= episodes[e].size();
+	
+	const T estdev = whiteice::math::sqrt(whiteice::math::abs(evar - emean*emean));
+
+	for(const auto& ei : episodes[e]){
+	  const T w = whiteice::math::pow(whiteice::math::abs(ei.reinforcement), T(2.0f));
+	  esum += T(1.0f)/(T(1.0f) + whiteice::math::exp(-(w-emean)/estdev)); // softmax so outliers dont dominate
 	}
 
 	if(episodes[e].size())
@@ -556,7 +570,7 @@ namespace whiteice
 	T sump = T(0.0f);
 
 	if(rifl.use_smart_weights)
-	  mixing_factor = T(1.0f);
+	  mixing_factor = T(0.0f);
 	
 	for(unsigned int i=0;i<database.size();i++){
 	  std::pair<T, unsigned int> p;

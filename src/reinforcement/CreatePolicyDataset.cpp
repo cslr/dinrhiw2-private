@@ -169,8 +169,24 @@ namespace whiteice
       
       T total_weight = T(0.0f);
 
+      T mean = T(0.0f);
+      T var  = T(0.0f);
+
       for(unsigned int i=0;i<database.size();i++){
-	total_weight += whiteice::math::pow(whiteice::math::abs(database[i].reinforcement), T(2.0f));
+	const T w = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement), T(2.0f));
+
+	mean += w;
+	var  += w*w;	 
+      }
+
+      mean /= database.size();
+      var /= database.size();
+
+      const T stdev = whiteice::math::sqrt(whiteice::math::abs(var - mean*mean));
+
+      for(unsigned int i=0;i<database.size();i++){       
+	const T w = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement), T(2.0f));
+	total_weight += T(1.0f)/(T(1.0f) + whiteice::math::exp(-(w-mean)/stdev)); // softmax so outliers dont dominate
       }
       
       // assert(total_weight > T(0.0f));
@@ -187,8 +203,9 @@ namespace whiteice
 	std::pair<T, unsigned int> p;
 
 	// sump += episodes_weights[i]/total_weight;
-	sump += (T(1.0f) - mixing_factor)*whiteice::math::pow(whiteice::math::abs(database[i].reinforcement), T(2.0f))/total_weight +
-	  mixing_factor*(T(1.0f)/T(database.size()));
+	const T w = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement), T(2.0f));
+	const T s = T(1.0f)/(T(1.0f) + whiteice::math::exp(-(w-mean)/stdev)); // softmax so outliers dont dominate
+	sump += (T(1.0f) - mixing_factor)*s/total_weight + mixing_factor*(T(1.0f)/T(database.size()));
 
 	p.first = sump;
 	p.second = i;
