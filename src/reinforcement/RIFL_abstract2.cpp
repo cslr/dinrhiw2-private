@@ -14,6 +14,17 @@
 #include <functional>
 #include <list>
 
+#include <pthread.h>
+#include <sched.h>
+
+#ifdef __linux__
+#include <unistd.h>
+#endif
+
+#ifdef WINOS
+#include <windows.h>
+#endif
+
 
 namespace whiteice
 {
@@ -1716,6 +1727,40 @@ namespace whiteice
   template <typename T>
   void RIFL_abstract2<T>::loop()
   {
+    // set thread priority high
+    {
+      sched_param sch_params;
+      int policy = SCHED_OTHER; // SCHED_RR, FIFO
+      
+      pthread_getschedparam(pthread_self(), &policy, &sch_params);
+      
+      policy = SCHED_OTHER;
+      sch_params.sched_priority = sched_get_priority_max(policy);
+      
+      if(pthread_setschedparam(pthread_self(),
+			       policy, &sch_params) != 0){
+      }
+
+      policy = SCHED_FIFO;
+      sch_params.sched_priority = sched_get_priority_max(policy);
+      
+      if(pthread_setschedparam(pthread_self(),
+			       policy, &sch_params) != 0){
+      }
+      
+#ifdef __linux__
+      nice(0);
+      nice(-20);
+#endif
+      
+#ifdef WINOS
+      SetThreadPriority(GetCurrentThread(),
+			THREAD_PRIORITY_HIGHEST);
+#endif
+      
+    }
+    
+    
     // number of iteratios to use per epoch for optimization
     // const unsigned int Q_OPTIMIZE_ITERATIONS = 100; // 40, was 1 (dont work), 5, 10, WAS: 5000
     // const unsigned int P_OPTIMIZE_ITERATIONS = 100; // 10, was 1 (dont work), 5, 10, WAS: 1000
