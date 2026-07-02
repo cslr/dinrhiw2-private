@@ -1749,7 +1749,6 @@ namespace whiteice
       }
       
 #ifdef __linux__
-      nice(0);
       nice(-20);
 #endif
       
@@ -2230,13 +2229,13 @@ namespace whiteice
 	  }
 #endif
 	  else{ // just adds some random noise to action based on Q-value [mini-exploration]
-#if 1
+#if 0
 	    auto noise = u;
 	    rng.normal(noise); // Normal EX[n]=0 StDev[n]=1
 	    u += T(0.025)*noise; // was: sigma = 0.025
 #endif
 	    
-#if 0
+#if 1
 	    auto noise = u, u2 = u;
 	    rng.normal(noise);
 	    u2 += T(0.01)*noise;
@@ -2284,7 +2283,7 @@ namespace whiteice
 
 	    const T epsilon = T(1e-5);
 
-	    const T uncertainty = (var1+var2)/(mean1+epsilon);
+	    const T uncertainty = (var1+var2)/(T(2.0f)*(mean1+epsilon));
 
 	    const T sigma_min = T(0.025);
 	    const T sigma_max = T(0.200);

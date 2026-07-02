@@ -252,7 +252,7 @@ namespace whiteice
 
     // reinforcement Q model: Q(state, action) ~ discounted future cost
     // whiteice::bayesian_nnetwork<T> Q, lagged_Q, Q2, lagged_Q2;
-    const unsigned int NUM_Q_NNETWORKS = 10; // was: 5 (dont work??), 10 (works)
+    const unsigned int NUM_Q_NNETWORKS = 15; // was: 5 (dont work??), 10 (works)
     std::vector< whiteice::bayesian_nnetwork<T> > Q, lagged_Q;
     whiteice::dataset<T> Q_preprocess;
     mutable std::mutex Q_mutex;
