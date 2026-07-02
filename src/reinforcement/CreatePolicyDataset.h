@@ -7,6 +7,7 @@
 #include <thread>
 #include <mutex>
 #include <vector>
+#include <atomic>
 
 #include "dataset.h"
 #include "dinrhiw_blas.h"
@@ -18,10 +19,10 @@ namespace whiteice
 {
 
   template <typename T = math::blas_real<float> >
-    class CreatePolicyDataset
-    {
-    public:
-
+  class CreatePolicyDataset
+  {
+  public:
+    
     // calculates reinforcement learning training dataset from database
     // using database_lock
     CreatePolicyDataset(RIFL_abstract2<T> const & rifl, 
@@ -46,22 +47,28 @@ namespace whiteice
     // (warning: if calculations are running then dataset can change during use)
     whiteice::dataset<T> const & getDataset() const;
 
-    private:
-
+  private:
+    
     RIFL_abstract2<T> const & rifl;
     
     std::vector< rifl2_datapoint<T> > const & database;    
     std::mutex & database_mutex;
+    
+    whiteice::dataset<T> policy_preprocess;
+    whiteice::bayesian_nnetwork<T> lagged_policy;
+    
+    whiteice::dataset<T> Q_preprocess;
+    std::vector< whiteice::bayesian_nnetwork<T> > lagged_Q;
 
     //whiteice::RNG<T> rng;
     
     unsigned int NUMDATA; // number of datapoints to create
     whiteice::dataset<T>& data;
-    bool completed;
+    std::atomic<bool> completed;
 
     std::thread* worker_thread;
     mutable std::mutex   thread_mutex;
-    bool running;
+    std::atomic<bool> running;
 
     // worker thread loop
     void loop();

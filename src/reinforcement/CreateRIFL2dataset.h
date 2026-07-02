@@ -7,6 +7,7 @@
 #include <thread>
 #include <mutex>
 #include <vector>
+#include <atomic>
 
 #include "dataset.h"
 #include "dinrhiw_blas.h"
@@ -68,11 +69,13 @@ namespace whiteice
 
     unsigned int NUMDATA; // number of datapoints to create
     whiteice::dataset<T> data;
-    bool completed = false;;
+    std::atomic<bool> completed = false;;
 
     std::thread* worker_thread = NULL;
     mutable std::mutex   thread_mutex;
-    bool running = false;
+
+    mutable std::mutex stop_mutex;
+    std::atomic<bool> running = false;
 
     // worker thread loop
     void loop();
