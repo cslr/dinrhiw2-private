@@ -360,7 +360,9 @@ float RNG<T>::unif() const
 template <typename T>
 double RNG<T>::unid() const
 {
-  return (0.5 + ((signed)((this->*rdrand32)())) * .2328306e-9);
+  const unsigned long long r = (this->*rdrand64)();
+  
+  return (double)(r >> 11)*(1.0/9007199254740992.0); // 53bit_integer / 2^53
 }
 
 

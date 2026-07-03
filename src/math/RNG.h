@@ -50,6 +50,10 @@ namespace whiteice {
     float uniformf() const {
       return unif();
     }
+
+    double uniformd() const {
+      return unid();
+    }
     
     float normalf() const {
       return rnor();
