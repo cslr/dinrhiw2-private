@@ -2107,7 +2107,7 @@ namespace whiteice
 	      
 	      rng.normal(noise); // Normal E[n]=0 StDev[n]=1
 	      
-	      actions[i] = u + T(0.333f)*noise; // was 0.1, 0.3, 0.6, *1.0
+	      actions[i] = u + T(0.5000f)*noise; // was 0.1, 0.3, 0.6, *1.0
 	      
 	      for(unsigned int j=0;j<actions[i].size();j++){ // action is [-1,1]^D valued vector
 		if(actions[i][j] < T(-1.0f)) actions[i][j] = T(-1.0f);
@@ -2330,7 +2330,7 @@ namespace whiteice
 	    else if(uncertainty <= T(0.0f)) uncertainty = T(0.0f);
 
 	    const T sigma_min = T(0.025);
-	    const T sigma_max = T(0.200);
+	    const T sigma_max = T(0.100);
 	    
 	    const T sigma = sigma_min + (sigma_max - sigma_min)*uncertainty;
 
