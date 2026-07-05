@@ -1179,7 +1179,7 @@ namespace whiteice
 	    if(value > best_value || always_update_solution){
 	      // improvement (larger mean q-value of the policy)
 
-	      printf("BETTER POLICY FOUND: %f\n", value.c[0]);
+	      // printf("BETTER POLICY FOUND: %f\n", value.c[0]);
  
 	      best_value = value;
 	      best_q_value = value; // getValue(*policy, *Q, *Q_preprocess, dtest);

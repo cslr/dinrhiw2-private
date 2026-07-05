@@ -2810,8 +2810,8 @@ namespace whiteice
 		  if(nn2.getBatchNorm()) if(nn2.importBNdata(lagged_bndata[0]) == false) assert(0);
 		  if(lagged_Q[q_index].importNetwork(nn2) == false) assert(0);
 
-		  printf("Q %d UPDATE DONE (epoch: %d, hasmodel: %d)\n",
-			 q_index, epoch[q_index], hasModel[q_index]);
+		  //printf("Q %d UPDATE DONE (epoch: %d, hasmodel: %d)\n", q_index, epoch[q_index], hasModel[q_index]);
+			 
 		}
 		else{
 		  logging.info("lagged_Q updated: NO LAG");
@@ -3111,8 +3111,7 @@ namespace whiteice
 		    
 		    lagged_policy.importNetwork(nn2);
 
-		    printf("POLICY UPDATE DONE (epoch: %d, hasmodel: %d)\n",
-			   epoch[NUM_Q_NNETWORKS], hasModel[NUM_Q_NNETWORKS]);
+		    //printf("POLICY UPDATE DONE (epoch: %d, hasmodel: %d)\n", epoch[NUM_Q_NNETWORKS], hasModel[NUM_Q_NNETWORKS]);
 		  }
 		  else{
 		    logging.info("lagged_policy updated: NO LAG");
