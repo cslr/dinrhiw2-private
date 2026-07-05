@@ -24,8 +24,8 @@ namespace whiteice
 					      whiteice::dataset<T>& data_) : 
 
     rifl(rifl_),
-    database(database_),
-    database_mutex(database_mutex_),
+    database__(database_),
+    database_mutex(database_mutex_),    
     data(data_)
   {
     std::lock_guard<std::mutex> lock(thread_mutex);
@@ -48,6 +48,7 @@ namespace whiteice
 	this->Q_preprocess = rifl.Q_preprocess;
       }
     }
+
   }
   
   
@@ -194,19 +195,40 @@ namespace whiteice
       logging.info(buf);
     }
 
-
-    std::map<T, unsigned int> weights;
-    
     {
-      database_mutex.lock();
+      std::lock_guard<std::mutex> lock(database_mutex);
+      
+      //this->database = database__;
+      
+      unsigned int DSIZE = 10*NUMDATA;
+      
+      if(DSIZE >= database__.size()){
+	this->database = database__;
+      }
+      else{
+	database.resize(DSIZE);
+
+	for(unsigned int i=0;i<database.size();i++){
+	  database[i] = database__[rng.rand() % database__.size()];
+	}
+      }
+      
+    }
+    
+
+    std::map<double, unsigned int> weights;
+
+#if 1
+    {
+      //database_mutex.lock();
 
       // weighted sampling that are calculated from |reinforcement(s,a)| and stdev(Qi(s,a))--
       
-      T total_weight = T(0.0f);
+      double total_weight = 0.0;
       T mean = T(0.0f);
       T var  = T(0.0f);
 
-      T total_qweight = T(0.0f);
+      double total_qweight = 0.0;
       T qmean = T(0.0f);
       T qvar  = T(0.0f);
 
@@ -240,6 +262,8 @@ namespace whiteice
 
 	  if(tmp2.write_subvertex(database[i].state, 0) == false)
 	    assert(0);
+
+	  policy_preprocess.preprocess(0, tmp2);
 
 	  if(lagged_policy.calculate(tmp2, action, 1, 0) == false)
 	    assert(0);
@@ -298,41 +322,71 @@ namespace whiteice
       const T stdev = whiteice::math::sqrt(whiteice::math::abs(var - mean*mean)) + T(1e-9);
       const T qstdev = whiteice::math::sqrt(whiteice::math::abs(qvar - qmean*qmean)) + T(1e-9);
 
+      const double beta = 1.5; // temperature, more weights to high values [2,4]
 
       for(unsigned int i=0;i<database.size();i++){       
 	const T w = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement), T(2.0f));
-	total_weight += T(1.0f)/(T(1.0f) + whiteice::math::exp(-(w-mean)/stdev)); // softmax so outliers dont dominate
+
+	double z = beta*((double)(w.c[0]-mean.c[0])/stdev.c[0]);
+
+	if(z > 20.0) z = 20.0;
+	
+	const double s = whiteice::math::exp(z);
+	
+	//const T s = T(1.0f)/(T(1.0f) + whiteice::math::exp(-beta*(w-mean)/stdev)); // softmax so outliers dont dominate
+	total_weight += s;
 
 	const T qw = whiteice::math::pow(whiteice::math::abs(qvalues[i]), T(2.0f));
-	total_qweight += T(1.0f)/(T(1.0f) + whiteice::math::exp(-(qw-qmean)/qstdev)); // softmax so outliers dont dominate
+	//const T qs = T(1.0f)/(T(1.0f) + whiteice::math::exp(-beta*(qw-qmean)/qstdev)); // softmax so outliers dont dominate
+
+	double qz = beta*((double)(qw.c[0]-qmean.c[0])/qstdev.c[0]);
+
+	if(qz > 20.0) qz = 20.0;
+	
+	const double qs = whiteice::math::exp(qz);
+	
+	total_qweight += qs;
       }
       
       // assert(total_weight > T(0.0f));
-      if(total_weight <= T(0.0f))
-	total_weight = 1.0f;
+      if(total_weight <= 0.0)
+	total_weight = 1.0;
 
-      if(total_qweight <= T(0.0f))
-	total_qweight = 1.0f;
+      if(total_qweight <= 0.0)
+	total_qweight = 1.0;
       
 
-      T mixing_factor = T(0.25f); // 75% go to high reinforcement values..
-      T sump = T(0.0f);
+      const double mixing_factor = 0.50; // was: 0.20: 80% go to high reinforcement values..
+      double sump = 0.0;
 
       //if(rifl.use_smart_weights)
       // mixing_factor = T(0.0f);
       
       for(unsigned int i=0;i<database.size();i++){
-	std::pair<T, unsigned int> p;
+	std::pair<double, unsigned int> p;
 
 	// sump += episodes_weights[i]/total_weight;
 	const T w = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement), T(2.0f));
-	const T s = T(1.0f)/(T(1.0f) + whiteice::math::exp(-(w-mean)/stdev)); // softmax so outliers dont dominate
+	//const T s = T(1.0f)/(T(1.0f) + whiteice::math::exp(-beta*(w-mean)/stdev)); // softmax so outliers dont dominate
+
+	double z = beta*((double)(w.c[0]-mean.c[0])/stdev.c[0]);
+
+	if(z > 20.0) z = 20.0;
+	
+	const double s = whiteice::math::exp(beta*z);
 
 	const T qw = whiteice::math::pow(whiteice::math::abs(qvalues[i]), T(2.0f));		
-	const T qs = T(1.0f)/(T(1.0f) + whiteice::math::exp(-(qw-qmean)/qstdev)); // softmax so outliers dont dominate
+	//const T qs = T(1.0f)/(T(1.0f) + whiteice::math::exp(-beta*(qw-qmean)/qstdev)); // softmax so outliers dont dominate
+
+	double qz = beta*((double)(qw.c[0]-qmean.c[0])/qstdev.c[0]);
+
+	if(qz > 20.0) qz = 20.0;
+	
+	const double qs = whiteice::math::exp(qz);
 	
 	sump +=
-	  (T(1.0f) - mixing_factor)*s/total_weight +
+	  (1.0 - mixing_factor)*(s/total_weight) +
+	  //(1.0 - mixing_factor)*(1.0/database.size()) +
 	  mixing_factor*(qs/total_qweight);
 
 	p.first = sump;
@@ -341,8 +395,9 @@ namespace whiteice
 	weights.insert(p);
       }
 
-      database_mutex.unlock();
+      // database_mutex.unlock();
     }
+#endif
 
     
 
@@ -356,28 +411,40 @@ namespace whiteice
       
       // const unsigned int index = rng.rand() % database.size();
 
-      const T r = rng.uniform();
-      
-      auto iter = weights.upper_bound(r);
-
       unsigned int index = 0;
 
-      if(iter != weights.end()){
-	index = iter->second;
+#if 1
+      if(rng.rand() &  1){ // 50% of the samples are weighted
+      
+	const double r = rng.uniformd();
+	
+	auto iter = weights.upper_bound(r);
+	
+	if(iter != weights.end()){
+	  index = iter->second;
+	}
+	
       }
-
-      database_mutex.lock();
+      else
+#endif
+      {
+	index = rng.rand() % database.size();
+      }
+	  
+	
+	
+      //database_mutex.lock();
       
       const auto datum = database[index];
       
-      database_mutex.unlock();
+      //database_mutex.unlock();
       
       
 #pragma omp critical
       {
 	data.add(0, datum.state);
 
-	// std::cout << "policy dataset: state = " << datum.state << std::endl;
+	//// std::cout << "policy dataset: state = " << datum.state << std::endl;
       }
       
     }
@@ -392,8 +459,8 @@ namespace whiteice
 #if 1
     // add preprocessing to dataset (ENABLED!)
     {
-      data.preprocess
-	(0, whiteice::dataset<T>::dnMeanVarianceNormalization);
+      data.preprocess(0, whiteice::dataset<T>::dnMeanVarianceNormalization);
+	
     }
 #endif
 
@@ -401,13 +468,13 @@ namespace whiteice
       unsigned int state_dimensions = 0;
       
       {
-	database_mutex.lock();
+	//database_mutex.lock();
 	
 	if(database.size() > 0){
 	  state_dimensions = database[0].state.size();
 	}
 	
-	database_mutex.unlock();
+	//database_mutex.unlock();
       }
     
       char buf[256];
@@ -416,6 +483,8 @@ namespace whiteice
     }
       
     {
+      database.clear();
+      
       std::lock_guard<std::mutex> lock(thread_mutex);
       completed = true;
       running = false;

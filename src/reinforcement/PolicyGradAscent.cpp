@@ -1113,7 +1113,7 @@ namespace whiteice
 	  
 	  { // use ADAM optimizer
 	    
-	    const T alpha = T(0.001);
+	    const T alpha = T(0.01); // was: 0.001, 0.03 (toimi)
 	    const T beta1 = T(0.9);
 	    const T beta2 = T(0.999);
 	    const T epsilon = T(1e-8);
@@ -1178,6 +1178,8 @@ namespace whiteice
 	    
 	    if(value > best_value || always_update_solution){
 	      // improvement (larger mean q-value of the policy)
+
+	      printf("BETTER POLICY FOUND: %f\n", value.c[0]);
  
 	      best_value = value;
 	      best_q_value = value; // getValue(*policy, *Q, *Q_preprocess, dtest);

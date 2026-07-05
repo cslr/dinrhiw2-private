@@ -208,6 +208,15 @@ namespace whiteice
       AFTER_EFFECT_DELAY_MS = delay_ms; // zero disables after effect
     }
 
+    bool getSaveAndReturnToBestEpisode() const {
+      return saveBestEpisode;
+    }
+
+    // remembers the best episode and returns to it if no progress
+    void setSaveAndReturnToBestEpisode(bool save){
+      saveBestEpisode = save;
+    }
+
     // clear reinforcement statistics
     bool clearStatistics();
 
@@ -252,7 +261,7 @@ namespace whiteice
 
     // reinforcement Q model: Q(state, action) ~ discounted future cost
     // whiteice::bayesian_nnetwork<T> Q, lagged_Q, Q2, lagged_Q2;
-    const unsigned int NUM_Q_NNETWORKS = 15; // was: 5 (dont work??), 10 (works)
+    const unsigned int NUM_Q_NNETWORKS = 10; // was: 5 (dont work??), 10 (works)
     std::vector< whiteice::bayesian_nnetwork<T> > Q, lagged_Q;
     whiteice::dataset<T> Q_preprocess;
     mutable std::mutex Q_mutex;
@@ -261,6 +270,9 @@ namespace whiteice
     whiteice::bayesian_nnetwork<T> policy, lagged_policy;;
     whiteice::dataset<T> policy_preprocess;
     mutable std::mutex policy_mutex;
+
+    // remembers the best episode and returns to it if no progress
+    std::atomic<bool> saveBestEpisode = false;    
 
     T tau = T(0.001), tau_policy = T(0.005);
 
@@ -272,6 +284,7 @@ namespace whiteice
     // database
     std::vector< rifl2_datapoint<T> > database;
     std::vector< std::vector< rifl2_datapoint<T> > > episodes;
+    std::vector<T> episodes_score;
     
     
     mutable std::mutex database_mutex;

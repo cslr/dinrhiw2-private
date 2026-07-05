@@ -59,8 +59,11 @@ namespace whiteice
   
     RIFL_abstract2<T> const & rifl;
 
-    const std::vector< rifl2_datapoint<T> >& database;
-    const std::vector< std::vector< rifl2_datapoint<T> > >& episodes;
+    std::vector< rifl2_datapoint<T> > const & database__;
+    std::vector< std::vector< rifl2_datapoint<T> > > const & episodes__;
+
+    std::vector< rifl2_datapoint<T> > database;
+    std::vector< std::vector< rifl2_datapoint<T> > > episodes;
     std::mutex & database_mutex;
 
     bool smartEpisodes = false;

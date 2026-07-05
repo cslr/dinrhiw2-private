@@ -90,6 +90,8 @@ int main(int argc, char** argv)
       if((counter % 180) == 0){ // saved model file every 3 minutes
 	if(system.save("rifl.dat"))
 	  printf("MODEL FILE SAVED\n");
+	else
+	  printf("MODEL FILE SAVING FAILED!\n");
       }
 
       if((counter % 10) == 0){ // every 10 secs
@@ -102,6 +104,8 @@ int main(int argc, char** argv)
 
     if(system.save("rifl.dat"))
       printf("MODEL FILE SAVED\n");
+    else
+      printf("MODEL FILE SAVING FAILED!\n");
 
     system.stop();
     

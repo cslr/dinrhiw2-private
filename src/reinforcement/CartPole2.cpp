@@ -17,22 +17,31 @@
 
 //using namespace std::chrono_literals;
 
+// was 64, 128 should learn the function properly...
+#define CP2_MODEL_WIDTH 64
 
 namespace whiteice
 {
 
   template <typename T>
-  CartPole2<T>::CartPole2() : RIFL_abstract2<T>(1, 6, false, 1, 1)
+  CartPole2<T>::CartPole2() : RIFL_abstract2<T>
+    (1, 6, false,
+     {CP2_MODEL_WIDTH,CP2_MODEL_WIDTH,CP2_MODEL_WIDTH,CP2_MODEL_WIDTH},
+     {CP2_MODEL_WIDTH,CP2_MODEL_WIDTH,CP2_MODEL_WIDTH,CP2_MODEL_WIDTH},
+     1, 1)
   {
     {
       this->setSmartEpisodes(true); // gives more weight to reinforcement values when calculating Q
       this->setReinforcementWeighting(true);
       this->setGamma(0.95);
       this->setEpsilon(0.80);
-      this->setLearningDatasetSize(10000); // disabled (use default 4000), 10.000
+      this->setLearningDatasetSize(2500); // disabled (use default 4000), was: 10.000, 1.000, *2500* (works)
+      this->setMinimumDataSize(2000); //1000 random examples before starting optimizations/learning..
 
-      this->setQTau(0.1);
-      this->setPolicyTau(0.1);
+      this->setQTau(0.01); // was: 0.1, 0.05, 1.0 (disable polyak averaging)
+      this->setPolicyTau(0.01); // was: 0.1, 0.05, 1.0 (disable polyak averaging)
+
+      this->setSaveAndReturnToBestEpisode(false); // NOT: remembers the best episode and returns to it if no progress
     }
     
     
@@ -566,7 +575,7 @@ namespace whiteice
 	F_processed_cond.notify_all();
       }
 
-      if(t >= 20.0 || abs(x) > T(1000.0f)){
+      if(t >= 10.0 || abs(x) > T(1000.0f)){ // from 20 secs to 10 secs stimulation period
 	iteration++;
 	t = 0.0;
 

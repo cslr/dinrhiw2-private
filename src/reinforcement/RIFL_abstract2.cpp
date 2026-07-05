@@ -191,9 +191,12 @@ namespace whiteice
 
 	  // nn.setNonlinearity(0, whiteice::nnetwork<T>::pureLinear);
 	  // nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid);
-	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh);
 	  
-	  nn.randomize(2, T(0.9)); // was 1.0
+	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // THIS ONE
+	  //nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::pureLinear);
+
+	  
+	  nn.randomize(2, T(0.5)); // was 1.0
 	  nn.setResidual(true);
 	  nn.setBatchNorm(false); // was: true
 	  
@@ -350,11 +353,12 @@ namespace whiteice
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::tanh);
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::tanh);
 	  // whiteice::nnetwork<T> nn(arch, whiteice::nnetwork<T>::sigmoid);
-	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh);
+	  nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::tanh); // THIS ONE!!
+	  //nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::pureLinear);
 	  // nn.setNonlinearity(0, whiteice::nnetwork<T>::pureLinear);
 	  // nn.setNonlinearity(nn.getLayers()-1, whiteice::nnetwork<T>::sigmoid);
 	  
-	  nn.randomize(2, T(0.9)); // was 1.0
+	  nn.randomize(2, T(0.5)); // was 1.0
 	  nn.setResidual(true);
 	  nn.setBatchNorm(false); // was: true for policy
 	  
@@ -1210,7 +1214,10 @@ namespace whiteice
 	db.createCluster("distance", 1);
 
       db.createCluster("episodes-range", 2);
-      
+
+      db.createCluster("episodes-score", 1);
+
+      assert(episodes.size() == episodes_score.size());
 
       for(unsigned int e=0;e<episodes.size();e++){
 	const unsigned int start = db.size(0);
@@ -1259,6 +1266,12 @@ namespace whiteice
 	v[1] = T(end);
 
 	db.add(8, v);
+
+	v.resize(1);
+
+	v[0] = episodes_score[e];
+	
+	db.add(9, v);
       }
 
 
@@ -1299,6 +1312,7 @@ namespace whiteice
     auto distances_load = distances;
     auto distances_random_load = distances_random;
     auto episodes_load = episodes;
+    auto episodes_score_load = episodes_score;
 
     reinforcements_mutex.unlock();
     database_mutex.unlock();
@@ -1532,7 +1546,7 @@ namespace whiteice
 	return false;
       }
 
-      if(db.getNumberOfClusters() != 9){
+      if(db.getNumberOfClusters() != 10){
 	logging.error("RIFL_abstract2::load() episodes database wrong number of clusters");
 	return false;
       }
@@ -1574,7 +1588,7 @@ namespace whiteice
       }
 
       if(db.size(0) != db.size(1) || db.size(1) != db.size(2) || db.size(2) != db.size(3) ||
-	 db.size(3) != db.size(4)){
+	 db.size(3) != db.size(4) || db.size(8) != db.size(9)){
 
 	char buf[128];
 	snprintf(buf, 128, "RIFL_abstract2::load() database wrong size %d %d %d %d %d",
@@ -1586,6 +1600,7 @@ namespace whiteice
       
       
       episodes_load.clear();
+      episodes_score_load.clear();
 
       for(unsigned int e=0;e<db.size(8);e++){
 
@@ -1630,7 +1645,11 @@ namespace whiteice
 	  epi.push_back(p);
 	}
 
-	episodes_load.push_back(epi);	
+	episodes_load.push_back(epi);
+
+	v = db.access(9, e);
+
+	episodes_score_load.push_back(v[0]); // saves scores
       }
       
     }
@@ -1656,6 +1675,7 @@ namespace whiteice
       distances = distances_load;
       distances_random = distances_random_load;
       episodes = episodes_load;
+      episodes_score = episodes_score_load;
     }
     
     return true;
@@ -1765,11 +1785,11 @@ namespace whiteice
     // const unsigned int P_OPTIMIZE_ITERATIONS = 100; // 10, was 1 (dont work), 5, 10, WAS: 1000
 
     // number of iteratios to use per epoch for optimization
-    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 1000,20
-    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 100,20
+    const unsigned int Q_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 100, 20
+    const unsigned int P_OPTIMIZE_ITERATIONS_FIRST = 100; // WAS: 100, 20
 
-    const unsigned int Q_OPTIMIZE_ITERATIONS = 20; // 3; // WAS: 500
-    const unsigned int P_OPTIMIZE_ITERATIONS = 20; // 3; // WAS: 100
+    const unsigned int Q_OPTIMIZE_ITERATIONS = 20; // WAS: 20
+    const unsigned int P_OPTIMIZE_ITERATIONS = 100; // WAS: 20, 100
     
     // tau = 1.0 => no lagged neural networks [don't work]
     // const T tau = T(0.001); // lagged Q and policy network [keeps tau%=1% of the new weights [was: 0.001, 0.05, 1.0*]
@@ -1781,6 +1801,24 @@ namespace whiteice
     FILE* episodesFile = fopen("episodes-result.txt", "w");    
 
     bool endFlag = false; // did the simulation end during this time step?
+
+    //////////////////////////////////////////////////////////////////////
+    // saves best episode and replaces current one with the best one with
+    // probability p_return = 1/20 when new episode is finished
+    // also resets optimizations when replacing current models with the best one
+
+    const float p_return = 1.0f/2000.0f; // average every 2000 episodes replace episode with the best one
+
+    T best_episode_score = T(-INFINITY);
+
+    std::vector< whiteice::bayesian_nnetwork<T> > best_Q, best_lagged_Q;
+    whiteice::dataset<T> best_Q_preprocess;
+
+    whiteice::bayesian_nnetwork<T> best_policy, best_lagged_policy;;
+    whiteice::dataset<T> best_policy_preprocess;
+    
+    //////////////////////////////////////////////////////////////////////
+    
 
     std::vector< whiteice::dataset<T> > data;
     std::vector< whiteice::CreateRIFL2dataset<T>* > dataset_thread;
@@ -1827,10 +1865,8 @@ namespace whiteice
       grad_iterations[i] = -1;
     
 
-    const unsigned long DATASIZE = 1000000; // was: 100K / 1M history of samples
-    // assumes each episode length is 100 so this is ~ equal to 1.000.000 samples
-    const unsigned long EPISODES_MAX_SIZE = 100000;
-    // const unsigned long MINIMUM_EPISODE_SIZE = 15;// was: 25
+    const unsigned long DATASIZE = 10000000; // was: 10M history of samples
+    const unsigned long EPISODES_MAX_SIZE = 1000000; // 1M episodes
     // const unsigned long MINIMUM_DATASIZE = 500; // samples required to start learning, was:1000
     // const unsigned long SAMPLESIZE = 4000; // number of samples used in learning, was: 5000,*2000*,1000,4000,8000
     unsigned long database_counter = 0;
@@ -1900,6 +1936,7 @@ namespace whiteice
 
 	for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++){
 	  if(dataset_thread[i]){
+	    dataset_thread[i]->stop();
 	    delete dataset_thread[i];
 	    dataset_thread[i] = nullptr;
 	  }
@@ -1909,6 +1946,7 @@ namespace whiteice
 	}
 
 	if(dataset2_thread){
+	  dataset2_thread->stop();
 	  delete dataset2_thread;
 	  dataset2_thread = nullptr;
 	}
@@ -2069,7 +2107,7 @@ namespace whiteice
 	      
 	      rng.normal(noise); // Normal E[n]=0 StDev[n]=1
 	      
-	      actions[i] = u + T(0.666f)*noise; // was 0.1, 0.3, 0.6, *1.0
+	      actions[i] = u + T(0.333f)*noise; // was 0.1, 0.3, 0.6, *1.0
 	      
 	      for(unsigned int j=0;j<actions[i].size();j++){ // action is [-1,1]^D valued vector
 		if(actions[i][j] < T(-1.0f)) actions[i][j] = T(-1.0f);
@@ -2155,7 +2193,7 @@ namespace whiteice
 	      index = iter->second;
 
 	    u = actions[index];
-	    
+
 	    random = true;
 	  }
 #endif
@@ -2293,13 +2331,14 @@ namespace whiteice
 	    noise = u;
 	    rng.normal(noise); // Normal EX[n]=0 StDev[n]=1
 	    u += sigma*noise; // was: sigma = 0.025
-
+#endif
+	    
 	    for(unsigned int i=0;i<u.size();i++){ // action is [-1,1]^D valued vector
 	      if(u[i] < T(-1.0f)) u[i] = T(-1.0f);
 	      else if(u[i] > T(1.0f)) u[i] = T(1.0f);
 	    }
-#endif
 	    
+	    random = false;
 	  }
 	}
 
@@ -2484,7 +2523,8 @@ namespace whiteice
 	  
 	  // for synchronizing access to database datastructure
 	  // (also used by CreateRIFL2dataset class/thread)
-	  std::lock_guard<std::mutex> lock(database_mutex);
+	  database_mutex.lock();
+	  
 	  
 	  episode.push_back(datum);
 	  
@@ -2493,7 +2533,7 @@ namespace whiteice
 	    T total_reward = T(0.0f);
 	    
 	    for(const auto& e : episode)
-	      total_reward += e.reinforcement_pure;
+	      total_reward += e.reinforcement;
 	    
 	    total_reward /= T(episode.size());
 	    
@@ -2517,14 +2557,84 @@ namespace whiteice
 
 	    { 
 	      if(episodes.size() >= EPISODES_MAX_SIZE){
-		const unsigned long index = (episodes_counter % EPISODES_MAX_SIZE);
-		episodes[index] = episode;
+		// tries to find worse memory to replace
+		unsigned int i = 0;
+		
+		while(i <  10){
+		  const unsigned int index = rng.rand() % episodes.size();
+		  
+		  if(episodes_score[index] < total_reward){
+		    episodes[index] = episode;
+		    episodes_score[index] = total_reward;
+		    break;
+		  }
+		  
+		  i++;
+		}
+		
 	      }
 	      else{
 		episodes.push_back(episode);
+		episodes_score.push_back(total_reward);
 	      }
 	      
 	    }
+
+	    database_mutex.unlock(); // frees database_mutex when we handle models and lock them
+
+	    // checks if we replace current models with the best stored one
+	    {
+	      if((rng.uniformf() <= p_return) && (total_reward < best_episode_score) && saveBestEpisode){
+		{
+		  std::lock_guard<std::mutex> lock1(Q_mutex), lock2(policy_mutex);
+		  
+		  this->Q = best_Q;
+		  this->lagged_Q = best_lagged_Q;
+		  this->Q_preprocess = best_Q_preprocess;
+		  
+		  this->policy = best_policy;
+		  this->lagged_policy = best_lagged_policy;
+		  this->policy_preprocess = best_policy_preprocess;
+		}
+
+		// resets optimizations
+		for(unsigned int i=0;i<dataset_thread.size();i++){
+		  if(dataset_thread[i]){
+		    dataset_thread[i]->stop();
+		    delete dataset_thread[i];
+		    dataset_thread[i] = nullptr;
+		  }
+		  
+		  grad[i].stopComputation();
+		  grad[i].reset();
+		}
+		
+		if(dataset2_thread){
+		  dataset2_thread->stop();
+		  delete dataset2_thread;
+		  dataset2_thread = nullptr;
+		}
+		
+		grad2.stopComputation();
+		grad2.reset();
+		
+	      }
+	      else if(total_reward > best_episode_score){
+		std::lock_guard<std::mutex> lock1(Q_mutex), lock2(policy_mutex);
+
+		best_episode_score = total_reward;
+
+		best_Q = Q;
+		best_lagged_Q = lagged_Q;
+		best_Q_preprocess = Q_preprocess;
+
+		best_policy = policy;
+		best_lagged_policy = lagged_policy;
+		best_policy_preprocess = policy_preprocess;
+	      }
+	    }
+
+	    database_mutex.lock(); // acquire database_mutex lock again
 	    
 	    episode.clear();
 	    episodes_counter++;
@@ -2535,9 +2645,20 @@ namespace whiteice
 	  
 	  {
 	    if(database.size() >= DATASIZE){
-	      const unsigned int index = rng.rand() % database.size();
+	      // tries to find worse memory to replace
+	      unsigned int i = 0;
+
+	      while(i <  10){
+		const unsigned int index = rng.rand() % database.size();
+
+		if(database[index].reinforcement < datum.reinforcement){
+		  database[index] = datum;
+		  break;
+		}
+
+		i++;
+	      }
 	      
-	      database[index] = datum;
 	    }
 	    else{
 	      database.push_back(datum);
@@ -2546,7 +2667,8 @@ namespace whiteice
 	  }
 
 	  database_counter++;
-	  
+
+	  database_mutex.unlock();
 	}
 
 	// removes processed values from after_effects_buffer
@@ -2561,6 +2683,7 @@ namespace whiteice
 
 	for(unsigned int i=0;i<dataset_thread.size();i++){
 	  if(dataset_thread[i]){
+	    dataset_thread[i]->stop();
 	    delete dataset_thread[i];
 	    dataset_thread[i] = nullptr;
 	  }
@@ -2570,6 +2693,7 @@ namespace whiteice
 	}
 
 	if(dataset2_thread){
+	  dataset2_thread->stop();
 	  delete dataset2_thread;
 	  dataset2_thread = nullptr;
 	}
@@ -2580,7 +2704,7 @@ namespace whiteice
 	
 	continue; // we do not do learning
       }
-
+      
 
       /*
       printf("DATABASE SIZE: %d / %d. EPISODES SIZE: %d / %d\n",
@@ -2685,6 +2809,9 @@ namespace whiteice
 		  if(nn2.importdata(lagged_weights[0]) == false) assert(0);
 		  if(nn2.getBatchNorm()) if(nn2.importBNdata(lagged_bndata[0]) == false) assert(0);
 		  if(lagged_Q[q_index].importNetwork(nn2) == false) assert(0);
+
+		  printf("Q %d UPDATE DONE (epoch: %d, hasmodel: %d)\n",
+			 q_index, epoch[q_index], hasModel[q_index]);
 		}
 		else{
 		  logging.info("lagged_Q updated: NO LAG");
@@ -2717,19 +2844,18 @@ namespace whiteice
 	  if(dataset_thread[q_index] == nullptr){
 	    
 	    {
+	      if(dataset_thread[q_index]){
+		dataset_thread[q_index]->stop();
+		delete dataset_thread[q_index];
+		dataset_thread[q_index] = nullptr;
+	      }
+
 	      std::lock_guard<std::mutex> lock(database_mutex);
 	      std::lock_guard<std::mutex> lockh(has_model_mutex);
 	      
 	      data[q_index].clear();
 	      //data.createCluster("input-state", numStates + numActions);
 	      //data.createCluster("output-qvalue", 1);
-
-	      if(dataset_thread[q_index]){
-		dataset_thread[q_index]->stop();
-		delete dataset_thread[q_index];
-		dataset_thread[q_index] = nullptr;
-	      }
-	      
 	      
 	      dataset_thread[q_index] = new CreateRIFL2dataset<T>(*this,
 								  database,
@@ -2798,6 +2924,7 @@ namespace whiteice
 	  
 	  const bool dropout = false;
 	  const bool useInitialNN = true; // WAS: start from scratch everytime
+	  const bool alwaysUpdateSolution = true;
 	  
 	  grad[q_index].setRegularizer(T(0.0f)); // DISABLE REGULARIZER FOR Q-NETWORK (was: 0.001f)
 	  grad[q_index].setNormalizeError(false); // calculate real error values	  
@@ -2812,7 +2939,7 @@ namespace whiteice
 	      grad[q_index].setSGD(T(-1.0f)); // disable stochastic gradient descent
 	      
 	      if(grad[q_index].startOptimize(data[q_index], qnn, 1, Q_OPTIMIZE_ITERATIONS,
-				    dropout, useInitialNN) == true)
+					     dropout, useInitialNN, alwaysUpdateSolution) == true)
 		logging.info("========> Q OPTIMIZATION STARTED");
 	      else
 		logging.info("========> Q OPTIMIZATION STARTED FAILED");
@@ -2823,7 +2950,8 @@ namespace whiteice
 	      grad[q_index].setUseMinibatch(false);
 	      grad[q_index].setSGD(T(-1.0f)); // disable stochastic gradient descent
 	      
-	      if(grad[q_index].startOptimize(data[q_index], qnn, 1, Q_OPTIMIZE_ITERATIONS_FIRST, dropout, useInitialNN) == true)
+	      if(grad[q_index].startOptimize(data[q_index], qnn, 1, Q_OPTIMIZE_ITERATIONS_FIRST,
+					     dropout, useInitialNN) == true)
 		logging.info("========> Q OPTIMIZATION STARTED");
 	      else
 		logging.info("========> Q OPTIMIZATION STARTED FAILED");
@@ -2982,6 +3110,9 @@ namespace whiteice
 		    if(nn2.getBatchNorm()) nn2.importBNdata(lagged_bndatas[0]);
 		    
 		    lagged_policy.importNetwork(nn2);
+
+		    printf("POLICY UPDATE DONE (epoch: %d, hasmodel: %d)\n",
+			   epoch[NUM_Q_NNETWORKS], hasModel[NUM_Q_NNETWORKS]);
 		  }
 		  else{
 		    logging.info("lagged_policy updated: NO LAG");
@@ -3030,6 +3161,9 @@ namespace whiteice
 	  // const unsigned int BATCHSIZE = 1000; // was 128
 
 	  if(dataset2_thread == nullptr){
+
+	    std::lock_guard<std::mutex> lock(database_mutex);
+	    
 	    data2.clear();
 	    data2.createCluster("input-state", numStates);
 
@@ -3127,7 +3261,7 @@ namespace whiteice
 
 	    const bool dropout = false;
 	    const bool useInitialNN = true; // WAS: start from scratch everytime
-	    const bool alwaysUpdateSolution = false;
+	    const bool alwaysUpdateSolution = true;
 	    
 
 	    {
@@ -3211,6 +3345,7 @@ namespace whiteice
 
     for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++){
       if(dataset_thread[i]){
+	dataset_thread[i]->stop();
 	delete dataset_thread[i];
 	dataset_thread[i] = nullptr;
       }
@@ -3222,6 +3357,7 @@ namespace whiteice
     grad2.stopComputation();
     
     if(dataset2_thread){
+      dataset2_thread->stop();
       delete dataset2_thread;
       dataset2_thread = nullptr;
     }

@@ -27,8 +27,8 @@ namespace whiteice
 					    unsigned int const& epoch_) : 
   
     rifl(rifl_), 
-    database(database_),
-    episodes(episodes_),
+    database__(database_),
+    episodes__(episodes_),
     database_mutex(database_mutex_),
     epoch(epoch_)
   {
@@ -51,7 +51,6 @@ namespace whiteice
       }
     }
 
-    
   }
   
   
@@ -181,7 +180,49 @@ namespace whiteice
 			THREAD_PRIORITY_IDLE);
 #endif	
     }
+    
+    {
+      std::lock_guard<std::mutex> lock(database_mutex);
 
+      unsigned int DSIZE = 10*NUMDATA;
+      
+      if(DSIZE >= database__.size()){
+	this->database = database__;
+      }
+      else{
+	database.resize(DSIZE);
+
+	for(unsigned int i=0;i<database.size();i++){
+	  database[i] = database__[rng.rand() % database__.size()];
+	}
+      }
+
+      unsigned int mean_e = 0;
+
+      for(unsigned int i=0;i<episodes__.size();i++)
+	mean_e += episodes__[i].size();
+
+      mean_e /= episodes__.size();
+
+      if(!mean_e) mean_e = 1;
+
+      unsigned int ESIZE = 10*NUMDATA / mean_e;
+
+      if(ESIZE >= episodes__.size()){
+	this->episodes = episodes__;
+      }
+      else{
+	episodes.resize(ESIZE);
+
+	for(unsigned int i=0;i<episodes.size();i++){
+	  episodes[i] = episodes__[rng.rand() % episodes__.size()];
+	}
+      }
+      
+    }
+      
+      
+    
     {
       logging.info("CreateRIFL2dataset debug, lagged_Q network diagnostics");
       this->lagged_Q[0].diagnosticsInfo();
@@ -191,7 +232,7 @@ namespace whiteice
       
       
       logging.info("CreateRIFL2dataset debug, database diagnostics");
-      database_mutex.lock();
+      //database_mutex.lock();
 
       T rminvalue = T(0.0);
       T rmaxvalue = T(0.0);
@@ -265,7 +306,7 @@ namespace whiteice
 
       logging.info(buffer);
       
-      database_mutex.unlock();
+      // database_mutex.unlock();
 
       if(smartEpisodes)
 	logging.info("CreateRIFL2dataset debug: smart episodes ENABLED");
@@ -279,14 +320,14 @@ namespace whiteice
 
     if(smartEpisodes){
       
-      database_mutex.lock();
+      // database_mutex.lock();
       
       // weighted sampling that are calculated from |reinforcement(s,a)| and stdev(Qi(s,a))
 
-      std::vector<T> episodes_weights;
-      std::vector<T> episodes_qweights;
+      std::vector<double> episodes_weights;
+      std::vector<double> episodes_qweights;
 
-      std::vector< std::vector<T> > qvalues;
+      std::vector< std::vector<double> > qvalues;
 
       episodes_weights.resize(episodes.size());
       episodes_qweights.resize(episodes.size());
@@ -294,11 +335,11 @@ namespace whiteice
 
 #pragma omp parallel for schedule(guided)
       for(unsigned int e=0;e<episodes.size();e++){
-	T esum = T(0.0f);
+	double esum = 0.0;
 	T emean = T(0.0f);
 	T evar  = T(0.0f);
 
-	T qsum = T(0.0f);
+	double qsum = 0.0;
 	T qmean = T(0.0f);
 	T qvar  = T(0.0f);
 
@@ -322,9 +363,55 @@ namespace whiteice
 
 	  if(tmp.write_subvertex(ei.action, rifl.numStates) == false)
 	    assert(0);
-
-	  this->Q_preprocess.preprocess(0, tmp);
 	  
+	  this->Q_preprocess.preprocess(0, tmp);
+
+	  whiteice::math::vertex<T> a;
+	  whiteice::math::vertex<T> tmp3(rifl.numStates);
+	  
+	  if(tmp3.write_subvertex(ei.newstate, 0) == false)
+	    assert(0);
+
+	  policy_preprocess.preprocess(0, tmp3);
+
+	  if(this->lagged_policy.calculate(tmp3, a, 1, 0) == false)
+	    assert(0);
+
+	  policy_preprocess.invpreprocess(1, a);
+
+	  whiteice::math::vertex<T> tmp2(rifl.numStates + rifl.numActions);
+	  tmp2.zero();
+
+	  if(tmp2.write_subvertex(ei.newstate, 0) == false)
+	    assert(0);
+
+	  if(tmp2.write_subvertex(a, rifl.numStates) == false)
+	    assert(0);
+
+	  this->Q_preprocess.preprocess(0, tmp2);
+
+	  T avg_q = T(0.0f);
+	  T stdev_q = T(0.0f);
+		   
+	  for(unsigned int i=0;i<lagged_Q.size();i++){
+	    whiteice::math::vertex<T> q;
+	    q.resize(1);
+	    q.zero();
+	    
+	    if(this->lagged_Q[i].calculate(tmp2, q, 1, 0) == false)
+	      assert(0);
+	    
+	    this->Q_preprocess.invpreprocess(1, q);
+	    
+	    avg_q += q[0];
+	    stdev_q += q[0]*q[0];
+	  }
+
+	  avg_q /= lagged_Q.size();
+	  stdev_q /= lagged_Q.size();
+	  
+	  stdev_q = whiteice::math::sqrt(whiteice::math::abs(stdev_q - avg_q*avg_q));
+
 	  for(unsigned int i=0;i<lagged_Q.size();i++){
 	    whiteice::math::vertex<T> q;
 	    q.resize(1);
@@ -335,20 +422,23 @@ namespace whiteice
 	    
 	    this->Q_preprocess.invpreprocess(1, q);
 	    
-	    qqmean += q[0];
-	    qqvar += q[0]*q[0];
+	    //const T td_error = ei.reinforcement + rifl.gamma*(avg_q) - q[0];
+	    const T td_error = ei.reinforcement + rifl.gamma*(avg_q + T(0.01f)*stdev_q) - q[0];
+	    
+	    qqmean += whiteice::math::abs(td_error);
+	    qqvar  += td_error*td_error;
 	  }
 	  
 	  
 	  qqmean /= lagged_Q.size();
 	  qqvar  /= lagged_Q.size();
 	  
-	  qqvar = whiteice::math::sqrt(whiteice::math::abs(qqvar - qqmean*qqmean));
+	  qqvar = whiteice::math::abs(qqvar - qqmean*qqmean);
 
-	  qvalues[e][index] = qqvar;
+	  qvalues[e][index] = qqmean.c[0];
 		
-	  qmean += qqvar;
-	  qvar += qqvar*qqvar;
+	  qmean += qqmean;
+	  qvar += qqvar;
 
 	  index++;
 	}
@@ -364,14 +454,32 @@ namespace whiteice
 	const T estdev = whiteice::math::sqrt(whiteice::math::abs(evar - emean*emean)) + T(1e-9f);
 	const T qstdev = whiteice::math::sqrt(whiteice::math::abs(qvar - qmean*qmean)) + T(1e-9f);
 
+	const double beta = 1.5; // temperature, more weights to high values
+
 	index = 0;
 
 	for(const auto& ei : episodes[e]){
 	  const T w = whiteice::math::pow(whiteice::math::abs(ei.reinforcement), T(2.0f));
-	  esum += T(1.0f)/(T(1.0f) + whiteice::math::exp(-(w-emean)/estdev)); // softmax so outliers dont dominate
+
+	  double z = beta*((double)((w.c[0]-emean.c[0])/estdev.c[0]));
+
+	  if(z > 20.0) z = 20.0;
+	  	  
+	  const double s = whiteice::math::exp(z);
+	  esum += s;
+	  
+	  //esum += T(1.0f)/(T(1.0f) + whiteice::math::exp(-beta*(w-emean)/estdev)); // softmax so outliers dont dominate
 	  
 	  const T qw = qvalues[e][index];
-	  qsum += T(1.0f)/(T(1.0f) + whiteice::math::exp(-(qw-qmean)/qstdev)); // softmax so outliers dont dominate
+	  //qsum += T(1.0f)/(T(1.0f) + whiteice::math::exp(-beta*(qw-qmean)/qstdev)); // softmax so outliers dont dominate
+
+	  double qz = beta*((double)((qw.c[0]-qmean.c[0])/qstdev.c[0]));
+
+	  if(qz > 20.0) qz = 20.0;
+	  
+	  const double qs = whiteice::math::exp(qz);
+
+	  qsum += qs;
 	  
 	  index++;
 	}
@@ -385,38 +493,39 @@ namespace whiteice
 	episodes_qweights[e] = qsum;
       }
 
-      database_mutex.unlock();
+      // database_mutex.unlock();
 
-      std::map<T, unsigned int> weights;
+      std::map<double, unsigned int> weights;
       
       {
-	T total_weight = T(0.0f);
-	T total_qweight = T(0.0f);
+	double total_weight = 0.0;
+	double total_qweight = 0.0;
 	
 	for(unsigned int i=0;i<episodes_weights.size();i++){
 	  total_weight += episodes_weights[i];
 	  total_qweight += episodes_qweights[i];
 	}
 
-	if(total_weight <= T(0.0f))
-	  total_weight = T(1.0f);
+	if(total_weight <= 0.0)
+	  total_weight = 1.0f;
 
-	if(total_qweight <= T(0.0f))
-	  total_qweight = T(1.0f);
+	if(total_qweight <= 0.0)
+	  total_qweight = 1.0;
 	
-	T mixing_factor = T(0.25f); // 75% go to high reinforcement value
-	T sump = T(0.0f);
+	const double mixing_factor = 0.50; // was: 0.95: 5% go to high reinforcement value
+	double sump = 0.0;
 
 	//if(rifl.use_smart_weights)
 	//mixing_factor = T(0.0f);
 	
 	for(unsigned int i=0;i<episodes_weights.size();i++){
-	  std::pair<T, unsigned int> p;
+	  std::pair<double, unsigned int> p;
 	  
 	  // sump += episodes_weights[i]/total_weight;
 	  sump +=
-	    (T(1.0f) - mixing_factor)*(episodes_weights[i]/total_weight) +
-	    mixing_factor*(T(episodes_qweights[i])/total_qweight);
+	    (1.0 - mixing_factor)*(episodes_weights[i]/total_weight) +
+	    //(1.0 - mixing_factor)*(1.0/episodes_weights.size()) +
+	    mixing_factor*(episodes_qweights[i]/total_qweight);
 	  
 	  p.first = sump;
 	  p.second = i;
@@ -436,27 +545,33 @@ namespace whiteice
 	if(running == false) // we don't do anything anymore..
 	  break; // exits loop
 	
-	database_mutex.lock();
-
 	// const unsigned int  index = rng.rand() % episodes.size();
 	// const auto episode = episodes[index];
 
-	const T r = rng.uniform();
-	
-	auto iter = weights.upper_bound(r);
-
 	unsigned int index = 0;
 
-	if(iter == weights.end()){
-	  index = (unsigned int)(episodes.size()-1);
+	if(rng.rand() &  1){ // 50% of the samples are weighted
+	  
+	  const double r = rng.uniformd();
+	  
+	  auto iter = weights.upper_bound(r);
+	  
+	  if(iter == weights.end()){
+	    index = (unsigned int)(episodes.size()-1);
+	  }
+	  else{
+	    index = iter->second;
+	  }
 	}
 	else{
-	  index = iter->second;
+	  index = rng.rand() %  episodes.size();
 	}
 
+	//database_mutex.lock();
+	
 	const auto episode = episodes[index];
 
-	database_mutex.unlock();
+	//database_mutex.unlock();
 
 	// adds episode start and end in dataset
 	{
@@ -541,14 +656,6 @@ namespace whiteice
 		logging.info(line.c_str());
 	      }
 
-#if 0
-	      // add exploration noise..
-	      auto noise = u;
-	      // Normal EX[n]=0 StDev[n]=1 [OPTMIZE ME: don't create new RNG everytime but use global one]
-	      rng.normal(noise);
-	      u += T(0.05)*noise;
-#endif
-	      
 	      if(tmp.write_subvertex(u, rifl.numStates) == false) // writes policy's action
 		assert(0);
 	    }
@@ -600,8 +707,10 @@ namespace whiteice
 	      q2 /= T(y.size());
 
 	      auto qstdev = whiteice::math::sqrt(whiteice::math::abs(q2 - qmean*qmean));
-	      
-	      out[0] = rifl.gamma*(qmean + T(0.50f)*qstdev) + datum.reinforcement;
+
+	      // printf("qmean: %f qstdev: %f\n", qmean.c[0], qstdev.c[0]);
+
+	      out[0] = rifl.gamma*(qmean + T(0.01f)*qstdev) + datum.reinforcement;
 	    }
 	    else{ // the first iteration of reinforcement learning do not use Q or if this is last step
 	      out[0] = datum.reinforcement;
@@ -617,7 +726,7 @@ namespace whiteice
 	  
 #pragma omp critical
 	  {
-	    std::lock_guard<std::mutex> lock(database_mutex);
+	    // std::lock_guard<std::mutex> lock(database_mutex);
 	    data.add(0, in);
 	    data.add(1, out);
 
@@ -633,18 +742,19 @@ namespace whiteice
     }
     else{
 
-      std::map<T, unsigned int> weights;
-      
+      std::map<double, unsigned int> weights;
+
+#if 1
       {
-	database_mutex.lock();
+	// database_mutex.lock();
 
 	// weighted sampling that are calculated from |reinforcement(s,a)| and stdev(Qi(s,a))
 	
-	T total_weight = T(0.0f);
+	double total_weight = 0.0;
 	T mean = T(0.0f);
 	T var  = T(0.0f);
 		
-	T total_qweight = T(0.0f);
+	double total_qweight = 0.0;
 	T qmean = T(0.0f);
 	T qvar  = T(0.0f);
 	
@@ -680,30 +790,79 @@ namespace whiteice
 	      assert(0);
 	    
 	    this->Q_preprocess.preprocess(0, tmp);
+
+	    whiteice::math::vertex<T> a;
+	    whiteice::math::vertex<T> tmp3(rifl.numStates);
+
+	    if(tmp3.write_subvertex(database[i].newstate, 0) == false)
+	      assert(0);
+
+	    policy_preprocess.preprocess(0, tmp3);
 	    
+	    if(this->lagged_policy.calculate(tmp3, a, 1, 0) == false)
+	      assert(0);
+
+	    policy_preprocess.invpreprocess(1, a);
+	    
+	    whiteice::math::vertex<T> tmp2(rifl.numStates + rifl.numActions);
+	    tmp2.zero();
+	    
+	    if(tmp2.write_subvertex(database[i].newstate, 0) == false)
+	      assert(0);
+	    
+	    if(tmp2.write_subvertex(a, rifl.numStates) == false)
+	      assert(0);
+	    
+	    this->Q_preprocess.preprocess(0, tmp2);
+	    
+	    T avg_q = T(0.0f);
+	    T stdev_q = T(0.0f);
+
 	    for(unsigned int i=0;i<lagged_Q.size();i++){
 	      whiteice::math::vertex<T> q;
 	      q.resize(1);
 	      q.zero();
 	      
-	      if(this->lagged_Q[i].calculate(tmp, q, 1, 0) == false)
+	      if(this->lagged_Q[i].calculate(tmp2, q, 1, 0) == false)
 		assert(0);
 	      
 	      this->Q_preprocess.invpreprocess(1, q);
 	      
-	      qqmean += q[0];
-	      qqvar += q[0]*q[0];
+	      avg_q += q[0];
+	      stdev_q += q[0]*q[0];
+	    }
+	    
+	    avg_q /= lagged_Q.size();
+	    stdev_q /= lagged_Q.size();
+
+	    stdev_q = whiteice::math::sqrt(whiteice::math::abs(stdev_q - avg_q*avg_q));
+	    
+	    for(unsigned int k=0;k<lagged_Q.size();k++){
+	      whiteice::math::vertex<T> q;
+	      q.resize(1);
+	      q.zero();
+	      
+	      if(this->lagged_Q[k].calculate(tmp, q, 1, 0) == false)
+		assert(0);
+	      
+	      this->Q_preprocess.invpreprocess(1, q);
+
+	      //const T td_error = database[i].reinforcement + rifl.gamma*(avg_q) - q[0];
+	      const T td_error = database[i].reinforcement + rifl.gamma*(avg_q + T(0.01f)*stdev_q) - q[0];
+	      
+	      qqmean += whiteice::math::abs(td_error);
+	      qqvar  += td_error*td_error;
 	    }
 	    
 	    qqmean /= lagged_Q.size();
 	    qqvar  /= lagged_Q.size();
 	    
-	    qqvar = whiteice::math::sqrt(whiteice::math::abs(qqvar - qqmean*qqmean));
+	    qqvar = whiteice::math::abs(qqvar - qqmean*qqmean);
 	    
-	    qvalues[i] = qqvar;
+	    qvalues[i] = qqmean;
 	    
-	    pqmean += qqvar;
-	    pqvar += qqvar*qqvar;
+	    pqmean += qqmean;
+	    pqvar += qqvar;
 	  }
 
 #pragma omp critical
@@ -725,39 +884,56 @@ namespace whiteice
 	const T stdev = whiteice::math::sqrt(whiteice::math::abs(var - mean*mean)) + T(1e-9f);
 	const T qstdev = whiteice::math::sqrt(whiteice::math::abs(qvar - qmean*qmean)) + T(1e-9f);
 
-	std::vector<T> softmax, qsoftmax;
+	std::vector<double> softmax, qsoftmax;
+
+	const double beta = 1.5; // temperature, more weights to high values [2,4]
 
 	for(unsigned int i=0;i<database.size();i++){
 	  const T w = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement), T(2.0f));
-	  const T s = T(1.0f)/(T(1.0f) + whiteice::math::exp(-(w-mean)/stdev)); // softmax so outliers dont dominate
+
+	  double z = beta*((double)((w.c[0]-mean.c[0])/stdev.c[0]));
+
+	  if(z > 20.0) z = 20.0;
+	  
+	  const double s = whiteice::math::exp(z);
+					       
+	  // const T s = T(1.0f)/(T(1.0f) + whiteice::math::exp(-beta*(w-mean)/stdev)); // softmax so outliers dont dominate
 	  softmax.push_back(s);
 	  total_weight += s;
 	  
 	  const T qw = qvalues[i];
-	  const T qs = T(1.0f)/(T(1.0f) + whiteice::math::exp(-(qw-qmean)/qstdev)); // softmax so outliers dont dominate
+	  // const T qs = T(1.0f)/(T(1.0f) + whiteice::math::exp(-beta*(qw-qmean)/qstdev)); // softmax so outliers dont dominate
+
+	  double qz = beta*((double)((qw.c[0]-qmean.c[0])/qstdev.c[0]));
+
+	  if(qz > 20.0) qz = 20.0;
+	  
+	  const double qs = whiteice::math::exp(qz);
+	  
 	  qsoftmax.push_back(qs);
 	  total_qweight += qs;
 	}
 	
 	// assert(total_weight > T(0.0f));
-	if(total_weight <= T(0.0f))
-	  total_weight = 1.0f;
+	if(total_weight <= 0.0)
+	  total_weight = 1.0;
 
-	if(total_qweight <= T(0.0f))
-	  total_qweight = 1.0f;
+	if(total_qweight <= 0.0)
+	  total_qweight = 1.0;
 	
-	T mixing_factor = T(0.25f); // 75% go to reinforcement values
-	T sump = T(0.0f);
+	const double mixing_factor = 0.50; // was: 0.95: 5% go to reinforcement values
+	double sump = 0.0;
 
 	//if(rifl.use_smart_weights)
 	//mixing_factor = T(0.0f);
 	
 	for(unsigned int i=0;i<database.size();i++){
-	  std::pair<T, unsigned int> p;
+	  std::pair<double, unsigned int> p;
 	  
 	  // sump += episodes_weights[i]/total_weight;
 	  sump +=
-	    (T(1.0f) - mixing_factor)*(softmax[i]/total_weight) +
+	    (1.0 - mixing_factor)*(softmax[i]/total_weight) +
+	    //(1.0 - mixing_factor)*(1.0/database.size()) +
 	    mixing_factor*(qsoftmax[i]/total_qweight);
 	  
 	  p.first = sump;
@@ -766,9 +942,9 @@ namespace whiteice
 	  weights.insert(p);
 	}
 	
-	database_mutex.unlock();
+	// database_mutex.unlock();
       }
-      
+#endif 
       
 
 #pragma omp parallel for schedule(guided)
@@ -784,23 +960,31 @@ namespace whiteice
 	
 	// const unsigned int index = rng.rand() % database.size();
 	// const auto datum = database[index];
-
-
-	const T r = rng.uniform();
-	
-	auto iter = weights.upper_bound(r);
 	
 	unsigned int index = 0;
-	
-	if(iter != weights.end()){
-	  index = iter->second;
-	}
 
-	database_mutex.lock();
+#if 1
+	if(rng.rand() &  1){ // 50% of the samples are weighted
+	  
+	  const double r = rng.uniformd();
+	  
+	  auto iter = weights.upper_bound(r);
+	  
+	  if(iter != weights.end()){
+	    index = iter->second;
+	  }
+	}
+	else
+#endif
+	{
+	  index = rng.rand() % database.size();
+	}
+	
+	//database_mutex.lock();
 	
 	const auto datum = database[index];
 	
-	database_mutex.unlock();
+	//database_mutex.unlock();
 	
 	
 	whiteice::math::vertex<T> in(rifl.numStates + rifl.numActions);
@@ -858,14 +1042,6 @@ namespace whiteice
 	      logging.info(line.c_str());
 	    }
 	    
-	    // add exploration noise..
-#if 0
-	    auto noise = u;
-	    // Normal EX[n]=0 StDev[n]=1 [OPTMIZE ME: don't create new RNG everytime but use global one]
-	    rng.normal(noise);
-	    u += T(0.05)*noise;
-#endif
-	    
 	    if(tmp.write_subvertex(u, rifl.numStates) == false) // writes policy's action
 	      assert(0);
 	  }
@@ -913,14 +1089,32 @@ namespace whiteice
 
 	  
 	  if(epoch >= 2 && datum.lastStep == false){
-	    auto qmin = y[0][0];
+	    //auto qmin = y[0][0];
+	    //
+	    //for(unsigned int i=0;i<y.size();i++){
+	    //  if(y[i][0] < qmin) qmin = y[i][0];
+	    //}
+	    //
+	    //out[0] = rifl.gamma*qmin + datum.reinforcement;
 
+	    auto qmean = T(0.0f);
+	    auto q2    = T(0.0f);
+	    
 	    for(unsigned int i=0;i<y.size();i++){
-	      if(y[i][0] < qmin) qmin = y[i][0];
+	      qmean += y[i][0];
+	      q2    += y[i][0]*y[i][0];
 	    }
 	    
-	    out[0] = rifl.gamma*qmin + datum.reinforcement;
+	    qmean /= T(y.size());
+	    q2 /= T(y.size());
+	    
+	    auto qstdev = whiteice::math::sqrt(whiteice::math::abs(q2 - qmean*qmean));
 
+	    // printf("qmean: %f qstdev: %f\n", qmean.c[0], qstdev.c[0]);
+
+	    // qstdev = 0.0f;
+	    	    
+	    out[0] = rifl.gamma*(qmean + T(0.01f)*qstdev) + datum.reinforcement;
 	  }
 	  else{ // the first iteration of reinforcement learning do not use Q or if this is last step
 	    out[0] = datum.reinforcement;
@@ -945,7 +1139,7 @@ namespace whiteice
       }
       
     }
-
+    
     {
       std::lock_guard<std::mutex> lock(thread_mutex);
       
@@ -957,7 +1151,7 @@ namespace whiteice
     {
       data.preprocess(0, whiteice::dataset<T>::dnMeanVarianceNormalization); // Q input vectors are normalized!
 	
-      // data.preprocess(1, whiteice::dataset<T>::dnMeanVarianceNormalization);
+      //// data.preprocess(1, whiteice::dataset<T>::dnMeanVarianceNormalization);
 	
     }
 
@@ -981,6 +1175,8 @@ namespace whiteice
       whiteice::logging.info(buffer);
     }
 
+    database.clear();
+    episodes.clear();
     completed = true;
 
     {
