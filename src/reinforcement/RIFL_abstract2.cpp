@@ -2245,9 +2245,12 @@ namespace whiteice
 	    var1 = whiteice::math::sqrt(whiteice::math::abs(var1 - mean1*mean1));
 	    var2 = whiteice::math::sqrt(whiteice::math::abs(var2 - mean2*mean2));
 
-	    const T epsilon = T(1e-5);
+	    const T epsilon = T(1e-3);
 
-	    const T uncertainty = (var1+var2)/(mean1+epsilon);
+	    const T uncertainty = (var1+var2)/(whiteice::math::abs(mean1)+epsilon);
+
+	    if(uncertainty > T(1.0f)) uncertainty = 1.0f;
+	    else if(uncertainty < T(0.0f)) uncertainty = 0.0f;
 
 	    const T sigma_min = T(0.025);
 	    const T sigma_max = T(0.666);
@@ -2319,9 +2322,12 @@ namespace whiteice
 	    var1 = whiteice::math::sqrt(whiteice::math::abs(var1 - mean1*mean1));
 	    var2 = whiteice::math::sqrt(whiteice::math::abs(var2 - mean2*mean2));
 
-	    const T epsilon = T(1e-5);
+	    const T epsilon = T(1e-3);
 
-	    const T uncertainty = (var1+var2)/(T(2.0f)*(mean1+epsilon));
+	    T uncertainty = (var1+var2)/(T(2.0f)*(whiteice::math::abs(mean1)+epsilon));
+
+	    if(uncertainty >= T(1.0f)) uncertainty = T(1.0f);
+	    else if(uncertainty <= T(0.0f)) uncertainty = T(0.0f);
 
 	    const T sigma_min = T(0.025);
 	    const T sigma_max = T(0.200);
@@ -2352,11 +2358,11 @@ namespace whiteice
 	    if(hasModel[i] == 0) no_model = true;
 	  
 	  if(no_model){
-	    //auto noise = u;		    
-	    //rng.normal(noise); // Normal E[n]=0 StDev[n]=1
-	    //u += T(1.00f)*noise; // was 0.1, 0.3*, 0.6
+	    auto noise = u;		    
+	    rng.normal(noise); // Normal E[n]=0 StDev[n]=1
+	    u += T(1.00f)*noise; // was 0.1, 0.3*, 0.6
 
-	    rng.uniform(u); // [0,1] valued actions!
+	    // rng.uniform(u); // [0,1] valued actions!
 	    
 	    for(unsigned int i=0;i<u.size();i++)
 	      u[i] = T(2.0f)*u[i] - T(1.0f); // [-1,+1] range
@@ -3289,7 +3295,7 @@ namespace whiteice
 		
 		if(grad2.startOptimize(&data2, q_nn, Q_preprocess_copy, nn, 1,
 				       P_OPTIMIZE_ITERATIONS_FIRST,
-				       dropout, useInitialNN, alwaysUpdateSolution) == true){
+				       dropout, useInitialNN, false) == true){
 		  logging.info("========> POLICY OPTIMIZATION STARTED (2)");
 		}
 		else{

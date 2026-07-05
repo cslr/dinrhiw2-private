@@ -59,8 +59,8 @@ namespace whiteice
 #endif
 	// no default initializer => faster but exposes bugs in code..
 	inline blas_real(){
-	  // c[0] = T(0.0f);
-	  // blas_safebox(c[0]);
+	  c[0] = T(0.0f);
+	  blas_safebox(c[0]);
 	}
 	
 	inline blas_real(const T& t){
@@ -368,8 +368,8 @@ namespace whiteice
 	
 	// no default value => faster but exposes bugs in code..
 	inline blas_complex(){
-	  //c[0] = T(0.0f); c[1] = T(0.0f);
-	  //blas_safebox(c[0]); blas_safebox(c[1]);
+	  c[0] = T(0.0f); c[1] = T(0.0f);
+	  blas_safebox(c[0]); blas_safebox(c[1]);
 	}
 	
 	inline blas_complex(const T& r){
