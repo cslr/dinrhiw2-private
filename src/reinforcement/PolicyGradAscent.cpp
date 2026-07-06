@@ -174,7 +174,8 @@ namespace whiteice
       return false;
     }
     
-    if(data_->getNumberOfClusters() != 1){ // dataset only contains state variables
+    if(data_->getNumberOfClusters() != 1 &&
+       data_->getNumberOfClusters() != 2){ // dataset only contains state variables
       char buf[256];
       snprintf(buf, 256, "PolicyGradAscent:startOptimize(): data_->getNumberOfclusters() = %d",
 	       data_->getNumberOfClusters());
@@ -510,6 +511,13 @@ namespace whiteice
       policy.calculateBatchNorm(xdata, 0); // was: calculate batch norm for only two first layers (was: 2)
     }
 #endif
+
+    bool importance_sampling = false;
+    
+    if(dtest.getNumberOfClusters() == 2){
+      if(dtest.getName(1) == "importance sampling prob")
+	importance_sampling = true;
+    }
     
     
 #pragma omp parallel
@@ -551,8 +559,17 @@ namespace whiteice
 
 	  mean += q[0];
 	  var += q[0]*q[0];
-
-	  vsum += q[0]/T(Q.size());
+		    
+	  if(importance_sampling){
+	    auto prob = dtest.access(1, i);
+	    if(prob[0] <= 0.0f) prob[0] = T(1.0f);
+	    const T weight = T(1.0f)/prob[0];
+	    
+	    vsum += weight*q[0]/T(Q.size());
+	  }
+	  else{
+	    vsum += q[0]/T(Q.size());
+	  }
 	}
 
 	mean /= T(Q.size());
@@ -560,7 +577,16 @@ namespace whiteice
 
 	const T stdev = whiteice::math::sqrt(whiteice::math::abs(var - mean*mean));
 
-	vsum -= beta*stdev;
+	if(importance_sampling){
+	  auto prob = dtest.access(1, i);
+	  if(prob[0] <= 0.0f) prob[0] = T(1.0f);
+	  const T weight = T(1.0f)/prob[0];
+	  
+	  vsum -= weight*beta*stdev;
+	}
+	else{
+	  vsum -= beta*stdev;
+	}
       }
 	
       vsum /= T((double)dtest.size(0));
@@ -614,26 +640,33 @@ namespace whiteice
 
     // 1. divides data to to training and testing sets
     ///////////////////////////////////////////////////
-   
+
+    bool importance_sampling = false;
+    
+    if(this->data.getNumberOfClusters() == 2){
+      if(this->data.getName(1) == "importance sampling prob")
+	importance_sampling = true;
+    }
+    
     whiteice::dataset<T> dtrain, dtest;
     
     dtrain = data;
     dtest  = data;
     
     dtrain.clearData(0);
-    //dtrain.clearData(1);
+    dtrain.clearData(1);
     
     dtest.clearData(0);
-    //dtest.clearData(1);
+    dtest.clearData(1);
 
     unsigned int counter = 0;
     
     while((dtrain.size(0) == 0 || dtest.size(0)  == 0) && counter < 10){
       dtrain.clearData(0);
-      //dtrain.clearData(1);
+      dtrain.clearData(1);
       
       dtest.clearData(0);
-      //dtest.clearData(1);
+      dtest.clearData(1);
       
       for(unsigned int i=0;i<data.size(0);i++){
 	const unsigned int r = (whiteice::rng.rand() & 3);
@@ -644,11 +677,16 @@ namespace whiteice
 	if(r != 0){ // 75% will got to training data
 	  dtrain.add(0, in,  true);
 	  //dtrain.add(1, out, true);
-	  
+
+	  if(importance_sampling)
+	    dtrain.add(1, data.access(1,i), true);
 	}
 	else{
 	  dtest.add(0, in,  true);
 	  //dtest.add(1, out, true);
+
+	  if(importance_sampling)
+	    dtest.add(1, data.access(1,i), true);
 	}
       }
 
@@ -660,6 +698,22 @@ namespace whiteice
       dtest  = data;
     }
 
+    if(importance_sampling){
+      for(unsigned int i=0;i<dtrain.size(1);i++){
+	math::vertex<T> p = dtrain.access(1,i);
+	p[0] = p[0]*T((float)data.size(1))/T((float)dtrain.size(1));
+	
+	dtrain.access(1,i) = p;
+      }
+      
+      for(unsigned int i=0;i<dtest.size(1);i++){
+	math::vertex<T> p = dtest.access(1,i);
+	p[0] = p[0]*T((float)data.size(1))/T((float)dtest.size(1));
+	
+	dtest.access(1,i) = p;
+      }
+    }
+    
     //dtrain = data;
     //dtest  = data;
 
@@ -929,9 +983,18 @@ namespace whiteice
 
 		grad -= beta*stdev_grad;
 
-		
-		//sgrad += ninv*grad;
-		sgrad += grad;
+		if(importance_sampling){
+		  auto prob = dtrain.access(1, index);
+		  if(prob[0] <= 0.0f) prob[0] = T(1.0f);
+		  const T weight = T(1.0f)/prob[0];
+		  
+		  sgrad += weight*grad;
+		}
+		else{
+		  // sgrad += ninv*grad;
+		  sgrad += grad;
+		}
+
 	      }
 	      
 	      
@@ -1050,10 +1113,19 @@ namespace whiteice
 		stdev_grad /= (x2[0] + epsilon);
 		
 		grad -= beta*stdev_grad;
-		
-		
-		//sgrad += ninv*grad;
-		sgrad += grad;
+
+		if(importance_sampling){
+		  auto prob = dtrain.access(1, i);
+		  if(prob[0] <= 0.0f) prob[0] = T(1.0f);
+		  const T weight = T(1.0f)/prob[0];
+		  
+		  sgrad += weight*grad;
+		}
+		else{
+		  // sgrad += ninv*grad;
+		  sgrad += grad;
+		}
+
 	      }
 	      
 	      

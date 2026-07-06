@@ -95,6 +95,7 @@ namespace whiteice
       NUMDATA = NUMDATAPOINTS;
       data.clear();
       data.createCluster("input-state", rifl.numStates);
+      data.createCluster("importance sampling prob", 1);
       
       completed = false;
       
@@ -217,6 +218,7 @@ namespace whiteice
     
 
     std::map<double, unsigned int> weights;
+    std::vector<double> pweights;
 
 #if 1
     {
@@ -383,16 +385,19 @@ namespace whiteice
 	if(qz > 20.0) qz = 20.0;
 	
 	const double qs = whiteice::math::exp(qz);
-	
-	sump +=
-	  (1.0 - mixing_factor)*(s/total_weight) +
+
+	const double pi = (1.0 - mixing_factor)*(s/total_weight) +
 	  //(1.0 - mixing_factor)*(1.0/database.size()) +
 	  mixing_factor*(qs/total_qweight);
+	
+	sump += pi;
+
 
 	p.first = sump;
 	p.second = i;
 
 	weights.insert(p);
+	pweights.push_back(pi);
       }
 
       // database_mutex.unlock();
@@ -413,6 +418,8 @@ namespace whiteice
 
       unsigned int index = 0;
 
+      double p = 1.0;
+
 #if 1
       if(rng.rand() &  1){ // 50% of the samples are weighted
       
@@ -423,12 +430,16 @@ namespace whiteice
 	if(iter != weights.end()){
 	  index = iter->second;
 	}
-	
+
+	// p is same for both random selections
+	p = 0.5*pweights[index]*((double)weights.size())/((double)NUMDATA) + 0.5*1.0/((double)NUMDATA);
       }
       else
 #endif
       {
 	index = rng.rand() % database.size();
+	
+	p = 0.5*pweights[index]*((double)weights.size())/((double)NUMDATA) + 0.5*1.0/((double)NUMDATA);
       }
 	  
 	
@@ -436,6 +447,10 @@ namespace whiteice
       //database_mutex.lock();
       
       const auto datum = database[index];
+
+      whiteice::math::vertex<T> pv;
+      pv.resize(1);
+      pv[0] = p;
       
       //database_mutex.unlock();
       
@@ -443,6 +458,8 @@ namespace whiteice
 #pragma omp critical
       {
 	data.add(0, datum.state);
+	data.add(1, pv); // importance sampling probablities for the case
+	
 
 	//// std::cout << "policy dataset: state = " << datum.state << std::endl;
       }

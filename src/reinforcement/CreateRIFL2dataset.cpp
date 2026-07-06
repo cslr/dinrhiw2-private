@@ -90,9 +90,10 @@ namespace whiteice
 	data.clear();
 	data.createCluster("input-state", rifl.numStates + rifl.numActions);
 	data.createCluster("output-action", 1);
+	data.createCluster("importance sampling prob", 1); // used by NNGradDescent
 	
 	if(smartEpisodes){
-	  data.createCluster("episode-ranges", 2);
+	  data.createCluster("episode-ranges", 2); // this is NOT used
 	}
       }
       
@@ -326,7 +327,7 @@ namespace whiteice
 
       std::vector<double> episodes_weights;
       std::vector<double> episodes_qweights;
-
+      
       std::vector< std::vector<double> > qvalues;
 
       episodes_weights.resize(episodes.size());
@@ -496,6 +497,9 @@ namespace whiteice
       // database_mutex.unlock();
 
       std::map<double, unsigned int> weights;
+      std::vector<double> pweights; // p-values for importance sampling
+
+      
       
       {
 	double total_weight = 0.0;
@@ -520,17 +524,20 @@ namespace whiteice
 	
 	for(unsigned int i=0;i<episodes_weights.size();i++){
 	  std::pair<double, unsigned int> p;
-	  
-	  // sump += episodes_weights[i]/total_weight;
-	  sump +=
-	    (1.0 - mixing_factor)*(episodes_weights[i]/total_weight) +
+
+	  const double pi = (1.0 - mixing_factor)*(episodes_weights[i]/total_weight) +
 	    //(1.0 - mixing_factor)*(1.0/episodes_weights.size()) +
 	    mixing_factor*(episodes_qweights[i]/total_qweight);
+	  
+	  // sump += episodes_weights[i]/total_weight;
+	  sump += pi;
+
 	  
 	  p.first = sump;
 	  p.second = i;
 	  
 	  weights.insert(p);
+	  pweights.push_back(pi);
 	}
       }
       
@@ -549,6 +556,8 @@ namespace whiteice
 	// const auto episode = episodes[index];
 
 	unsigned int index = 0;
+	double p = 1.0;
+	
 
 	if(rng.rand() &  1){ // 50% of the samples are weighted
 	  
@@ -562,9 +571,17 @@ namespace whiteice
 	  else{
 	    index = iter->second;
 	  }
+	  
+	  // p is same for both random selections
+	  p = 0.5*pweights[index]*((double)pweights.size())/((double)episodes.size()) +
+	    0.5*1.0/((double)episodes.size());
 	}
 	else{
 	  index = rng.rand() %  episodes.size();
+
+	  // p is same for both random selections
+	  p = 0.5*pweights[index]*((double)pweights.size())/((double)episodes.size()) +
+	    0.5*1.0/((double)episodes.size());
 	}
 
 	//database_mutex.lock();
@@ -575,7 +592,7 @@ namespace whiteice
 
 	// adds episode start and end in dataset
 	{
-	  std::lock_guard<std::mutex> lock(database_mutex);
+	  //std::lock_guard<std::mutex> lock(database_mutex);
 	  
 	  const unsigned int START = data.size(0);
 	  const unsigned int LENGTH = episode.size();
@@ -730,6 +747,12 @@ namespace whiteice
 	    data.add(0, in);
 	    data.add(1, out);
 
+	    whiteice::math::vertex<T> pv;
+	    pv.resize(1);
+	    pv[0] = p/episode.size(); // importance sampling p-value
+
+	    data.add(2, pv);
+
 	    counter++;
 	    
 	    maxvalues.push_back(maxvalue);
@@ -743,6 +766,7 @@ namespace whiteice
     else{
 
       std::map<double, unsigned int> weights;
+      std::vector<double> pweights;
 
 #if 1
       {
@@ -929,17 +953,20 @@ namespace whiteice
 	
 	for(unsigned int i=0;i<database.size();i++){
 	  std::pair<double, unsigned int> p;
-	  
-	  // sump += episodes_weights[i]/total_weight;
-	  sump +=
-	    (1.0 - mixing_factor)*(softmax[i]/total_weight) +
+
+	  const double pi = (1.0 - mixing_factor)*(softmax[i]/total_weight) +
 	    //(1.0 - mixing_factor)*(1.0/database.size()) +
 	    mixing_factor*(qsoftmax[i]/total_qweight);
+	  
+	  // sump += episodes_weights[i]/total_weight;
+	  sump += pi;
+
 	  
 	  p.first = sump;
 	  p.second = i;
 	  
 	  weights.insert(p);
+	  pweights.push_back(pi);
 	}
 	
 	// database_mutex.unlock();
@@ -962,6 +989,7 @@ namespace whiteice
 	// const auto datum = database[index];
 	
 	unsigned int index = 0;
+	double p = 1.0;
 
 #if 1
 	if(rng.rand() &  1){ // 50% of the samples are weighted
@@ -973,11 +1001,17 @@ namespace whiteice
 	  if(iter != weights.end()){
 	    index = iter->second;
 	  }
+
+	  // p is same for both random selections
+	  p = 0.5*pweights[index]*((double)weights.size())/((double)NUMDATA) + 0.5*1.0/((double)NUMDATA);
 	}
 	else
 #endif
 	{
 	  index = rng.rand() % database.size();
+
+	  // p is same for both random selections
+	  p = 0.5*pweights[index]*((double)weights.size())/((double)NUMDATA) + 0.5*1.0/((double)NUMDATA);
 	}
 	
 	//database_mutex.lock();
@@ -1132,6 +1166,12 @@ namespace whiteice
 	{
 	  data.add(0, in);
 	  data.add(1, out);
+
+	  whiteice::math::vertex<T> pv;
+	  pv.resize(1);
+	  pv[0] = p; // importance sampling p-value
+	  
+	  data.add(2, pv);
 	  
 	  maxvalues.push_back(maxvalue);
 	}

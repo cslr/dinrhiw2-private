@@ -656,6 +656,13 @@ namespace whiteice
 	net.diagnosticsInfo();
       }
 
+      bool importance_sampling = false;
+
+      if(dtest.getNumberOfClusters() == 3){
+	if(dtest.getName(2) == "importance sampling prob")
+	  importance_sampling = true;
+      }
+
       
       // error term is E[ 0.5*||y-f(x)||^2 ]
       // in case mne (minimum norm error) error term is E[||y-f(x)||]
@@ -699,11 +706,24 @@ namespace whiteice
 	    }
 	    
 	    err = out - yvalue;
-	    
-	    if(mne) esum += err.norm();
-	    else{
-	      auto n = err.norm();
-	      esum += T(0.5f)*n*n;
+
+	    if(importance_sampling == false){	      
+	      if(mne) esum += err.norm();
+	      else{
+		auto n = err.norm();
+		esum += T(0.5f)*n*n;
+	      }
+	    }
+	    else{ // importance_sampling = true
+	      auto prob = dtest.access(2, index);
+	      if(prob[0][0] <= 0.0f) prob[0] = T(1.0f);
+	      const T weight = T(1.0f)/prob[0];
+
+	      if(mne) esum += weight*err.norm();
+	      else{
+		auto n = err.norm();
+		esum += weight*T(0.5f)*n*n;
+	      }
 	    }
 	    
 	  }
@@ -756,13 +776,25 @@ namespace whiteice
 	    }
 	    
 	    err = out - yvalue;
-	    
-	    if(mne) esum += err.norm();
-	    else{
-	      auto n = err.norm();
-	      esum += T(0.5f)*n*n;
-	    }
 
+	    if(importance_sampling == false){	      
+	      if(mne) esum += err.norm();
+	      else{
+		auto n = err.norm();
+		esum += T(0.5f)*n*n;
+	      }
+	    }
+	    else{ // improtance_sampling = true
+	      auto prob = dtest.access(2, index);
+	      if(prob[0][0] <= 0.0f) prob[0] = T(1.0f);
+	      const T weight = T(1.0f)/prob[0];
+
+	      if(mne) esum += weight*err.norm();
+	      else{
+		auto n = err.norm();
+		esum += weight*T(0.5f)*n*n;
+	      }
+	    }
 	    	
 	    //if(esum >= T(10e9)){
 	    //  assert(0);
@@ -846,6 +878,13 @@ namespace whiteice
       
       // 1. divides data to to training and testing sets
       ///////////////////////////////////////////////////
+
+      bool importance_sampling = false;
+
+      if(this->data.getNumberOfClusters() == 3){
+	if(this->data.getName(2) == "importance sampling prob")
+	  importance_sampling = true;
+      }
       
       whiteice::dataset<T> dtrain, dtest;
       
@@ -856,8 +895,10 @@ namespace whiteice
 	
 	dtrain.clearData(0);
 	dtrain.clearData(1);
+	dtrain.clearData(2);
 	dtest.clearData(0);
 	dtest.clearData(1);
+	dtest.clearData(2);
 	
 	int counter = 0;
 	
@@ -866,8 +907,10 @@ namespace whiteice
 	  
 	  dtrain.clearData(0);
 	  dtrain.clearData(1);
+	  dtrain.clearData(2);
 	  dtest.clearData(0);
 	  dtest.clearData(1);
+	  dtest.clearData(2);
 	  
 	  for(unsigned int i=0;i<data.size(0);i++){
 	    const unsigned int r = (whiteice::rng.rand() & 3);
@@ -878,6 +921,9 @@ namespace whiteice
 	      
 	      dtrain.add(0, in,  true);
 	      dtrain.add(1, out, true);
+
+	      if(importance_sampling)
+		dtrain.add(2, data.access(2,i), true);
 	    }
 	    else{ // 25% will go to testing data
 	      math::vertex<T> in  = data.access(0,i);
@@ -885,6 +931,9 @@ namespace whiteice
 	      
 	      dtest.add(0, in,  true);
 	      dtest.add(1, out, true);
+
+	      if(importance_sampling)
+		dtest.add(2, data.access(2,i), true);
 	    }
 	    
 	  }
@@ -895,6 +944,22 @@ namespace whiteice
 	if(counter >= 10){ // too little data to divive datasets
 	  dtrain = this->data;
 	  dtest  = this->data;
+	}
+
+	if(importance_sampling){
+	  for(unsigned int i=0;i<dtrain.size(2);i++){
+	    math::vertex<T> p = dtrain.access(2,i);
+	    p[0] = p[0]*T((float)data.size(2))/T((float)dtrain.size(2));
+
+	    dtrain.access(2,i) = p;
+	  }
+
+	  for(unsigned int i=0;i<dtest.size(2);i++){
+	    math::vertex<T> p = dtest.access(2,i);
+	    p[0] = p[0]*T((float)data.size(2))/T((float)dtest.size(2));
+
+	    dtest.access(2,i) = p;
+	  }
 	}
       }
 
@@ -1062,9 +1127,18 @@ namespace whiteice
 		      assert(0);
 		    }
 		  }
-		  
-		  // sgrad += ninv*grad;
-		  sgrad += grad;
+
+		  if(importance_sampling){
+		    auto prob = dtrain.access(2, index);
+		    if(prob[0][0] <= 0.0f) prob[0] = T(1.0f);
+		    const T weight = T(1.0f)/prob[0];
+
+		    sgrad += weight*grad;
+		  }
+		  else{
+		    // sgrad += ninv*grad;
+		    sgrad += grad;
+		  }
 		}
 		
 #pragma omp critical
@@ -1134,8 +1208,18 @@ namespace whiteice
 		    }
 		  }
 		  
-		  // sgrad += ninv*grad;
-		  sgrad += grad;
+		  if(importance_sampling){
+		    auto prob = dtrain.access(2, index);
+		    if(prob[0][0] <= 0.0f) prob[0] = T(1.0f);
+		    const T weight = T(1.0f)/prob[0];
+
+		    sgrad += weight*grad;
+		  }
+		  else{
+		    // sgrad += ninv*grad;
+		    sgrad += grad;
+		  }
+
 		}
 		
 #pragma omp critical
