@@ -348,8 +348,16 @@ namespace whiteice
 
 	unsigned int index = 0;
 
+
+	T rmean = T(0.0f);
+	
+	for(const auto& ei : episodes[e])
+	  rmean += ei.reinforcement;
+
+	rmean /= episodes[e].size();
+
 	for(const auto& ei : episodes[e]){
-	  const T w = whiteice::math::pow(whiteice::math::abs(ei.reinforcement), T(2.0f));
+	  const T w = whiteice::math::pow(whiteice::math::abs(ei.reinforcement-rmean), T(2.0f));
 	  emean += w;
 	  evar  += w*w;
 
@@ -460,7 +468,7 @@ namespace whiteice
 	index = 0;
 
 	for(const auto& ei : episodes[e]){
-	  const T w = whiteice::math::pow(whiteice::math::abs(ei.reinforcement), T(2.0f));
+	  const T w = whiteice::math::pow(whiteice::math::abs(ei.reinforcement - rmean), T(2.0f));
 
 	  double z = beta*((double)((w.c[0]-emean.c[0])/estdev.c[0]));
 
@@ -786,6 +794,13 @@ namespace whiteice
 
 	qvalues.resize(database.size());
 
+	T rmean = T(0.0f);
+	
+	for(const auto& ei : database)
+	  rmean += ei.reinforcement;
+	
+	rmean /= database.size();
+	
 #pragma omp parallel
 	{
 	  T pmean = T(0.0f);
@@ -793,10 +808,10 @@ namespace whiteice
 
 	  T pqmean = T(0.0f);
 	  T pqvar = T(0.0f);
-	  
+
 #pragma omp for schedule(guided)
 	  for(unsigned int i=0;i<database.size();i++){
-	    const T r = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement), T(2.0f));
+	    const T r = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement-rmean), T(2.0f));
 	    
 	    pmean += r;
 	    pvar += r;
@@ -913,7 +928,7 @@ namespace whiteice
 	const double beta = 1.5; // temperature, more weights to high values [2,4]
 
 	for(unsigned int i=0;i<database.size();i++){
-	  const T w = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement), T(2.0f));
+	  const T w = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement-rmean), T(2.0f));
 
 	  double z = beta*((double)((w.c[0]-mean.c[0])/stdev.c[0]));
 

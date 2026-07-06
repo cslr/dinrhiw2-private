@@ -237,6 +237,13 @@ namespace whiteice
       std::vector<T> qvalues;
       qvalues.resize(database.size());
 
+      T rmean = T(0.0f);
+
+      for(const auto& ei : database)
+	rmean += ei.reinforcement;
+
+      rmean /= database.size();
+
 #pragma omp parallel
       {
 	T pmean = T(0.0f);
@@ -248,7 +255,7 @@ namespace whiteice
 
 #pragma omp for nowait
 	for(unsigned int i=0;i<database.size();i++){
-	  const T w = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement), T(2.0f));
+	  const T w = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement-rmean), T(2.0f));
 	  
 	  pmean += w;
 	  pvar  += w*w;
@@ -327,7 +334,7 @@ namespace whiteice
       const double beta = 1.5; // temperature, more weights to high values [2,4]
 
       for(unsigned int i=0;i<database.size();i++){       
-	const T w = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement), T(2.0f));
+	const T w = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement-rmean), T(2.0f));
 
 	double z = beta*((double)(w.c[0]-mean.c[0])/stdev.c[0]);
 
@@ -368,7 +375,7 @@ namespace whiteice
 	std::pair<double, unsigned int> p;
 
 	// sump += episodes_weights[i]/total_weight;
-	const T w = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement), T(2.0f));
+	const T w = whiteice::math::pow(whiteice::math::abs(database[i].reinforcement-rmean), T(2.0f));
 	//const T s = T(1.0f)/(T(1.0f) + whiteice::math::exp(-beta*(w-mean)/stdev)); // softmax so outliers dont dominate
 
 	double z = beta*((double)(w.c[0]-mean.c[0])/stdev.c[0]);
