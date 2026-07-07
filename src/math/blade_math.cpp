@@ -1115,6 +1115,9 @@ namespace whiteice
     bool convert(complex<float>& B, const float A){ B = (float)A; return true; }
     bool convert(complex<double>& B, const double A){ B = (double)A; return true; }
 
+    bool convert(blas_real<double>& B, const double A){ B.c[0] = A; return true; }
+    bool convert(blas_real<double>& B, const float A){ B.c[0] = (double)A; return true; }
+
     
     
     //////////////////////////////////////////////////////////////////////

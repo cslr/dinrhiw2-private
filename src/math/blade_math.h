@@ -431,7 +431,10 @@ namespace whiteice
     bool convert(float& B, const complex<float> A);
     bool convert(double& B, const complex<double> A);
     bool convert(double& B, const complex<float> A);
-    bool convert(float& B, const complex<double> A);    
+    bool convert(float& B, const complex<double> A);
+
+    bool convert(blas_real<double>& B, const double A);
+    bool convert(blas_real<double>& B, const float A);
 
     
 #if 0
