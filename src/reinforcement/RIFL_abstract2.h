@@ -57,6 +57,8 @@ namespace whiteice
                           // if after effect is disabled
                           // reinforcement == reinforcement_pure
 
+    unsigned long long t; // measurement time in milliseconds
+
     bool random;   // true if action was random
     bool lastStep; // true if was the last step of the simulation
   };
@@ -208,6 +210,14 @@ namespace whiteice
       AFTER_EFFECT_DELAY_MS = delay_ms; // zero disables after effect
     }
 
+    unsigned long long getHistoryRemoveTimeMS() const{
+      return HISTORY_REMOVE_TIME_MS;
+    }
+
+    void setHistoryRemoveTimeMS(unsigned long long remove_time_ms = 0){
+      HISTORY_REMOVE_TIME_MS = remove_time_ms;
+    }
+
     bool getSaveAndReturnToBestEpisode() const {
       return saveBestEpisode;
     }
@@ -285,6 +295,14 @@ namespace whiteice
     std::vector< rifl2_datapoint<T> > database;
     std::vector< std::vector< rifl2_datapoint<T> > > episodes;
     std::vector<T> episodes_score;
+
+    // time points when measurement was made
+    std::map<unsigned long long, unsigned int> database_t;
+    std::map<unsigned long long, unsigned int> episodes_t;
+
+    // how many milliseconds has to pass before element is removed from replay buffer
+    // zero means disabled as the default
+    unsigned long long HISTORY_REMOVE_TIME_MS = 0;
     
     
     mutable std::mutex database_mutex;

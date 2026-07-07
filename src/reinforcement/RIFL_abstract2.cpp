@@ -1083,7 +1083,7 @@ namespace whiteice
     {
       snprintf(buffer, 256, "%s-database", filename.c_str());
 
-      whiteice::dataset<T> db;
+      whiteice::dataset< whiteice::math::blas_real<double> > db;
 
       std::lock_guard<std::mutex> lock1(database_mutex);
 
@@ -1126,37 +1126,62 @@ namespace whiteice
 	db.createCluster("distance", 1);
       else
 	db.createCluster("distance", 1);
-      
+
+      if(database.size() > 0)
+	db.createCluster("measure time", 1);
+      else
+	db.createCluster("measure time", 1);
+
+
+      whiteice::math::vertex< whiteice::math::blas_real<double> > v;
+
 
       for(unsigned int i=0;i<database.size();i++){
-	db.add(0, database[i].state);
-	db.add(1, database[i].newstate);
-	db.add(2, database[i].action);
+	// db.add(0, database[i].state);
+	v.resize(database[i].state.size());
+	for(unsigned int j=0;j<v.size();j++)
+	  v[j] = (double)database[i].state[j].c[0];
+	db.add(0, v);
 
-	whiteice::math::vertex<T> v;
+	
+	//db.add(1, database[i].newstate);
+	v.resize(database[i].newstate.size());
+	for(unsigned int j=0;j<v.size();j++)
+	  v[j] = (double)database[i].newstate[j].c[0];
+	db.add(1, v);
+	
+	// db.add(2, database[i].action);
+	v.resize(database[i].action.size());
+	for(unsigned int j=0;j<v.size();j++)
+	  v[j] = (double)database[i].action[j].c[0];
+	db.add(2, v);
+
 	v.resize(1);
-	v[0] = database[i].reinforcement;
+	v[0] = (double)database[i].reinforcement.c[0];
 	db.add(3, v);
 
 	if(database[i].lastStep)
-	  v[0] = T(1.0f);
+	  v[0] = 1.0;
 	else
-	  v[0] = T(0.0f);
+	  v[0] = 0.0;
 
 	db.add(4, v);
 
 	if(database[i].random)
-	  v[0] = T(1.0f);
+	  v[0] = 1.0;
 	else
-	  v[0] = T(0.0f);
+	  v[0] = 0.0;
 
 	db.add(5, v);
 
-	v[0] = database[i].reinforcement_pure;
+	v[0] = (double)database[i].reinforcement_pure.c[0];
 	db.add(6, v);
 
-	v[0] = database[i].distance;
+	v[0] = (double)database[i].distance.c[0];
 	db.add(7, v);
+
+	v[0] = (double)database[i].t;
+	db.add(8, v);
       }
 
       if(db.save(buffer) == false){
@@ -1169,7 +1194,7 @@ namespace whiteice
     {
       snprintf(buffer, 256, "%s-episodes", filename.c_str());
 
-      whiteice::dataset<T> db;
+      whiteice::dataset< whiteice::math::blas_real<double> > db;
 
       std::lock_guard<std::mutex> lock1(database_mutex);
 
@@ -1213,6 +1238,11 @@ namespace whiteice
       else
 	db.createCluster("distance", 1);
 
+      if(database.size() > 0)
+	db.createCluster("measure time", 1);
+      else
+	db.createCluster("measure time", 1);
+
       db.createCluster("episodes-range", 2);
 
       db.createCluster("episodes-score", 1);
@@ -1221,62 +1251,124 @@ namespace whiteice
 
       for(unsigned int e=0;e<episodes.size();e++){
 	const unsigned int start = db.size(0);
+
+	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
 	
 	for(unsigned int i=0;i<episodes[e].size();i++){
-	  db.add(0, episodes[e][i].state);
-	  db.add(1, episodes[e][i].newstate);
-	  db.add(2, episodes[e][i].action);
+
+	  //db.add(0, episodes[e][i].state);
+	  v.resize(episodes[e][i].state.size());
+	  for(unsigned int j=0;j<v.size();j++)
+	    v[j] = (double)episodes[e][i].state[j].c[0];
+	  db.add(0, v);
+	  	  
+	  // db.add(1, episodes[e][i].newstate);
+	  v.resize(episodes[e][i].newstate.size());
+	  for(unsigned int j=0;j<v.size();j++)
+	    v[j] = (double)episodes[e][i].newstate[j].c[0];
+	  db.add(1, v);
 	  
-	  whiteice::math::vertex<T> v;
+	  // db.add(2, episodes[e][i].action);
+	  v.resize(episodes[e][i].action.size());
+	  for(unsigned int j=0;j<v.size();j++)
+	    v[j] = (double)episodes[e][i].action[j].c[0];
+	  db.add(2, v);
+	  
 	  v.resize(1);
 	  
-	  v[0] = episodes[e][i].reinforcement;
+	  v[0] = (double)episodes[e][i].reinforcement.c[0];
 	  
 	  db.add(3, v);
 	  
 	  if(episodes[e][i].lastStep)
-	    v[0] = T(1.0f);
+	    v[0] = 1.0;
 	  else
-	    v[0] = T(0.0f);
+	    v[0] = 0.0;
 	  
 	  db.add(4, v);
 
 	  if(episodes[e][i].random)
-	    v[0] = T(1.0f);
+	    v[0] = 1.0;
 	  else
-	    v[0] = T(0.0f);
+	    v[0] = 0.0;
 	  
 	  db.add(5, v);
 	  
-	  v[0] = episodes[e][i].reinforcement_pure;
-	  
+	  v[0] = (double)episodes[e][i].reinforcement_pure.c[0];
 	  db.add(6, v);
 
-	  v[0] = episodes[e][i].distance;
-	  
+	  v[0] = (double)episodes[e][i].distance.c[0];
 	  db.add(7, v);
+
+	  v[0] = (double)episodes[e][i].t;
+	  db.add(8, v);
 	}
 
 	const unsigned int end = db.size(0);
 
-	whiteice::math::vertex<T> v;
 	v.resize(2);
 
-	v[0] = T(start);
-	v[1] = T(end);
+	v[0] = (double)(start);
+	v[1] = (double)(end);
 
-	db.add(8, v);
+	db.add(9, v);
 
 	v.resize(1);
 
-	v[0] = episodes_score[e];
+	v[0] = (double)episodes_score[e].c[0];
 	
-	db.add(9, v);
+	db.add(10, v);
       }
 
 
       if(db.save(buffer) == false){
 	logging.error("RIFL_abstract2::save() saving episodes failed");
+	return false;
+      }
+    }
+
+    // database_t and episodes_t saving (with large values so use double)
+    {
+      std::lock_guard<std::mutex> lock1(database_mutex);
+
+      snprintf(buffer, 256, "%s-tmappings", filename.c_str());
+      
+      whiteice::dataset< whiteice::math::blas_real<double> > db;
+
+      db.createCluster("database_t", 2);
+      db.createCluster("episodes_t", 2);
+      db.createCluster("current time", 1);
+      
+      auto now = std::chrono::high_resolution_clock::now();	
+      const unsigned long long now_ms = 
+	std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+      
+      whiteice::math::vertex< whiteice::math::blas_real<double> > v;
+      v.resize(1);
+      v[0] = (double)now_ms;
+
+      db.add(2, v);
+
+      for(auto i = database_t.begin();i!= database_t.end();i++){
+	v.resize(2);
+
+	whiteice::math::convert(v[0], ((double)i->first));
+	whiteice::math::convert(v[1], ((double)i->second));
+
+	db.add(0, v);
+      }
+
+      for(auto i = episodes_t.begin();i!= episodes_t.end();i++){
+	v.resize(2);
+
+	whiteice::math::convert(v[0], ((double)i->first));
+	whiteice::math::convert(v[1], ((double)i->second));
+
+	db.add(1, v);
+      }
+
+      if(db.save(buffer) == false){
+	logging.error("RIFL_abstract2::save() saving t-mappings failed");
 	return false;
       }
     }
@@ -1313,6 +1405,9 @@ namespace whiteice
     auto distances_random_load = distances_random;
     auto episodes_load = episodes;
     auto episodes_score_load = episodes_score;
+
+    auto database_t_load = database_t;
+    auto episodes_t_load = episodes_t;
 
     reinforcements_mutex.unlock();
     database_mutex.unlock();
@@ -1447,10 +1542,81 @@ namespace whiteice
 	distances_random_load[i] = v[i];
     }
 
+
+    // database_t and episodes_t saving (with large values so use double)
+    unsigned long long t0 = 0; // used to remap timings to current time
+
+    auto now = std::chrono::high_resolution_clock::now();	
+    const unsigned long long now_ms = 
+      std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+    
+    {
+      whiteice::dataset< whiteice::math::blas_real<double> > db;
+
+      snprintf(buffer, 256, "%s-tmappings", filename.c_str());
+
+      if(db.load(buffer) == false){
+	char buf[1024];
+	snprintf(buf, 1024, "RIFL_abstract2::load(\"%s\") loading t-mappings dataset FAILED", buffer);
+	logging.error(buf);
+	return false;
+      }
+
+      if(db.getNumberOfClusters() != 3){
+	logging.error("RIFL_abstract2::load() t-mappings database wrong number of clusters");
+	return false;
+      }
+
+      if(db.dimension(0) != 2 || db.dimension(1) != 2 || db.dimension(2) != 1 || db.size(2) != 1){
+	char buf[128];
+	snprintf(buf, 128, "RIFL_abstract2::load() t-mappings database wrong dimensions %d %d %d %d",
+		 db.dimension(0), db.dimension(1), db.dimension(2), db.size(2));
+	logging.error(buf);
+	return false;
+      }
+
+      auto t = db.access(2, 0);
+
+      t0 = (unsigned long long)t[0].c[0];
+
+      if(now_ms < t0){
+	logging.error("RIFL_abstract2::load() t0 is in the future according to computer's clock");
+	return false;
+      }
+
+      database_t_load.clear();
+      episodes_t_load.clear();
+
+      for(unsigned int i=0;i<db.size(0);i++){
+	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
+	v = db.access(0, i);
+
+	std::pair<unsigned long long, unsigned int> p;
+
+	p.first = (now_ms - t0) + ((unsigned long long)v[0].c[0]);
+	p.second = (unsigned int)v[1].c[0];
+	
+	database_t_load.insert(p);
+      }
+
+      for(unsigned int i=0;i<db.size(1);i++){
+	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
+	v = db.access(1, i);
+
+	std::pair<unsigned long long, unsigned int> p;
+
+	p.first = (now_ms - t0) + (unsigned long long)v[0].c[0];
+	p.second = (unsigned int)v[1].c[0];
+	
+	episodes_t_load.insert(p);
+      }
+    }
+ 
+
     {
       snprintf(buffer, 256, "%s-database", filename.c_str());
       
-      whiteice::dataset<T> db;
+      whiteice::dataset< whiteice::math::blas_real<double> > db;
 
       if(db.load(buffer) == false){
 	char buf[128];
@@ -1459,7 +1625,7 @@ namespace whiteice
 	return false;
       }
 
-      if(db.getNumberOfClusters() != 8){
+      if(db.getNumberOfClusters() != 9){
 	logging.error("RIFL_abstract2::load() database wrong number of clusters");
 	return false;
       }
@@ -1506,27 +1672,44 @@ namespace whiteice
       database_load.clear();
       
       whiteice::rifl2_datapoint<T> p;
-      whiteice::math::vertex<T> v;
+      whiteice::math::vertex< whiteice::math::blas_real<double> > v;
 
       for(unsigned int i=0;i<db.size(0);i++){
-	p.state = db.access(0, i);
-	p.newstate = db.access(1, i);
-	p.action = db.access(2, i);
+
+	v = db.access(0, i);
+	p.state.resize(v.size());
+	for(unsigned int j=0;j<v.size();j++)
+	  p.state[j] = v[j].c[0];
+
+	v = db.access(1, i);
+	p.newstate.resize(v.size());
+	for(unsigned int j=0;j<v.size();j++)
+	  p.newstate[j] = v[j].c[0];
+
+	v = db.access(2, i);	
+	p.action.resize(v.size());
+	for(unsigned int j=0;j<v.size();j++)
+	  p.action[j] = v[j].c[0];
+	
 	v = db.access(3, i);
 	p.reinforcement = v[0];
+	
 	v = db.access(4, i);
-	if(v[0] > T(0.5)) p.lastStep = true;
+	if(v[0] > 0.5) p.lastStep = true;
 	else p.lastStep = false;
 
 	v = db.access(5, i);
-	if(v[0] > T(0.5)) p.random = true;
+	if(v[0] > 0.5) p.random = true;
 	else p.random = false;
 	
 	v = db.access(6, i);
-	p.reinforcement_pure = v[0];
+	p.reinforcement_pure = v[0].c[0];
 
 	v = db.access(7, i);
-	p.distance = v[0];
+	p.distance = v[0].c[0];
+
+	v = db.access(8, i);
+	p.t = (now_ms - t0) + (unsigned long long)v[0].c[0];
 	
 	database_load.push_back(p);
       }
@@ -1537,7 +1720,7 @@ namespace whiteice
     {
       snprintf(buffer, 256, "%s-episodes", filename.c_str());
       
-      whiteice::dataset<T> db;
+      whiteice::dataset< whiteice::math::blas_real<double> > db;
 
       if(db.load(buffer) == false){
 	char buf[1024];
@@ -1546,13 +1729,13 @@ namespace whiteice
 	return false;
       }
 
-      if(db.getNumberOfClusters() != 10){
+      if(db.getNumberOfClusters() != 11){
 	logging.error("RIFL_abstract2::load() episodes database wrong number of clusters");
 	return false;
       }
 
       if(db.dimension(0) != db.dimension(1) ||
-	 db.dimension(3) != 1 || db.dimension(4) != 1 || db.dimension(8) != 2){
+	 db.dimension(3) != 1 || db.dimension(4) != 1 || db.dimension(9) != 2){
 	char buf[128];
 	snprintf(buf, 128, "RIFL_abstract2::load() database wrong dimensions %d %d %d %d %d %d",
 		 db.dimension(0), db.dimension(1), db.dimension(3), db.dimension(3),
@@ -1578,7 +1761,7 @@ namespace whiteice
 	return false;
       }
 
-      if(db.dimension(8) != 2){
+      if(db.dimension(9) != 2){
 	char buf[128];
 	snprintf(buf, 128, "RIFL_abstract2::load() database wrong dimensions %d %d (4)",
 		 db.dimension(5), 2);
@@ -1588,7 +1771,7 @@ namespace whiteice
       }
 
       if(db.size(0) != db.size(1) || db.size(1) != db.size(2) || db.size(2) != db.size(3) ||
-	 db.size(3) != db.size(4) || db.size(8) != db.size(9)){
+	 db.size(3) != db.size(4) || db.size(9) != db.size(10)){
 
 	char buf[128];
 	snprintf(buf, 128, "RIFL_abstract2::load() database wrong size %d %d %d %d %d",
@@ -1602,14 +1785,14 @@ namespace whiteice
       episodes_load.clear();
       episodes_score_load.clear();
 
-      for(unsigned int e=0;e<db.size(8);e++){
+      for(unsigned int e=0;e<db.size(9);e++){
 
 	std::vector< whiteice::rifl2_datapoint<T> > epi;
 	
 	whiteice::rifl2_datapoint<T> p;
-	whiteice::math::vertex<T> v;
+	whiteice::math::vertex< whiteice::math::blas_real<double> > v;
 
-	v = db.access(8, e);
+	v = db.access(9, e);
 
 	unsigned int START = 0;
 	unsigned int END = 0;
@@ -1621,39 +1804,55 @@ namespace whiteice
 	assert(END <= db.size(0));
 
 	for(unsigned int i=START;i<END;i++){
-	  p.state = db.access(0, i);
-	  p.newstate = db.access(1, i);
-	  p.action = db.access(2, i);
+	  
+	  v = db.access(0, i);
+	  p.state.resize(v.size());
+	  for(unsigned int j=0;j<v.size();j++)
+	  p.state[j] = v[j].c[0];
+
+	  v = db.access(1, i);
+	  p.newstate.resize(v.size());
+	  for(unsigned int j=0;j<v.size();j++)
+	    p.newstate[j] = v[j].c[0];
+	  
+	  v = db.access(2, i);	
+	  p.action.resize(v.size());
+	  for(unsigned int j=0;j<v.size();j++)
+	    p.action[j] = v[j].c[0];
 	  
 	  v = db.access(3, i);
 	  p.reinforcement = v[0];
 	  
 	  v = db.access(4, i);
-	  if(v[0] > T(0.5)) p.lastStep = true;
+	  if(v[0] > 0.5) p.lastStep = true;
 	  else p.lastStep = false;
-
+	  
 	  v = db.access(5, i);
-	  if(v[0] > T(0.5)) p.random = true;
+	  if(v[0] > 0.5) p.random = true;
 	  else p.random = false;
-
+	  
 	  v = db.access(6, i);
-	  p.reinforcement_pure = v[0];
-
+	  p.reinforcement_pure = v[0].c[0];
+	  
 	  v = db.access(7, i);
-	  p.distance = v[0];
+	  p.distance = v[0].c[0];
+	  
+	  v = db.access(8, i);
+	  p.t = (now_ms - t0) + (unsigned long long)v[0].c[0];
 	  
 	  epi.push_back(p);
 	}
 
 	episodes_load.push_back(epi);
 
-	v = db.access(9, e);
+	v = db.access(10, e);
 
 	episodes_score_load.push_back(v[0]); // saves scores
       }
       
     }
-    
+
+   
     
     {
       std::lock_guard<std::mutex> lock1(Q_mutex);
@@ -1676,6 +1875,9 @@ namespace whiteice
       distances_random = distances_random_load;
       episodes = episodes_load;
       episodes_score = episodes_score_load;
+
+      database_t = database_t_load;
+      episodes_t = episodes_t_load;
     }
     
     return true;
@@ -2455,6 +2657,7 @@ namespace whiteice
 	  datum.reinforcement_pure = reinforcement; // without after effects
 	  datum.reinforcement = reinforcement; // with after effects
 	  datum.lastStep = endFlag;
+	  datum.t = now_ms;
 
 	  after_effects_buffer.insert(std::pair<unsigned long long, rifl2_datapoint<T> >(now_ms, datum));
 	}
@@ -2475,6 +2678,7 @@ namespace whiteice
 	  datum.reinforcement_pure = reinforcement; // without after effects
 	  datum.reinforcement = T(0.0f); // with after effects [calculated later]
 	  datum.lastStep = endFlag;
+	  datum.t = now_ms;
 
 	  after_effects_buffer.insert(std::pair<unsigned long long, rifl2_datapoint<T> >(now_ms, datum));
 	}
@@ -2502,6 +2706,7 @@ namespace whiteice
 	      const T w2 = T(1.00f)/T(1.50f);
 	      
 	      datum.reinforcement = w1*datum.reinforcement_pure + w2*r;
+	      datum.t = now_ms;
 	    }
 	    else{ // after effects is disabled
 	      datum.reinforcement = datum.reinforcement_pure;
@@ -2537,9 +2742,13 @@ namespace whiteice
 	  if(datum.lastStep){
 	    
 	    T total_reward = T(0.0f);
+
+	    unsigned long long measure_time = 0;
 	    
-	    for(const auto& e : episode)
+	    for(const auto& e : episode){
 	      total_reward += e.reinforcement;
+	      if(e.t > measure_time) measure_time = e.t;
+	    }
 	    
 	    total_reward /= T(episode.size());
 	    
@@ -2572,6 +2781,20 @@ namespace whiteice
 		  if(episodes_score[index] < total_reward){
 		    episodes[index] = episode;
 		    episodes_score[index] = total_reward;
+		    
+		    for(auto iter=episodes_t.begin();iter!=episodes_t.end();iter++){
+		      if(iter->second == index){
+			episodes_t.erase(iter);
+			break;
+		      }
+		    }
+
+		    std::pair<unsigned long long, unsigned int> p;
+		    p.first = measure_time;
+		    p.second = index;
+		    
+		    episodes_t.insert(p);
+		    
 		    break;
 		  }
 		  
@@ -2582,6 +2805,12 @@ namespace whiteice
 	      else{
 		episodes.push_back(episode);
 		episodes_score.push_back(total_reward);
+		
+		std::pair<unsigned long long, unsigned int> p;
+		p.first = measure_time;
+		p.second = episodes.size()-1;
+		
+		episodes_t.insert(p);
 	      }
 	      
 	    }
@@ -2659,6 +2888,20 @@ namespace whiteice
 
 		if(database[index].reinforcement < datum.reinforcement){
 		  database[index] = datum;
+
+		  for(auto iter=database_t.begin();iter!=database_t.end();iter++){
+		    if(iter->second == index){
+		      database_t.erase(iter);
+		      break;
+		    }
+		  }
+
+		  std::pair<unsigned long long, unsigned int> p;
+		  p.first = datum.t;
+		  p.second = index;
+		    
+		  database_t.insert(p);
+		  
 		  break;
 		}
 
@@ -2668,6 +2911,12 @@ namespace whiteice
 	    }
 	    else{
 	      database.push_back(datum);
+
+	      std::pair<unsigned long long, unsigned int> p;
+	      p.first = datum.t;
+	      p.second = database.size()-1;
+	      
+	      database_t.insert(p);
 	    }
 	    
 	  }
@@ -2680,6 +2929,83 @@ namespace whiteice
 	// removes processed values from after_effects_buffer
 
 	after_effects_buffer.erase(after_effects_buffer.begin(), last_iter);
+      }
+
+      
+      // removes old measurements from database and episodes
+      if(HISTORY_REMOVE_TIME_MS){
+	std::lock_guard<std::mutex> lock(database_mutex);
+	
+	auto now = std::chrono::high_resolution_clock::now();	
+	unsigned long long now_ms = 
+	  std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+
+	if(now_ms > HISTORY_REMOVE_TIME_MS){
+	  now_ms -= HISTORY_REMOVE_TIME_MS;
+	}
+	else{
+	  now_ms = 0;
+	}
+
+	// removes old elements from database
+	while(database.size() > 0){
+
+	  const auto last_iter = database_t.upper_bound(now_ms);
+
+	  if(last_iter == database_t.begin()) break;
+	  auto it = database_t.begin();
+	  
+	  const unsigned int index = it->second;
+	  
+	  const unsigned int new_elem_index = database.size()-1;
+
+	  if(index == new_elem_index){
+	    database.erase(database.end()-1);
+	    database_t.erase(it);
+	  }
+	  else{
+	    database[index] = database[new_elem_index];
+	    database.erase(database.end()-1);
+	    database_t.erase(it);
+	    
+	    for(auto iter=database_t.begin();iter!=database_t.end();iter++){
+	      if(iter->second == new_elem_index) iter->second = index;
+	    }
+	    
+	  }
+	}
+
+	// removes old elements from episodes
+	while(episodes.size() > 0){
+
+	  const auto last_iter = episodes_t.upper_bound(now_ms);
+
+	  if(last_iter == episodes_t.begin()) break;
+	  auto it = episodes_t.begin();
+	  
+	  const unsigned int index = it->second;
+	  
+	  const unsigned int new_elem_index = episodes.size()-1;
+
+	  if(index == new_elem_index){
+	    episodes.erase(episodes.end()-1);
+	    episodes_score.erase(episodes_score.end()-1);
+	    episodes_t.erase(it);
+	  }
+	  else{
+	    episodes[index] = episodes[new_elem_index];
+	    episodes_score[index] = episodes_score[new_elem_index];
+	    episodes.erase(episodes.end()-1);
+	    episodes_score.erase(episodes_score.end()-1);
+	    episodes_t.erase(it);
+
+	    for(auto iter=episodes_t.begin();iter!=episodes_t.end();iter++){
+	      if(iter->second == new_elem_index) iter->second = index;
+	    }
+	    
+	  }
+	}
+	
       }
       
       

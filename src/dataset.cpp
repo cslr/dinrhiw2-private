@@ -715,12 +715,12 @@ namespace whiteice
     //  datasize: INT  number of data vectors
     //  dimen.  : INT
     //  NORMFLAG: INT  normalization flags
-    //  softmax : float
-    //  [mean]  : float[DIM]
-    //  [var]   : float[DIM]
-    //  [Rxx]   : float[DIM]x[DIM]
-    //  [ICA]   : float[DIM]x[DIM]
-    //  data    : float[datasize]x[DIM]
+    //  softmax : double
+    //  [mean]  : double[DIM]
+    //  [var]   : doubleDIM]
+    //  [Rxx]   : double[DIM]x[DIM]
+    //  [ICA]   : double[DIM]x[DIM]
+    //  data    : double[datasize]x[DIM]
     
     if(filename.length() <= 0)
       return false;
@@ -797,7 +797,7 @@ namespace whiteice
     if(typeid(T) == typeid(whiteice::math::superresolution< whiteice::math::blas_real<float>, whiteice::math::modular<unsigned int> >) ||
        typeid(T) == typeid(whiteice::math::superresolution< whiteice::math::blas_real<double>, whiteice::math::modular<unsigned int> >)){
       
-      if(version != (2 + 0xBEEF0000)) // v3.8 datafile (3.8 adds superresolutional numbers which add 1 to version number) (3.7 adds batch norm data)
+      if(version != (3 + 0xBEEF0000)) // v3.9 datafile (3.9 adds double numbers) (3.8 adds superresolutional numbers which add 1 to version number) (3.7 adds batch norm data)
       {
 	fclose(fp);
 	return false;
@@ -805,7 +805,7 @@ namespace whiteice
     }
     else{
       
-      if(version != 2){
+      if(version != 3){
 	fclose(fp);
 	return false;
       }
@@ -883,7 +883,7 @@ namespace whiteice
       unsigned int datasize = 0;
       unsigned int data_dimension = 0;
       unsigned int flags = 0;
-      float d32_softmax = 0.0f;
+      double d32_softmax = 0.0f;
 
       
       // reads basic cluster information
@@ -906,7 +906,7 @@ namespace whiteice
 	return false;	
       }
       
-      if(fread(&d32_softmax, 4, 1, fp) != 1){
+      if(fread(&d32_softmax, 8, 1, fp) != 1){
 	clusters.resize(0);
 	fclose(fp);
 	return false;	
@@ -932,13 +932,13 @@ namespace whiteice
       //////////////////////////////////////////////////////////////////////
       // reads cluster statistics
 
-      float* buffer = (float*)calloc(2*clusters[i].data_dimension*NUMBER_SIZE, 4);
+      double* buffer = (double*)calloc(2*clusters[i].data_dimension*NUMBER_SIZE, 8);
       
       if(flags & 0x01){
 	clusters[i].mean.resize(clusters[i].data_dimension);
 	clusters[i].variance.resize(clusters[i].data_dimension);
 	
-	if(fread(buffer, 4, 2*clusters[i].mean.size()*NUMBER_SIZE, fp) !=
+	if(fread(buffer, 8, 2*clusters[i].mean.size()*NUMBER_SIZE, fp) !=
 	   2*clusters[i].mean.size()*NUMBER_SIZE)
 	{
 	  clusters.resize(0);
@@ -962,7 +962,7 @@ namespace whiteice
 	}
 	
 	
-	if(fread(buffer, 4, 2*clusters[i].variance.size()*NUMBER_SIZE, fp) !=
+	if(fread(buffer, 8, 2*clusters[i].variance.size()*NUMBER_SIZE, fp) !=
 	   2*clusters[i].variance.size()*NUMBER_SIZE)
 	{
 	  clusters.resize(0);
@@ -991,7 +991,7 @@ namespace whiteice
 	
 	for(unsigned int a=0;a<data_dimension;a++){
 	  
-	  if(fread(buffer, 4, 2*data_dimension*NUMBER_SIZE, fp) != 2*data_dimension*NUMBER_SIZE){
+	  if(fread(buffer, 8, 2*data_dimension*NUMBER_SIZE, fp) != 2*data_dimension*NUMBER_SIZE){
 	    clusters.resize(0);
 	    fclose(fp);
 	    free(buffer);
@@ -1057,7 +1057,7 @@ namespace whiteice
 	
 	for(unsigned int a=0;a<data_dimension;a++){
 	  
-	  if(fread(buffer, 4, 2*data_dimension*NUMBER_SIZE, fp) != 2*data_dimension*NUMBER_SIZE){
+	  if(fread(buffer, 8, 2*data_dimension*NUMBER_SIZE, fp) != 2*data_dimension*NUMBER_SIZE){
 	    clusters.resize(0);
 	    fclose(fp);
 	    free(buffer);
@@ -1090,7 +1090,7 @@ namespace whiteice
       
       for(unsigned int a=0;a<clusters[i].data.size();a++){
 	
-	if(fread(buffer, 4, 2*clusters[i].data_dimension*NUMBER_SIZE, fp) !=
+	if(fread(buffer, 8, 2*clusters[i].data_dimension*NUMBER_SIZE, fp) !=
 	   2*clusters[i].data_dimension*NUMBER_SIZE)
 	{
 	  clusters.resize(0);
@@ -1162,12 +1162,12 @@ namespace whiteice
     //  datasize: INT  number of data vectors
     //  dimen.  : INT
     //  NORMFLAG: INT  normalization flags
-    //  softmax : float
-    //  [mean]  : float[DIM] (two values per element)
-    //  [var]   : float[DIM] (two values per element)
-    //  [Rxx]   : float[DIM]x[DIM] (two values per element)
-    //  [ICA]   : float[DIM]x[DIM] (two values per element)
-    //  data    : float[datasize]x[DIM] (two values per element)
+    //  softmax : double
+    //  [mean]  : double[DIM] (two values per element)
+    //  [var]   : double[DIM] (two values per element)
+    //  [Rxx]   : double[DIM]x[DIM] (two values per element)
+    //  [ICA]   : double[DIM]x[DIM] (two values per element)
+    //  data    : double[datasize]x[DIM] (two values per element)
     
     if(filename.length() <= 0)
       return false;
@@ -1199,7 +1199,8 @@ namespace whiteice
     // version 0 was initial version number for previous
     // version 1 did not support complex numbers
     // version 2 saves/loads values to disk as complex numbers
-    unsigned int version = 2;
+    // version 3 adds doubles to saving file format (larger numbers)
+    unsigned int version = 3;
 
     if(typeid(T) == typeid(whiteice::math::superresolution< whiteice::math::blas_real<float>, whiteice::math::modular<unsigned int> >) ||
        typeid(T) == typeid(whiteice::math::superresolution< whiteice::math::blas_real<double>, whiteice::math::modular<unsigned int> >)){
@@ -1301,7 +1302,7 @@ namespace whiteice
 	  flags |= 0x08;
       }
 
-      float d32_softmax = 0.0f;
+      double d32_softmax = 0.0f;
       math::convert(d32_softmax, clusters[i].softmax_parameter);
 
       // writes basic cluster information
@@ -1324,7 +1325,7 @@ namespace whiteice
 	return false;
       }
 
-      if(fwrite(&d32_softmax, 4, 1, fp) != 1){
+      if(fwrite(&d32_softmax, 8, 1, fp) != 1){
 	fclose(fp);
 	remove(filename.c_str());
 	return false;
@@ -1341,7 +1342,7 @@ namespace whiteice
 	NUMBER_SIZE = value.size();
       }
       
-      float* buffer = (float*)calloc(4, 2*clusters[i].data_dimension*NUMBER_SIZE);
+      double* buffer = (double*)calloc(8, 2*clusters[i].data_dimension*NUMBER_SIZE);
 
       if(buffer == 0){
 	fclose(fp);
@@ -1361,7 +1362,7 @@ namespace whiteice
 	  }
 	}
 	
-	if(fwrite(buffer, 4, 2*clusters[i].mean.size()*NUMBER_SIZE, fp) !=
+	if(fwrite(buffer, 8, 2*clusters[i].mean.size()*NUMBER_SIZE, fp) !=
 	   2*clusters[i].mean.size()*NUMBER_SIZE)
 	  {
 	    fclose(fp);
@@ -1381,7 +1382,7 @@ namespace whiteice
 	  }
 	}
 	
-	if(fwrite(buffer, 4, 2*clusters[i].variance.size()*NUMBER_SIZE, fp) !=
+	if(fwrite(buffer, 8, 2*clusters[i].variance.size()*NUMBER_SIZE, fp) !=
 	   2*clusters[i].variance.size()*NUMBER_SIZE)
 	{
 	  remove(filename.c_str());
@@ -1405,7 +1406,7 @@ namespace whiteice
 	    }
 	  }
 
-	  if(fwrite(buffer, 4, 2*data_dimension*NUMBER_SIZE, fp) != 2*data_dimension*NUMBER_SIZE){
+	  if(fwrite(buffer, 8, 2*data_dimension*NUMBER_SIZE, fp) != 2*data_dimension*NUMBER_SIZE){
 	    remove(filename.c_str());
 	    fclose(fp);
 	    free(buffer);
@@ -1428,7 +1429,7 @@ namespace whiteice
 	    }
 	  }
 
-	  if(fwrite(buffer, 4, 2*data_dimension*NUMBER_SIZE, fp) != 2*data_dimension*NUMBER_SIZE){
+	  if(fwrite(buffer, 8, 2*data_dimension*NUMBER_SIZE, fp) != 2*data_dimension*NUMBER_SIZE){
 	    remove(filename.c_str());
 	    fclose(fp);
 	    free(buffer);
@@ -1453,7 +1454,7 @@ namespace whiteice
 	  }
 	}
 	
-	if(fwrite(buffer, 4, 2*data_dimension*NUMBER_SIZE, fp) != 2*data_dimension*NUMBER_SIZE){
+	if(fwrite(buffer, 8, 2*data_dimension*NUMBER_SIZE, fp) != 2*data_dimension*NUMBER_SIZE){
 	  remove(filename.c_str());
 	  fclose(fp);
 	  free(buffer);
