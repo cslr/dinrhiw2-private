@@ -10,6 +10,7 @@
 #include "number.h"
 
 #include <iostream>
+#include <iomanip>
 #include <stdio.h>
 #include <stdexcept>
 #include <exception>
@@ -4081,6 +4082,7 @@ namespace whiteice
 			     const whiteice::math::vertex<T>& v)
     {
       if(v.size() == 1){
+	ios << std::setprecision(15);
 	ios << v[0];
       }
       else if(v.size() > 1){
@@ -4088,6 +4090,7 @@ namespace whiteice
 	ios << "[";
 	
 	for(unsigned int i=0;i<v.size();i++){
+	  ios << std::setprecision(15);
 	  ios << " " << v[i];
 	}
 	
