@@ -297,8 +297,8 @@ namespace whiteice
     std::vector<T> episodes_score;
 
     // time points when measurement was made
-    std::map<unsigned long long, unsigned int> database_t;
-    std::map<unsigned long long, unsigned int> episodes_t;
+    std::multimap<unsigned long long, unsigned int> database_t;
+    std::multimap<unsigned long long, unsigned int> episodes_t;
 
     // how many milliseconds has to pass before element is removed from replay buffer
     // zero means disabled as the default

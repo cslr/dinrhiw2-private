@@ -41,6 +41,8 @@ namespace whiteice
       this->setQTau(0.01); // was: 0.1, 0.05, 1.0 (disable polyak averaging)
       this->setPolicyTau(0.01); // was: 0.1, 0.05, 1.0 (disable polyak averaging)
 
+      //this->setHistoryRemoveTimeMS(1*60*1000); // 1 minutes forgetting time.. [DEBUGGING, REMOVE ME]
+
       this->setSaveAndReturnToBestEpisode(false); // NOT: remembers the best episode and returns to it if no progress
     }
     

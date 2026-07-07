@@ -932,7 +932,7 @@ namespace whiteice
       //////////////////////////////////////////////////////////////////////
       // reads cluster statistics
 
-      double* buffer = (double*)calloc(2*clusters[i].data_dimension*NUMBER_SIZE, 8);
+      double* buffer = (double*)calloc(8, 2*clusters[i].data_dimension*NUMBER_SIZE);
       
       if(flags & 0x01){
 	clusters[i].mean.resize(clusters[i].data_dimension);
@@ -1106,6 +1106,9 @@ namespace whiteice
 	      whiteice::math::convert(clusters[i].data[a][b][k], buffer[2*b*NUMBER_SIZE+k]);
 	    }
 	    else{ // complex number (two values per number)
+
+	      printf("DATASET::LOAD() COMPLEX VALUE USE\n");
+	      
 	      auto value = whiteice::math::blas_complex<double>(buffer[2*b*NUMBER_SIZE+k],
 								buffer[2*b*NUMBER_SIZE+k+1]);
 	      whiteice::math::convert(clusters[i].data[a][b][k], value);

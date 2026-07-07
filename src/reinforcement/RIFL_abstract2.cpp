@@ -942,12 +942,15 @@ namespace whiteice
   template <typename T>
   bool RIFL_abstract2<T>::save(const std::string& filename) const
   {
+    std::lock_guard<std::mutex> lock1(Q_mutex);
+    std::lock_guard<std::mutex> lock2(policy_mutex);
+    std::lock_guard<std::mutex> lock3(has_model_mutex);
+    std::lock_guard<std::mutex> lock4(database_mutex);
+    std::lock_guard<std::mutex> lock5(reinforcements_mutex);
+    
     char buffer[256];
     
     {
-      std::lock_guard<std::mutex> lock1(Q_mutex);
-      std::lock_guard<std::mutex> lock2(policy_mutex);
-
       for(unsigned int i=0;i<NUM_Q_NNETWORKS;i++){
 	snprintf(buffer, 256, "%s-q%d", filename.c_str(), i);
 	
@@ -1000,8 +1003,6 @@ namespace whiteice
       v.resize(NUM_Q_NNETWORKS+1);
       v.zero();
 
-      std::lock_guard<std::mutex> lockh(has_model_mutex);
-
       for(unsigned int i=0;i<(NUM_Q_NNETWORKS+1);i++)
 	v[i] = T(hasModel[i]);
       
@@ -1017,9 +1018,7 @@ namespace whiteice
       }
     }
 
-    {
-      std::lock_guard<std::mutex> lock(reinforcements_mutex);
-      
+    { 
       snprintf(buffer, 256, "%s-measurements", filename.c_str());
 
       whiteice::dataset<T> db;
@@ -1084,8 +1083,6 @@ namespace whiteice
       snprintf(buffer, 256, "%s-database", filename.c_str());
 
       whiteice::dataset< whiteice::math::blas_real<double> > db;
-
-      std::lock_guard<std::mutex> lock1(database_mutex);
 
       if(database.size() > 0)
 	db.createCluster("state", database[0].state.size());
@@ -1195,9 +1192,7 @@ namespace whiteice
       snprintf(buffer, 256, "%s-episodes", filename.c_str());
 
       whiteice::dataset< whiteice::math::blas_real<double> > db;
-
-      std::lock_guard<std::mutex> lock1(database_mutex);
-
+      
       if(database.size() > 0)
 	db.createCluster("state", database[0].state.size());
       else
@@ -1329,8 +1324,6 @@ namespace whiteice
 
     // database_t and episodes_t saving (with large values so use double)
     {
-      std::lock_guard<std::mutex> lock1(database_mutex);
-
       snprintf(buffer, 256, "%s-tmappings", filename.c_str());
       
       whiteice::dataset< whiteice::math::blas_real<double> > db;
@@ -1347,22 +1340,23 @@ namespace whiteice
       v.resize(1);
       v[0] = (double)now_ms;
 
-      db.add(2, v);
+      db.add(2, v, true); // no preprocess so nothing should change the value...
 
-      for(auto i = database_t.begin();i!= database_t.end();i++){
+
+      for(auto i = database_t.begin();i!=database_t.end();i++){
 	v.resize(2);
 
-	whiteice::math::convert(v[0], ((double)i->first));
-	whiteice::math::convert(v[1], ((double)i->second));
+	v[0] = ((double)(i->first));
+	v[1] = ((double)(i->second));
 
 	db.add(0, v);
       }
 
-      for(auto i = episodes_t.begin();i!= episodes_t.end();i++){
+      for(auto i = episodes_t.begin();i!=episodes_t.end();i++){
 	v.resize(2);
 
-	whiteice::math::convert(v[0], ((double)i->first));
-	whiteice::math::convert(v[1], ((double)i->second));
+	v[0] = ((double)(i->first));
+	v[1] = ((double)(i->second));
 
 	db.add(1, v);
       }
@@ -1371,6 +1365,7 @@ namespace whiteice
 	logging.error("RIFL_abstract2::save() saving t-mappings failed");
 	return false;
       }
+      
     }
     
 
@@ -1414,7 +1409,7 @@ namespace whiteice
     has_model_mutex.unlock();
     policy_mutex.unlock();
     Q_mutex.unlock();
-       
+     
     {
       Q_load.resize(NUM_Q_NNETWORKS);
       lagged_Q_load.resize(NUM_Q_NNETWORKS);
@@ -1490,7 +1485,7 @@ namespace whiteice
     }
 
     {
-      std::lock_guard<std::mutex> lock(reinforcements_mutex);
+      // std::lock_guard<std::mutex> lock(reinforcements_mutex);
       
       snprintf(buffer, 256, "%s-measurements", filename.c_str());
 
@@ -1593,7 +1588,7 @@ namespace whiteice
 
 	std::pair<unsigned long long, unsigned int> p;
 
-	p.first = (now_ms - t0) + ((unsigned long long)v[0].c[0]);
+	p.first = (unsigned long long)(now_ms - t0) + ((unsigned long long)v[0].c[0]);
 	p.second = (unsigned int)v[1].c[0];
 	
 	database_t_load.insert(p);
@@ -2948,64 +2943,75 @@ namespace whiteice
 	}
 
 	// removes old elements from database
-	while(database.size() > 0){
-
+	{
 	  const auto last_iter = database_t.upper_bound(now_ms);
-
-	  if(last_iter == database_t.begin()) break;
-	  auto it = database_t.begin();
 	  
-	  const unsigned int index = it->second;
-	  
-	  const unsigned int new_elem_index = database.size()-1;
+	  for(auto it = database_t.begin();it != last_iter;it++){
 
-	  if(index == new_elem_index){
-	    database.erase(database.end()-1);
-	    database_t.erase(it);
-	  }
-	  else{
-	    database[index] = database[new_elem_index];
-	    database.erase(database.end()-1);
-	    database_t.erase(it);
+	    if(it->first > now_ms) printf("REMOVING FRESH ENTRY!\n");
 	    
-	    for(auto iter=database_t.begin();iter!=database_t.end();iter++){
-	      if(iter->second == new_elem_index) iter->second = index;
+	    const unsigned int index = it->second;
+	    
+	    const unsigned int new_elem_index = database.size()-1;
+	    
+	    // printf("REMOVE INDEX: %d database_t.size() = %d\n", (int)index, (int)database_t.size());
+	    
+	    if(index == new_elem_index){
+	      database.erase(database.end()-1);
+	      //database_t.erase(it);
 	    }
-	    
+	    else{
+	      database[index] = database[new_elem_index];
+	      database.erase(database.end()-1);
+	      //database_t.erase(it);
+	      
+	      for(auto iter=database_t.rbegin();iter!=database_t.rend();iter++){
+		if(iter->second == new_elem_index){
+		  iter->second = index;
+		  break;
+		}
+	      }
+	    }
 	  }
+
+	  database_t.erase(database_t.begin(), last_iter);
 	}
 
-	// removes old elements from episodes
-	while(episodes.size() > 0){
-
-	  const auto last_iter = episodes_t.upper_bound(now_ms);
-
-	  if(last_iter == episodes_t.begin()) break;
-	  auto it = episodes_t.begin();
-	  
-	  const unsigned int index = it->second;
-	  
-	  const unsigned int new_elem_index = episodes.size()-1;
-
-	  if(index == new_elem_index){
-	    episodes.erase(episodes.end()-1);
-	    episodes_score.erase(episodes_score.end()-1);
-	    episodes_t.erase(it);
-	  }
-	  else{
-	    episodes[index] = episodes[new_elem_index];
-	    episodes_score[index] = episodes_score[new_elem_index];
-	    episodes.erase(episodes.end()-1);
-	    episodes_score.erase(episodes_score.end()-1);
-	    episodes_t.erase(it);
-
-	    for(auto iter=episodes_t.begin();iter!=episodes_t.end();iter++){
-	      if(iter->second == new_elem_index) iter->second = index;
-	    }
-	    
-	  }
-	}
 	
+	
+	// removes old elements from episodes
+	{
+	  const auto last_iter = episodes_t.upper_bound(now_ms);
+	  
+	  for(auto it = episodes_t.begin();it != last_iter;it++){
+	    
+	    const unsigned int index = it->second;
+	    
+	    const unsigned int new_elem_index = episodes.size()-1;
+	    
+	    if(index == new_elem_index){
+	      episodes.erase(episodes.end()-1);
+	      episodes_score.erase(episodes_score.end()-1);
+	      //episodes_t.erase(it);
+	    }
+	    else{
+	      episodes[index] = episodes[new_elem_index];
+	      episodes_score[index] = episodes_score[new_elem_index];
+	      episodes.erase(episodes.end()-1);
+	      episodes_score.erase(episodes_score.end()-1);
+	      //episodes_t.erase(it);
+	      
+	      for(auto iter=episodes_t.rbegin();iter!=episodes_t.rend();iter++){
+		if(iter->second == new_elem_index){
+		  iter->second = index;
+		  break;
+		}
+	      }
+	    }
+	  }
+	  
+	  episodes_t.erase(episodes_t.begin(), last_iter);
+	}
       }
       
       
