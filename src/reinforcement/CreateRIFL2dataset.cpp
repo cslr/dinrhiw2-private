@@ -1206,7 +1206,7 @@ namespace whiteice
     {
       data.preprocess(0, whiteice::dataset<T>::dnMeanVarianceNormalization); // Q input vectors are normalized!
 	
-      //// data.preprocess(1, whiteice::dataset<T>::dnMeanVarianceNormalization);
+      //////////////////// data.preprocess(1, whiteice::dataset<T>::dnMeanVarianceNormalization);
 	
     }
 
