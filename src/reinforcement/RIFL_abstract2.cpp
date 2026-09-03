@@ -2602,8 +2602,8 @@ namespace whiteice
       {
 	
 	if(performAction(action, ns, reinforcement, distance, endFlag) == false){
-	  //std::cout << "ERROR: RIFL_abstract2::performAction() FAILED." << std::endl;
-	  whiteice::logging.error("ERROR: RIFL_abstact::performAction() FAILED.");
+	  // std::cout << "ERROR: RIFL_abstract2::performAction() FAILED." << std::endl;
+	  // whiteice::logging.error("ERROR: RIFL_abstact::performAction() FAILED.");
 	  performActionFailed++;
 	  goto optimization_step;
 	}
