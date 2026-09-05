@@ -382,7 +382,7 @@ namespace whiteice
 
 	if(z > 20.0) z = 20.0;
 	
-	const double s = whiteice::math::exp(beta*z);
+	const double s = whiteice::math::exp(z);
 
 	const T qw = whiteice::math::pow(whiteice::math::abs(qvalues[i]), T(2.0f));		
 	//const T qs = T(1.0f)/(T(1.0f) + whiteice::math::exp(-beta*(qw-qmean)/qstdev)); // softmax so outliers dont dominate
