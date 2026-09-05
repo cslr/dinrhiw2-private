@@ -161,7 +161,7 @@ namespace whiteice
       vertex<T> bestx;
       T best_error;
       T best_pure_error;
-      unsigned int iterations;
+      std::atomic<unsigned int> iterations;
       
       whiteice::dataset<T> data;
       

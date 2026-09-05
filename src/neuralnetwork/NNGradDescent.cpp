@@ -67,7 +67,7 @@ namespace whiteice
     {
       best_error = grad.best_error;
       best_pure_error = grad.best_pure_error;
-      iterations = grad.iterations;
+      iterations.store( grad.iterations.load() );
       data = grad.data;
       NTHREADS = grad.NTHREADS;
       MAXITERS = grad.MAXITERS;      
@@ -611,7 +611,7 @@ namespace whiteice
       iterations = 0;
       NTHREADS = 0;
       thread_is_running = 0;
-      
+
       this->use_minibatch = false;
 
       dropout = false;
@@ -843,6 +843,8 @@ namespace whiteice
     {
       try{
 
+      unsigned int thread_iterations = 0;
+
       
       // set thread priority (non-standard)
       {
@@ -1049,6 +1051,7 @@ namespace whiteice
 	    std::lock_guard<std::mutex> lock(solution_lock);
 	    
 	    iterations++;
+	    thread_iterations++;
 	  }
 
 #if 0
@@ -1248,8 +1251,8 @@ namespace whiteice
 	      m[i] = beta1 * m[i] + (T(1.0) - beta1)*sumgrad[i];
 	      v[i] = beta2 * v[i] + (T(1.0) - beta2)*sumgrad[i]*sumgrad[i];
 	      
-	      const T m_hat = m[i] / (T(1.0) - whiteice::math::pow(beta1[0], T(iterations)[0]));
-	      const T v_hat = v[i] / (T(1.0) - whiteice::math::pow(beta2[0], T(iterations)[0]));
+	      const T m_hat = m[i] / (T(1.0) - whiteice::math::pow(beta1[0], T(thread_iterations)[0]));
+	      const T v_hat = v[i] / (T(1.0) - whiteice::math::pow(beta2[0], T(thread_iterations)[0]));
 	      
 	      x[i] -= (alpha / (whiteice::math::sqrt(v_hat) + epsilon)) * m_hat;
 	    }
@@ -1356,7 +1359,7 @@ namespace whiteice
 	    whiteice::math::vertex<T> w;
 	    nn->exportdata(w);
 	    
-	    snprintf(buffer, 256, "NNGradDescent: %d/%d (%s) reset/fresh neural network. param norm %f.", iterations, MAXITERS, str_id.c_str(), w.norm()[0].c[0]);
+	    snprintf(buffer, 256, "NNGradDescent: %d/%d (%s) reset/fresh neural network. param norm %f.", iterations.load(), MAXITERS, str_id.c_str(), w.norm()[0].c[0]);
 	    whiteice::logging.info(buffer);
 	  }
 	  
@@ -1745,7 +1748,7 @@ namespace whiteice
 		double tmp = 0.0;
 		whiteice::math::convert(tmp, sumgrad.norm());
 		
-		snprintf(buffer, 256, "NNGradDescent: %d/%d gradient norm: %f", iterations, MAXITERS, tmp);
+		snprintf(buffer, 256, "NNGradDescent: %d/%d gradient norm: %f", iterations.load(), MAXITERS, tmp);
 		whiteice::logging.info(buffer);
 	      }
 	      
@@ -1840,7 +1843,7 @@ namespace whiteice
 		  
 		  snprintf(buffer, 256,
 			   "NNGradDescent: %d/%d (%s) linesearch error: %f delta-error: %f ratio: %f lrate: %e",
-			   iterations, MAXITERS,
+			   iterations.load(), MAXITERS,
 			   str_id.c_str(),
 			   tmp1, tmp2, tmp4, tmp3);
 		  whiteice::logging.info(buffer);
@@ -1894,7 +1897,7 @@ namespace whiteice
 		
 		snprintf(buffer, 256,
 			 "NNGradDescent: %d/%d (%s) linesearch STOP noimprove counter: %d error: %f delta-error: %f ratio: %f lrate: %e",
-			 iterations, MAXITERS,
+			 iterations.load(), MAXITERS,
 			 str_id.c_str(),
 			 noimprovements[std::this_thread::get_id()],
 			 tmp1, tmp2, tmp4, tmp3);
@@ -1957,6 +1960,7 @@ namespace whiteice
 	      }
 	      
 	      iterations++;
+	      thread_iterations++;
 	      
 	      // cancellation point
 	      {
