@@ -445,6 +445,10 @@ namespace whiteice
 			      const unsigned int k,
 			      vertex<T>& v)
     {
+      // CHECK: there seem to be problem with transposed matrix, matrix dimensions should be given as is,
+      // not transposed dimensions but original matrix dimensions!!!
+     
+      
       try{
 	vertex<T> w;
 	vertex<T> vv = v * v;
@@ -564,14 +568,32 @@ namespace whiteice
 #else
 	if(typeid(T) == typeid(blas_real<float>)){
 	  // w = beta * A' * v
+	 
+	  
 	  cblas_sgemv(CblasRowMajor, CblasTrans, v.size(), M,
 		      *((float*)&beta), (float*)&(A.data[k*A.numCols + i]), A.xsize(),
 		      (float*)v.data, 1, 0.0f, (float*)w.data, 1);
-	  
+	    
+
+	  // FIX
+	  /*
+	  cblas_sgemv(CblasRowMajor, CblasTrans, w.size(), v.size(),
+		      *((float*)&beta), (float*)&(A.data[k*A.numCols + i]), A.xsize(),
+		      (float*)v.data, 1, 0.0f, (float*)w.data, 1);
+	  */
 	  // A += v * w';
+	  
 	  cblas_sger(CblasRowMajor, v.size(), M,
 		     1.0f, (float*)v.data, 1, (float*)w.data, 1,
 		     (float*)&(A.data[k*A.numCols + i]), A.xsize());
+	  
+	  
+	  // FIX
+	  /*
+	  cblas_sger(CblasRowMajor, v.size(), w.size(),
+		     1.0f, (float*)v.data, 1, (float*)w.data, 1,
+		     (float*)&(A.data[k*A.numCols + i]), A.xsize());
+	  */
 	}
 	else if(typeid(T) == typeid(blas_real<double>)){
 	  // w = beta * A' * v
