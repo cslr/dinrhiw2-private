@@ -2216,9 +2216,10 @@ namespace whiteice
 	}
 	else if(s.size() != (numStates/STATE_HISTORY_LEN)){
 	  state = oldstate;
-	  if(firstTime) continue;
 
 	  whiteice::logging.error("ERROR: RIFL_abstact2::getState() return dimension mismatch.");
+	  
+	  if(firstTime) continue;
 	}
 	else{ // got new state
 	  state_history.push_back(s);
