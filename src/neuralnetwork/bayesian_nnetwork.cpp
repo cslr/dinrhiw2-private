@@ -642,11 +642,16 @@ namespace whiteice
 #pragma omp for nowait schedule(auto)
       for(unsigned int i=(nnets.size() - latestN);i<nnets.size();i++){
 
-	const unsigned int index = rng.rand() % nnets.size();
-	
-	math::vertex<T> in(nnets[0]->input_size());
-	math::vertex<T> out(DIM), out_nn(nnets[0]->output_size());
-	math::vertex<T> rdim(RDIM);
+	const unsigned int index = whiteice::rng.rand() % nnets.size();
+
+	math::vertex<T> in;
+	math::vertex<T> out, out_nn;
+	math::vertex<T> rdim;
+
+	in.resize(nnets[0]->input_size());
+	out.resize(DIM);
+	out_nn.resize(nnets[0]->output_size());
+	rdim.resize(RDIM);
 
 	in.zero();
 	out.zero();
