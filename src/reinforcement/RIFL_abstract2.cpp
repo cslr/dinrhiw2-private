@@ -598,6 +598,9 @@ namespace whiteice
     if(reinforcements.size() <= 10 || reinforcements_random.size() <= 10)
       return false;
 
+    if(distances.size() <= 10 || distances_random.size() <= 10)
+      return false;
+
     {
       std::lock_guard<std::mutex> locke(epsilon_mutex);
       if(epsilon == T(0.0f) || epsilon == T(1.0f)) return false;
@@ -883,7 +886,7 @@ namespace whiteice
 	if(stdev_random < T(0.0))
 	  stdev_random = T(0.0);
 	
-	stdev_random = sqrt(stdev_random/reinforcements_random.size()); // mean's stdev
+	stdev_random = sqrt(stdev_random/distances_random.size()); // mean's stdev
       }
       else{
 	int SAMPLES = 1;
@@ -1466,7 +1469,7 @@ namespace whiteice
 	return false;
       }
 
-      if(db.size(0) != 1 && db.dimension(0) != (NUM_Q_NNETWORKS+1)){
+      if(db.size(0) != 1 || db.dimension(0) != (NUM_Q_NNETWORKS+1)){
 	logging.error("RIFL_abstract2::load() loading hasModel dataset file failed (2)");
 	return false;
       }
@@ -2013,6 +2016,13 @@ namespace whiteice
 
     whiteice::bayesian_nnetwork<T> best_policy, best_lagged_policy;;
     whiteice::dataset<T> best_policy_preprocess;
+
+    best_Q = Q;
+    best_lagged_Q = lagged_Q;
+    best_Q_preprocess = Q_preprocess;
+    best_policy = policy;
+    best_lagged_policy = lagged_policy;
+    best_policy_preprocess = policy_preprocess;
     
     //////////////////////////////////////////////////////////////////////
     

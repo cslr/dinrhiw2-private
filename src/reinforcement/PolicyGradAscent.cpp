@@ -58,7 +58,7 @@ namespace whiteice
     
     best_value = grad.best_value;
     best_q_value = grad.best_q_value;
-    iterations = grad.iterations;
+    iterations.store( grad.iterations.load() );
 
     if(grad.Q.size()){
       this->Q.resize(grad.Q.size());
@@ -615,6 +615,8 @@ namespace whiteice
   template <typename T>
   void PolicyGradAscent<T>::optimizer_loop()
   {
+
+    unsigned int thread_iterations = 0;
     
     {
       sched_param sch_params;
@@ -1199,8 +1201,8 @@ namespace whiteice
 	      m[i] = beta1 * m[i] + (T(1.0) - beta1)*(-sumgrad[i]);
 	      v[i] = beta2 * v[i] + (T(1.0) - beta2)*sumgrad[i]*sumgrad[i];
 	      
-	      const T m_hat = m[i] / (T(1.0) - whiteice::math::pow(beta1[0], T(iterations+1)[0]));
-	      const T v_hat = v[i] / (T(1.0) - whiteice::math::pow(beta2[0], T(iterations+1)[0]));
+	      const T m_hat = m[i] / (T(1.0) - whiteice::math::pow(beta1[0], T(thread_iterations+1)[0]));
+	      const T v_hat = v[i] / (T(1.0) - whiteice::math::pow(beta2[0], T(thread_iterations+1)[0]));
 	      
 	      weights[i] -= (alpha / (whiteice::math::sqrt(v_hat) + epsilon)) * m_hat;
 	    }
@@ -1223,7 +1225,7 @@ namespace whiteice
 	    
 	    snprintf(buffer, 128,
 		     "PolicyGradAscent (%d/%d): policy updated value %f\n",
-		     iterations, MAXITERS,
+		     iterations.load(), MAXITERS,
 		     v);
 	    whiteice::logging.info(buffer);
 	  }
@@ -1232,6 +1234,7 @@ namespace whiteice
 	  w0 = weights;
  	  
 	  iterations++;
+	  thread_iterations++;
 	  
 	  // cancellation point
 	  {
@@ -1268,7 +1271,7 @@ namespace whiteice
 		
 		snprintf(buffer, 128,
 			 "PolicyGradAscent: better policy found: %f iter %d",
-			 b, iterations);
+			 b, iterations.load());
 		whiteice::logging.info(buffer);
 	      }
 

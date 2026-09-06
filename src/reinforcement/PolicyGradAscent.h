@@ -153,7 +153,7 @@ namespace whiteice
     whiteice::math::vertex<T> bestx; // best policy weights
     T best_value;
     T best_q_value; // without regularizer term
-    unsigned int iterations;
+    std::atomic<unsigned int> iterations;
     
     
     // flag to indicate this is the first thread to start optimization

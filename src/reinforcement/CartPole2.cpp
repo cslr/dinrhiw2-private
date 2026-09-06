@@ -38,8 +38,8 @@ namespace whiteice
       this->setLearningDatasetSize(2500); // disabled (use default 4000), was: 10.000, 1.000, *2500* (works)
       this->setMinimumDataSize(2000); //1000 random examples before starting optimizations/learning..
 
-      this->setQTau(0.01); // was: 0.1, 0.05, 1.0 (disable polyak averaging)
-      this->setPolicyTau(0.01); // was: 0.1, 0.05, 1.0 (disable polyak averaging)
+      this->setQTau(0.1); // was: 0.01, 0.1, 0.05, 1.0 (disable polyak averaging)
+      this->setPolicyTau(0.1); // was: 0.01, 0.1, 0.05, 1.0 (disable polyak averaging)
 
       //this->setHistoryRemoveTimeMS(1*60*1000); // 1 minutes forgetting time.. [DEBUGGING, REMOVE ME]
 
