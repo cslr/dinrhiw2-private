@@ -593,20 +593,27 @@ namespace whiteice
     
     percent_change = T(0.0f);
     average_change = T(0.0f);
-    linear_curve_distance_percent_change = T(0.0f);
+    linear_curve_distance_percent_change = T(0.0f);    
     
-    if(reinforcements.size() <= 10 || reinforcements_random.size() <= 10)
+    if(reinforcements.size() <= 10 || reinforcements_random.size() <= 10){      
+      logging.error("executionStatistics(): FAIL: no reinforcement values");
       return false;
+    }
 
-    if(distances.size() <= 10 || distances_random.size() <= 10)
+    if(distances.size() <= 10 || distances_random.size() <= 10){
+      logging.error("executionStatistics(): FAIL: no distance values");
       return false;
+    }
 
     {
       std::lock_guard<std::mutex> locke(epsilon_mutex);
-      if(epsilon == T(0.0f) || epsilon == T(1.0f)) return false;
+      if(epsilon == T(0.0f) || epsilon == T(1.0f)){
+	logging.error("executionStatistics(): FAIL: bad epsilon");
+	return false;
+      }
     }
 
-        // reinforcement
+    // reinforcement
     {
       T mean = T(0.0), stdev = T(0.0);
       T mean_random = T(0.0), stdev_random = T(0.0);
@@ -720,7 +727,10 @@ namespace whiteice
       
       // if(mean+stdev <= T(0.0)) return false;
       
-      if((mean_random-min_random) <= T(0.0)) return false;
+      if((mean_random-min_random) <= T(0.0)){
+	logging.error("executionStatistics(): FAIL: reinforcements mean_random < min_random");
+	return false;
+      }
       
       // percent_change = (mean-stdev - (mean_random+stdev_random))/(mean+stdev);
 
@@ -768,8 +778,10 @@ namespace whiteice
 	whiteice::math::vertex<> b;
 	whiteice::math::blas_real<float> error;
 	
-	if(whiteice::math::linear_optimization<>(x, y, A, b, error) == false)
+	if(whiteice::math::linear_optimization<>(x, y, A, b, error) == false){
+	  logging.error("executionStatistics(): FAIL: distances linear_optimization failure");
 	  return false;
+	}
 	
 	// 1d model is y = a*x + b
 	
@@ -839,8 +851,10 @@ namespace whiteice
 	whiteice::math::vertex<> b;
 	whiteice::math::blas_real<float> error;
 	
-	if(whiteice::math::linear_optimization<>(x, y, A, b, error) == false)
+	if(whiteice::math::linear_optimization<>(x, y, A, b, error) == false){
+	  logging.error("executionStatistics(): FAIL: distances linear_optimization failure (2)");
 	  return false;
+	}
 	
 	// 1d model is y = a*x + b
 
@@ -930,7 +944,10 @@ namespace whiteice
       
       // if(mean+stdev <= T(0.0)) return false;
       
-      if((mean_random-min_random) <= T(0.0)) return false;
+      if((mean_random-min_random) <= T(0.0)){
+	logging.error("executionStatistics(): FAIL: distances mean_random < min_random");
+	return false;
+      }
       
       // percent_change = (mean-stdev - (mean_random+stdev_random))/(mean+stdev);
 
