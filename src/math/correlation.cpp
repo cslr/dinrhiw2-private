@@ -142,6 +142,8 @@ namespace whiteice
 	    whiteice::logging.error("autocorrelation(): cublasDspr() failed.");
 	    throw CUDAException("CUBLAS cublasDspr() call failed.");
 	  }
+
+	  i++;
 	}
 
 	
