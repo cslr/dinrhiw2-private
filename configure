@@ -5482,6 +5482,37 @@ printf '%s\n' "no NVIDIA cuBLAS detected" >&6; }
    fi
 fi
 
+{ printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking for NVIDIA cuBLAS generic Linux library SLOW (/usr/include/)" >&5
+printf %s "checking for NVIDIA cuBLAS generic Linux library SLOW (/usr/include/)... " >&6; }
+CUBLAS_FLAGS="-lcublas -lcuda -lcudart"
+`g++ -o cublastest cublastest.cpp -DCUBLAS $CUBLAS_FLAGS > /dev/null 2> /dev/null`
+
+if [ $? -eq 0 ]; then
+  if test "x$enable_cublas" == "xno"
+then :
+
+     NVIDIACUBLAS="no"
+     { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: yes, but DISABLED" >&5
+printf '%s\n' "yes, but DISABLED" >&6; }
+
+else case e in #(
+  e)
+     NVIDIACUBLAS="yes"x
+     BLAS_CFLAGS="-DCUBLAS"
+     BLAS_LIBS="-lcublas -lcuda -lcudart"
+     { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: yes, using generic Linux cublas" >&5
+printf '%s\n' "yes, using generic Linux cublas" >&6; }
+   ;;
+esac
+fi
+else
+   { printf '%s\n' "$as_me:${as_lineno-$LINENO}: result: no NVIDIA cuBLAS detected" >&5
+printf '%s\n' "no NVIDIA cuBLAS detected" >&6; }
+   if [ "x$NVIDIACUBLAS" != "xyes" ]; then
+      NVIDIACUBLAS="no"
+   fi
+fi
+
 
 
 

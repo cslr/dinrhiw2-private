@@ -671,6 +671,28 @@ else
    fi
 fi
 
+AC_MSG_CHECKING([for NVIDIA cuBLAS generic Linux library [SLOW] (/usr/include/)])
+CUBLAS_FLAGS="-lcublas -lcuda -lcudart"
+`g++ -o cublastest cublastest.cpp -DCUBLAS $CUBLAS_FLAGS > /dev/null 2> /dev/null`
+
+if [[ $? -eq 0 ]]; then
+  AS_IF([test "x$enable_cublas" == "xno"],[
+     NVIDIACUBLAS="no"
+     AC_MSG_RESULT([yes, but DISABLED])
+  ],
+  [
+     NVIDIACUBLAS="yes"x
+     BLAS_CFLAGS="-DCUBLAS"
+     BLAS_LIBS="-lcublas -lcuda -lcudart"
+     AC_MSG_RESULT([yes, using generic Linux cublas])
+  ])
+else
+   AC_MSG_RESULT([no NVIDIA cuBLAS detected])
+   if [[ "x$NVIDIACUBLAS" != "xyes" ]]; then
+      NVIDIACUBLAS="no"
+   fi
+fi
+
 
 
 
