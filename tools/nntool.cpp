@@ -1575,7 +1575,7 @@ int main(int argc, char** argv)
 		math::blas_real<float> e = 0.0;
 		nnetwork< math::blas_real<float> > net(*nn);
 		
-#pragma omp for nowait schedule(dynamic. 150)
+#pragma omp for nowait schedule(dynamic, 150)
 		for(unsigned int i=0;i<dtrain.size(0);i++){
 		  const unsigned int index = i; // rand() % dtrain.size(0);
 		  auto input = dtrain.access(0, index);
@@ -1626,7 +1626,7 @@ int main(int argc, char** argv)
 		math::blas_real<float> e = 0.0;
 		nnetwork< math::blas_real<float> > net(*nn);
 		
-#pragma omp for nowait schedule(dynamic. 150)
+#pragma omp for nowait schedule(dynamic, 150)
 		for(unsigned int i=0;i<dtest.size(0);i++){
 		  const unsigned int index = i; // rand() % dtest.size(0);
 		  auto input = dtest.access(0, index);
