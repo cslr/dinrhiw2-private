@@ -402,6 +402,11 @@ namespace whiteice
     // discretizes problem variables (only input)
     std::vector< whiteice::dynamic_bitset > xdata, pdata;
     std::vector< math::vertex<T> > ydata;
+
+    // generates all frequent itemsets dataset
+    std::vector< whiteice::math::vertex<T> > result;
+    std::vector< whiteice::math::vertex<T> > presult;
+    
     
     {
       T mean  = T(0.0f);
@@ -420,7 +425,18 @@ namespace whiteice
 	  f.set(i*K + k, true);
 	}
 
-	std::cout << "discretized: " << f << std::endl;
+	// std::cout << "discretized: " << f << std::endl;
+
+#if 0
+	whiteice::math::vertex<T> vv;
+	vv.resize(f.size());
+	for(unsigned int i=0;i<vv.size();i++){
+	  if(f[i]) vv[i] = T(+1.0f);
+	  else if(f[i] == false) vv[i] = T(0.0f);
+	}
+
+	result.push_back(vv);
+#endif	
 
 	xdata.push_back(f);
 	ydata.push_back(data.access(1,j));
@@ -444,19 +460,26 @@ namespace whiteice
     
     // calculates frequent sets and all subsets
     std::vector<dynamic_bitset> fset;
-    const double freq_limit = 100.0/xdata.size(); // (estimating mean requires at least 20 data points but 50 should be always enough)
+    const double freq_limit = 20.0/xdata.size(); // (estimating mean requires at least 20 data points but 50 should be always enough)
 
     {
       list_source<dynamic_bitset>* source = new list_source<dynamic_bitset>(xdata);
       
       whiteice::datamining::FrequentSetsFinder fsfinder(*source, fset, freq_limit);
-      fsfinder.find();
+      assert(fsfinder.find() == true);
       delete source;
+
+#if 0
+      for(unsigned int i=0;i<xdata.size();i++)
+	std::cout << "xdata: " << xdata[i] << std::endl;
 
       for(unsigned int i=0;i<fset.size();i++){
 	std::cout << "fset: " << fset[i] << std::endl;
       }
+#endif
     }
+
+    std::cout << "f = " << fset.size() << std::endl;
     
     // extend datasets to all subsets of frequent sets
     std::set<dynamic_bitset> f;
@@ -472,7 +495,7 @@ namespace whiteice
 	dynamic_bitset b;
 	b.resize(BITS);
 	b.reset();
-
+	
 	b.inc();
 
 	while(b.none() == false){
@@ -487,14 +510,21 @@ namespace whiteice
 	    if(fset[i][l]){
 
 	      if(b[k]) c.set(l, true);
+	      else c.set(l, false);
 	      
 	      k++;
 	    }
 	  }
 
+	  assert(c.size() == fset[i].size());
+
+	  //std::cout << "fset[" << i << "] = " << fset[i] << std::endl;
+
+	  //std::cout << "c = " << c << std::endl;
+
 	  f.insert(c);
 
-	  std::cout << "b = " << b << std::endl;
+	  //std::cout << "f.size() = " << f.size() << std::endl;
 
 	  b.inc();
 	}
@@ -503,12 +533,12 @@ namespace whiteice
       }
     }
 
-    
-    // generates all frequent itemsets dataset
-    std::vector< whiteice::math::vertex<T> > result;
-    std::vector< whiteice::math::vertex<T> > presult;
+    std::cout << "f subsets = " << f.size() << std::endl;
     
     {
+      result.resize(xdata.size());
+
+#pragma omp parallel for
       for(unsigned int j=0;j<xdata.size();j++){
 	dynamic_bitset value;
 	value.resize(f.size());
@@ -517,10 +547,13 @@ namespace whiteice
 	unsigned int index = 0;
 
 	for(const auto& b : f){
-	  bool fdata = true;
+	  bool fdata = false;
+
+	  assert(xdata[j].size() == b.size());
 
 	  for(unsigned int i=0;i<b.size();i++){
-	    if(b[i] && xdata[j][i] == 0.0){ fdata = false; }
+	    if(b[i] && xdata[j][i] == false) fdata = false;
+	    else if(b[i] == true && xdata[j][i] == true) fdata = true;
 	  }
 
 	  if(fdata) value.set(index, true);
@@ -529,7 +562,7 @@ namespace whiteice
 	  index++;
 	}
 
-	std::cout << value << std::endl;
+	// std::cout << value << std::endl;
 	
 	// now we have one frequent item
 	
@@ -541,9 +574,12 @@ namespace whiteice
 	  else r[i] = T(0.0);
 	}
 
-	result.push_back(r);
+	result[j] = r;
       }
 
+      presult.resize(pdata.size());
+
+#pragma omp parallel for      
       for(unsigned int j=0;j<pdata.size();j++){
 	dynamic_bitset value;
 	value.resize(f.size());
@@ -552,10 +588,11 @@ namespace whiteice
 	unsigned int index = 0;
 
 	for(const auto& b : f){
-	  bool fdata = true;
+	  bool fdata = false;
 
 	  for(unsigned int i=0;i<b.size();i++){
-	    if(b[i] && pdata[j][i] == 0.0){ fdata = false; }
+	    if(b[i] && pdata[j][i] == false) fdata = false;
+	    else if(b[i] == true && pdata[j][i] == true) fdata = true;
 	  }
 
 	  if(fdata) value.set(index, true);
@@ -574,7 +611,7 @@ namespace whiteice
 	  else r[i] = T(0.0);
 	}
 
-	presult.push_back(r);
+	presult[j] = r;
       }
 
     }
@@ -583,6 +620,7 @@ namespace whiteice
     // solves linear problem "y = Ax + b", "min(A,b) 0.5*||y - A*x - b||^2"
     // solution is A = Cyx*pseudoinverse(Cxx), b = mean(y) - A*mean(x)
     {
+#if 0
       math::matrix<T> Cxx, Cyx;
       math::vertex<T> mx, my;
 
@@ -597,15 +635,22 @@ namespace whiteice
 
       A = Cyx*Cxx;
       b = my - A*mx;
+#endif
+
+      std::cout << "Global optimization." << std::endl;
 
       T error = T(0.0);
+      
+      linear_optimization_grad(result, ydata, A, b, error);
 
+#if 0
       for(unsigned int k=0;k<result.size();k++){
 	auto y = A*result[k] + b;
 	error += (data.access(1,k)-y).norm();
       }
 
       error /= result.size();
+#endif
 
       std::cout << "optimization error = " << error << std::endl;
 
@@ -697,7 +742,7 @@ namespace whiteice
   template <typename T>
   int discretize(const T& x, const unsigned int K, const T& mean, const T& stdev)
   {
-    if(K <= 1) return -1;
+    if(K <= 1) return 0;
     
     T sd = stdev;
     
@@ -708,7 +753,7 @@ namespace whiteice
     
     s = whiteice::math::round(T(K/2.0f)*s + T(K/2.0f)); // [-K/2, K/2] + K/2 = [0,K]
     int k = 0;
-    if(s > T((float)K)) s = T((float)K);
+    if(s >= T((float)K)) s = T((float)K-1);
     whiteice::math::convert(k, s); // converts T to integer
     
     if(k < 0) k = 0;

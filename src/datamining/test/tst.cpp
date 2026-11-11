@@ -306,7 +306,7 @@ void test_frequent_sets()
   }
   */
 
-  /*
+  
   {
     dynamic_bitset x;
     x.resize(5);
@@ -352,7 +352,8 @@ void test_frequent_sets()
     x.set(3, true);
     data.push_back(x);
   }
-  */
+  
+#if 0
   {
     dynamic_bitset x;
     x.resize(17);
@@ -431,11 +432,18 @@ void test_frequent_sets()
     x.set(n, true);
     data.push_back(x);
   }
+#endif
 
   source = new list_source<dynamic_bitset>(data);
   fsfinder = new datamining::FrequentSetsFinder(*source, fset, 3.0/data.size());
 
   fsfinder->find();
+
+  std::cout << "Data: " << std::endl;
+  
+  for(unsigned int i=0;i<data.size();i++){
+    std::cout << data[i] << std::endl;
+  }
 
   std::cout << "Frequent sets found: " << fset.size() << std::endl;
 
@@ -444,6 +452,7 @@ void test_frequent_sets()
   }
 
 
+  return;
 
   {
     std::set<whiteice::dynamic_bitset> f; // frequent sets

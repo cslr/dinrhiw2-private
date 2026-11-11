@@ -181,8 +181,8 @@ namespace whiteice
 	s.insert(std::pair<std::set<long long>, long long>(ss,node->count));
       }
       else{
-	for(unsigned long long i=0;i<children.size();i++){
-	  node->find_sets(children[i], item, s);
+	for(unsigned long long i=0;i<node->children.size();i++){
+	  node->find_sets(node->children[i], item, s);
 	}
       }
     }

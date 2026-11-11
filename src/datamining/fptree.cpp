@@ -157,6 +157,19 @@ std::set<Pattern> fptree_growth(const FPTree& fptree)
             Pattern new_pattern{ { curr_fpnode_item }, curr_fpnode_frequency };
             single_path_patterns.insert( new_pattern );
 
+	    std::vector<Pattern> previous_patterns(
+						   single_path_patterns.begin(),
+						   single_path_patterns.end()
+						   );
+	    
+	    for(const Pattern& pattern : previous_patterns){
+	      Pattern new_pattern{pattern};
+	      new_pattern.first.insert(curr_fpnode_item);
+	      new_pattern.second = curr_fpnode_frequency;
+	      single_path_patterns.insert(new_pattern);
+	    }
+	    
+#if 0
             // create a new pattern by adding the item of the current node to each pattern generated until now
             for ( const Pattern& pattern : single_path_patterns ) {
                 Pattern new_pattern{ pattern };
@@ -166,6 +179,7 @@ std::set<Pattern> fptree_growth(const FPTree& fptree)
 
                 single_path_patterns.insert( new_pattern );
             }
+#endif
 
             // advance to the next node until the end of the tree
             assert( curr_fpnode->children.size() <= 1 );

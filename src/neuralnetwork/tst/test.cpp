@@ -3037,7 +3037,7 @@ void simple_global_optimum_test()
     global_linear_optimizer(data, predict, K, A, b);
 
     std::cout << "Optimizer code done." << std::endl;
-
+    
     
     math::matrix<> Cxx, Cyx;
     math::vertex<> mx, my;

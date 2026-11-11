@@ -11,6 +11,7 @@
 #include "matrix.h"
 #include "vertex.h"
 #include "dinrhiw_blas.h"
+#include "RNG.h"
 
 
 namespace whiteice
@@ -75,7 +76,20 @@ namespace whiteice
 				      vertex< blas_real<double> >& b,
 				      blas_real<double>& error);
     
+
+    template bool linear_optimization_grad(const std::vector< vertex< blas_real<float> > >& x,
+					   const std::vector< vertex< blas_real<float> > >& y,
+					   matrix< blas_real<float> >& A,
+					   vertex< blas_real<float> >& b,
+					   blas_real<float>& error);
     
+    template bool linear_optimization_grad(const std::vector< vertex< blas_real<double> > >& x,
+					   const std::vector< vertex< blas_real<double> > >& y,
+					   matrix< blas_real<double> >& A,
+					   vertex< blas_real<double> >& b,
+					   blas_real<double>& error);
+    
+
     
     template bool cholesky_factorization< blas_real<float> >
     (matrix< blas_real<float> >& A) ;
@@ -487,6 +501,87 @@ namespace whiteice
 
       error = err;
 
+      return true;
+    }
+
+    
+    /* 
+     * solves linear optimization problem, min(A,b) E_xy{0.5*(y-Ax-b)^2}
+     * regularizes matrixes if they are singular to get solution.
+     */
+    template <typename T>
+    bool linear_optimization_grad(const std::vector< vertex<T> >& x,
+				  const std::vector< vertex<T> >& y,
+				  matrix<T>& A, vertex<T>& b, T& error)
+    {
+      if(x.size() != y.size()) return false;
+      if(x.size() == 0 || y.size() == 0) return false;
+
+      matrix<T> gA;
+      vertex<T> gb;
+
+      A.resize(y[0].size(), x[0].size());
+      b.resize(y[0].size());
+
+      whiteice::RNG<T> rng;
+
+      rng.normal(b);
+      rng.normal(A);
+
+      //std::cout << "A = " << A << std::endl;
+      //std::cout << "b = " << b << std::endl;
+
+      T delta = T(1.0f), old_delta = T(1.0f);
+      const T lrate = T(0.0001);
+      
+      while(delta > 0.001){
+	gA.resize(y[0].size(), x[0].size());
+	gb.resize(y[0].size());
+	
+	gA.zero();
+	gb.zero();
+
+	vertex<T> e;
+
+	for(unsigned i=0;i<x.size();i++){
+	  e = A*x[i] + b - y[i];
+
+	  for(unsigned int h=0;h<e.size();h++){
+	    for(unsigned int k=0;k<x[i].size();k++){
+	      gA(h,k) += e[h]*x[i][k];
+	    }
+	  }
+
+	  gb += e;
+	}
+
+	gA /= T(x.size());
+	gb /= T(x.size());
+
+	old_delta = delta;
+	delta = frobenius_norm(gA)/T(gA.size())+gb.norm()/T(gb.size());
+	// delta = gA.norm()+gb.norm();
+
+	if(old_delta < delta) lrate *= T(0.70f);
+	else if(old_delta > delta) lrate *= T(1.1f);
+
+	std::cout << "delta = " << delta << std::endl;
+
+	A -= lrate*gA;
+	b -= lrate*gb;
+      }
+
+      error = T(0.0f);
+
+      for(unsigned i=0;i<x.size();i++){
+	auto e = y[i] - A*x[i] - b;
+	error += e.norm();
+      }
+
+      error /= x.size();
+
+      std::cout << "error = " << error << std::endl;
+      
       return true;
     }
 
