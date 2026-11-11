@@ -3011,18 +3011,17 @@ void simple_global_optimum_test()
 
     predict.createCluster("input", 10);
     
-    for(unsigned int i=0;i<1000;i++){
+    for(unsigned int i=0;i<10000;i++){
       math::vertex<> x, y, x2;
 
       x.resize(10);
       x2.resize(10);
       y.resize(1);
-      y[0] = (a*x)[0];
 
       rng.normal(x);
       rng.normal(x2);
       //rng.normal(y);
-
+      y[0] = (a*x)[0];
       
       data.add(0, x);
       data.add(1, y);
@@ -3038,6 +3037,39 @@ void simple_global_optimum_test()
     global_linear_optimizer(data, predict, K, A, b);
 
     std::cout << "Optimizer code done." << std::endl;
+
+    
+    math::matrix<> Cxx, Cyx;
+    math::vertex<> mx, my;
+    whiteice::math::blas_real<> p = 0.0001f;
+    
+    std::vector< whiteice::math::vertex<> > result, ydata;
+    data.getData(0, result);
+    data.getData(1, ydata);
+    
+    if(mean_covariance_estimate(mx, Cxx, result) == false)
+      return;
+    
+    if(mean_crosscorrelation_estimate(mx, my, Cyx, result, ydata) == false)
+      return;
+    
+    if(Cxx.symmetric_pseudoinverse(p) == false)
+      return;
+    
+    A = Cyx*Cxx;
+    b = my - A*mx;
+    
+    whiteice::math::blas_real<> error = 0.0;
+    
+    for(unsigned int k=0;k<result.size();k++){
+      auto y = A*result[k] + b;
+      error += (data.access(1,k)-y).norm();
+    }
+    
+    error /= result.size();
+    
+    std::cout << "LINEAR optimization error = " << error << std::endl;
+    
   }
 
   return;

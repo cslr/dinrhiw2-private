@@ -444,7 +444,7 @@ namespace whiteice
     
     // calculates frequent sets and all subsets
     std::vector<dynamic_bitset> fset;
-    const double freq_limit = 50.0/xdata.size(); // (estimating mean requires at least 20 data points but 50 should be always enough)
+    const double freq_limit = 100.0/xdata.size(); // (estimating mean requires at least 20 data points but 50 should be always enough)
 
     {
       list_source<dynamic_bitset>* source = new list_source<dynamic_bitset>(xdata);
@@ -467,7 +467,7 @@ namespace whiteice
 	const unsigned int BITS = fset[i].count();
 	//const unsigned int BITS = fset[i].size();
 
-	std::cout << "BITS = " << BITS << std::endl;
+	//std::cout << "BITS = " << BITS << std::endl;
 	
 	dynamic_bitset b;
 	b.resize(BITS);
