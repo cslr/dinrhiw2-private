@@ -35,10 +35,11 @@ namespace whiteice
   // solves global optimum of pseudolinear "y = Ax + b" by solving least squares problem
   template <typename T>
   bool global_linear_optimizer(const whiteice::dataset<T>& data,
+			       whiteice::dataset<T>& predict,
 			       const unsigned int K,
 			       whiteice::math::matrix<T>& A,
 			       whiteice::math::vertex<T>& b);
-				 
+  
 
   // discretizes each variable to K bins: [-4*stdev, 4*stdev]/K
   // discretization is calculated (K/2)*((x-mean)/4*stdev)+K/2 => [0,K[ (clipped to interval)
@@ -62,6 +63,8 @@ namespace whiteice
   bool data_statistics(const std::vector< math::vertex<T> >& input,
 		       whiteice::math::vertex<T>& mean,
 		       whiteice::math::vertex<T>& stdev);
+
+
   
 
   //////////////////////////////////////////////////////////////////////
@@ -84,12 +87,14 @@ namespace whiteice
 
   extern template bool global_linear_optimizer
     (const whiteice::dataset< math::blas_real<float> >& data,
+     whiteice::dataset< math::blas_real<float> >& predict,
      const unsigned int K,
      whiteice::math::matrix< math::blas_real<float> >& A,
      whiteice::math::vertex< math::blas_real<float> >& b);
   
   extern template bool global_linear_optimizer
     (const whiteice::dataset< math::blas_real<double> >& data,
+     whiteice::dataset< math::blas_real<double> >& predict,
      const unsigned int K,
      whiteice::math::matrix< math::blas_real<double> >& A,
      whiteice::math::vertex< math::blas_real<double> >& b);

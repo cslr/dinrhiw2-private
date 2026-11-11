@@ -270,7 +270,6 @@ namespace whiteice
       
       list_source<dynamic_bitset>* source = new list_source<dynamic_bitset>(dbdata);
       
-      
       whiteice::datamining::FrequentSetsFinder fsfinder(*source, fset, freq_limit);
       
       fsfinder.find();
@@ -284,7 +283,7 @@ namespace whiteice
     
     {
       for(unsigned int i=0;i<fset.size();i++){
-
+	
 	const unsigned int BITS = fset[i].count();
 	
 	dynamic_bitset b;

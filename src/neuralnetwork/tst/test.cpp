@@ -210,9 +210,13 @@ int main()
 
   try{
 
-    narx_test();
-    
+    simple_global_optimum_test(); // DOES NOT WORK WELL
+
     return 0;
+
+    //narx_test();
+    
+    //return 0;
     
     // nn_layer_norm_gradient_value_test();
 
@@ -220,7 +224,7 @@ int main()
 
     // hmc_test();
 
-    mcmc_diffeq_test();
+    // mcmc_diffeq_test();
 
     // simple_tsne_test();
       
@@ -230,7 +234,7 @@ int main()
 
     // nn_save_load_test();
     
-    return 0;
+    // return 0;
 
     // r_hmc_test(); // tests recurrent Hamiltonian Monte Carlo sampling..
 
@@ -2990,6 +2994,57 @@ void nngraddescent_complex_test()
 
 void simple_global_optimum_test()
 {
+  {
+    std::cout << "Linear global optimizer code." << std::endl;
+
+    whiteice::math::vertex<> a;
+    whiteice::dataset<> data, predict;
+    const unsigned int K = 10;
+
+    whiteice::RNG<> rng;
+
+    data.createCluster("input", 10);
+    data.createCluster("output", 1);
+
+    a.resize(10);
+    rng.normal(a);
+
+    predict.createCluster("input", 10);
+    
+    for(unsigned int i=0;i<1000;i++){
+      math::vertex<> x, y, x2;
+
+      x.resize(10);
+      x2.resize(10);
+      y.resize(1);
+      y[0] = (a*x)[0];
+
+      rng.normal(x);
+      rng.normal(x2);
+      //rng.normal(y);
+
+      
+      data.add(0, x);
+      data.add(1, y);
+      predict.add(0, x2);
+    }
+
+    data.preprocess(0);
+    data.preprocess(1);
+
+    whiteice::math::matrix<> A;
+    whiteice::math::vertex<> b;
+    
+    global_linear_optimizer(data, predict, K, A, b);
+
+    std::cout << "Optimizer code done." << std::endl;
+  }
+
+  return;
+
+  
+#if 0
+  
   std::cout << "Global Optimum pretraining tests." << std::endl;
 
   // 0. test case: create random neural network and generate 10.000 training samples.
@@ -3581,6 +3636,7 @@ void simple_global_optimum_test()
     printf("Final optimization error without pretraining: %f.\n", final_error1);
     printf("Final optimization error with global optimum pretraining: %f.\n", final_error2);
   }
+#endif
   
 }
 
@@ -7985,19 +8041,24 @@ void nnetwork_test()
   try{
     std::cout << "NNETWORK TEST 2: SIMPLE PROBLEM + DIRECT GRADIENT DESCENT" << std::endl;
     
-    nnetwork<>* nn;
-    
     std::vector<unsigned int> arch;
     arch.push_back(2);
-    arch.push_back(10);
-    arch.push_back(10);
-    arch.push_back(10);
+    arch.push_back(100);
+    arch.push_back(100);
+    arch.push_back(100);
     arch.push_back(2);
-    
-    nn = new nnetwork<>(arch);
-    nn->setNonlinearity(nn->getLayers()-1, nnetwork<>::pureLinear);
 
+    nnetwork<>* nn;
+    nn = new nnetwork<>(arch, nnetwork<>::rectifier);
+    nn->setNonlinearity(nn->getLayers()-1, nnetwork<>::pureLinear);
+    
     nn->randomize();
+    
+    nnetwork<>* nn2;
+    nn2 = new nnetwork<>(arch, nnetwork<>::sigmoid);
+    nn2->setNonlinearity(nn->getLayers()-1, nnetwork<>::pureLinear);
+
+    nn2->randomize();
     
     const unsigned int size = 500;
     
@@ -8013,10 +8074,12 @@ void nnetwork_test()
       
       input[i][0] = (((float)rand())/((float)RAND_MAX))*2.0f - 0.5f; // [-1.0,+1.0]
       input[i][1] = (((float)rand())/((float)RAND_MAX))*2.0f - 0.5f; // [-1.0,+1.0]
+
+      nn2->calculate(input[i], output[i]);
       
-      output[i][0] = input[i][0] - math::blas_real<float>(0.2f)*input[i][1];
-      output[i][1] = math::blas_real<float>(-0.12f)*input[i][0] +
-	math::blas_real<float>(0.1f)*input[i][1];
+      //output[i][0] = input[i][0] - math::blas_real<float>(0.2f)*input[i][1];
+      //output[i][1] = math::blas_real<float>(-0.12f)*input[i][0] +
+      //math::blas_real<float>(0.1f)*input[i][1];
     }
 
     gpu_sync();

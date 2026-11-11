@@ -231,8 +231,11 @@ namespace whiteice
 	  math::matrix<T> A;
 	  math::vertex<T> b;
 
+	  whiteice::dataset<T> predict;
+	  predict.createCluster("input", train_data.dimension(0));
+
 	  // solves linear optimization problem
-	  if(global_linear_optimizer(train_data, K, A, b) == false){
+	  if(global_linear_optimizer(train_data, predict, K, A, b) == false){
 	    printf("ERROR: global_linear_optimizer() call failed.\n");
 	    failure = true;
 	    continue;
@@ -304,7 +307,10 @@ namespace whiteice
 
       if(dmap.preprocess(0, dataset<T>::dnMeanVarianceNormalization) == false) return false;
 
-      if(global_linear_optimizer(dmap, K, A, b) == false) return false;
+      dataset<T> predict;
+      predict.createCluster("input", 0);
+
+      if(global_linear_optimizer(dmap, predict, K, A, b) == false) return false;
 
       if(data_statistics(linear_parameters_u, umean, ustdev) == false)
 	return false;
@@ -319,8 +325,11 @@ namespace whiteice
       
       math::matrix<T> AA;
       math::vertex<T> bb;
+
+      dataset<T> predict;
+      predict.createCluster("input", 0);
       
-      if(global_linear_optimizer(data, K, AA, bb) == false) return false;
+      if(global_linear_optimizer(data, predict, K, AA, bb) == false) return false;
       
       // vectorizes AA and bb
       math::vertex<T> u1;
@@ -363,6 +372,7 @@ namespace whiteice
   // solves global optimum of pseudolinear "y = Ax + b" by solving least squares problem
   template <typename T>
   bool global_linear_optimizer(const whiteice::dataset<T>& data,
+			       whiteice::dataset<T>& predict,
 			       const unsigned int K,
 			       whiteice::math::matrix<T>& A,
 			       whiteice::math::vertex<T>& b)
@@ -371,15 +381,26 @@ namespace whiteice
     if(data.getNumberOfClusters() <= 1) return false;
     if(data.size(0) != data.size(1)) return false;
 
+    // FIXME: do mean-variance normalization manually and same for data and predict
+    
     std::vector< enum whiteice::dataset<T>::data_normalization > dn;
     if(data.getPreprocessings(0, dn) == false) return false;
     if(dn.size() != 1) return false;
     if(dn[0] != whiteice::dataset<T>::dnMeanVarianceNormalization)
       return false;
 
+    if(predict.getNumberOfClusters() != 1) return false;
+    
+    std::vector< enum whiteice::dataset<T>::data_normalization > pl;
+    pl.push_back(whiteice::dataset<T>::dnMeanVarianceNormalization); // predicted dataset should have same statistics as data
+    
+    predict.convert(0, pl);
+    predict.createCluster("predicted", data.dimension(1));
+    
+    
     
     // discretizes problem variables (only input)
-    std::vector< math::vertex<T> > xdata;
+    std::vector< whiteice::dynamic_bitset > xdata, pdata;
     std::vector< math::vertex<T> > ydata;
     
     {
@@ -388,33 +409,187 @@ namespace whiteice
 
       for(unsigned int j=0;j<data.size(0);j++){
 	const math::vertex<T>& v = data.access(0, j);
-	math::vertex<T> u;
-	u.resize(data.dimension(0)*K);
-	u.zero();
+	
+	whiteice::dynamic_bitset f;
+	f.resize(K*v.size());
+	f.reset();
+	
 
 	for(unsigned int i=0;i<v.size();i++){
 	  int k = discretize(v[i], K, mean, stdev);
-	  if(k < 0) return false;
-	  else if(k >= (signed)K) k = K-1;
-	  u[i*K + k] = T(1.0f);
+	  f.set(i*K + k, true);
 	}
 
-	xdata.push_back(u);
+	std::cout << "discretized: " << f << std::endl;
+
+	xdata.push_back(f);
 	ydata.push_back(data.access(1,j));
+      }
+
+      for(unsigned int j=0;j<predict.size(0);j++){
+	const math::vertex<T>& w = predict.access(0, j);
+	
+	whiteice::dynamic_bitset f2;
+	f2.resize(K*w.size());
+	f2.reset();
+	
+	for(unsigned int i=0;i<w.size();i++){
+	  int k = discretize(w[i], K, mean, stdev);
+	  f2.set(i*K + k, true);	  
+	}
+	
+	pdata.push_back(f2);
       }
     }
     
+    // calculates frequent sets and all subsets
+    std::vector<dynamic_bitset> fset;
+    const double freq_limit = 50.0/xdata.size(); // (estimating mean requires at least 20 data points but 50 should be always enough)
 
+    {
+      list_source<dynamic_bitset>* source = new list_source<dynamic_bitset>(xdata);
+      
+      whiteice::datamining::FrequentSetsFinder fsfinder(*source, fset, freq_limit);
+      fsfinder.find();
+      delete source;
+
+      for(unsigned int i=0;i<fset.size();i++){
+	std::cout << "fset: " << fset[i] << std::endl;
+      }
+    }
+    
+    // extend datasets to all subsets of frequent sets
+    std::set<dynamic_bitset> f;
+    
+    {
+      for(unsigned int i=0;i<fset.size();i++){
+	
+	const unsigned int BITS = fset[i].count();
+	//const unsigned int BITS = fset[i].size();
+
+	std::cout << "BITS = " << BITS << std::endl;
+	
+	dynamic_bitset b;
+	b.resize(BITS);
+	b.reset();
+
+	b.inc();
+
+	while(b.none() == false){
+	  
+	  dynamic_bitset c;
+	  c.resize(fset[i].size());
+	  c.reset();
+
+	  unsigned int k = 0;
+
+	  for(unsigned int l=0;l<fset[i].size();l++){
+	    if(fset[i][l]){
+
+	      if(b[k]) c.set(l, true);
+	      
+	      k++;
+	    }
+	  }
+
+	  f.insert(c);
+
+	  std::cout << "b = " << b << std::endl;
+
+	  b.inc();
+	}
+	
+	
+      }
+    }
+
+    
+    // generates all frequent itemsets dataset
+    std::vector< whiteice::math::vertex<T> > result;
+    std::vector< whiteice::math::vertex<T> > presult;
+    
+    {
+      for(unsigned int j=0;j<xdata.size();j++){
+	dynamic_bitset value;
+	value.resize(f.size());
+	value.reset();
+
+	unsigned int index = 0;
+
+	for(const auto& b : f){
+	  bool fdata = true;
+
+	  for(unsigned int i=0;i<b.size();i++){
+	    if(b[i] && xdata[j][i] == 0.0){ fdata = false; }
+	  }
+
+	  if(fdata) value.set(index, true);
+	  else value.set(index, false);
+	  
+	  index++;
+	}
+
+	std::cout << value << std::endl;
+	
+	// now we have one frequent item
+	
+	whiteice::math::vertex<T> r;
+	r.resize(value.size());
+	
+	for(unsigned int i=0;i<r.size();i++){
+	  if(value[i]) r[i] = T(1.0);
+	  else r[i] = T(0.0);
+	}
+
+	result.push_back(r);
+      }
+
+      for(unsigned int j=0;j<pdata.size();j++){
+	dynamic_bitset value;
+	value.resize(f.size());
+	value.reset();
+
+	unsigned int index = 0;
+
+	for(const auto& b : f){
+	  bool fdata = true;
+
+	  for(unsigned int i=0;i<b.size();i++){
+	    if(b[i] && pdata[j][i] == 0.0){ fdata = false; }
+	  }
+
+	  if(fdata) value.set(index, true);
+	  else value.set(index, false);
+	  
+	  index++;
+	}
+
+	// now we have one frequent item
+	
+	whiteice::math::vertex<T> r;
+	r.resize(value.size());
+	
+	for(unsigned int i=0;i<r.size();i++){
+	  if(value[i]) r[i] = T(1.0);
+	  else r[i] = T(0.0);
+	}
+
+	presult.push_back(r);
+      }
+
+    }
+    
+    
     // solves linear problem "y = Ax + b", "min(A,b) 0.5*||y - A*x - b||^2"
     // solution is A = Cyx*pseudoinverse(Cxx), b = mean(y) - A*mean(x)
     {
       math::matrix<T> Cxx, Cyx;
       math::vertex<T> mx, my;
 
-      if(mean_covariance_estimate(mx, Cxx, xdata) == false)
+      if(mean_covariance_estimate(mx, Cxx, result) == false)
 	return false;
 
-      if(mean_crosscorrelation_estimate(mx, my, Cyx, xdata, ydata) == false)
+      if(mean_crosscorrelation_estimate(mx, my, Cyx, result, ydata) == false)
 	return false;
 
       if(Cxx.symmetric_pseudoinverse(T(0.0001f)) == false)
@@ -422,7 +597,25 @@ namespace whiteice
 
       A = Cyx*Cxx;
       b = my - A*mx;
+
+      T error = T(0.0);
+
+      for(unsigned int k=0;k<result.size();k++){
+	auto y = A*result[k] + b;
+	error += (data.access(1,k)-y).norm();
+      }
+
+      error /= result.size();
+
+      std::cout << "optimization error = " << error << std::endl;
+
+      for(unsigned int k=0;k<presult.size();k++){
+	auto y = A*presult[k] + b;
+
+	predict.add(1, y);
+      }
     }
+    
 
     return true;
   }
@@ -584,12 +777,14 @@ namespace whiteice
   
   template bool global_linear_optimizer
   (const whiteice::dataset< math::blas_real<float> >& data,
+   whiteice::dataset< math::blas_real<float> >& predict,
    const unsigned int K,
    whiteice::math::matrix< math::blas_real<float> >& A,
    whiteice::math::vertex< math::blas_real<float> >& b);
   
   template bool global_linear_optimizer
   (const whiteice::dataset< math::blas_real<double> >& data,
+   whiteice::dataset< math::blas_real<double> >& predict,
    const unsigned int K,
    whiteice::math::matrix< math::blas_real<double> >& A,
    whiteice::math::vertex< math::blas_real<double> >& b);

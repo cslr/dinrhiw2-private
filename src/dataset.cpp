@@ -3108,6 +3108,16 @@ namespace whiteice
   {
     if(index >= clusters.size())
       return false;
+
+    this->convert(index); // remove preprocessings
+
+    for(unsigned int i=0;i<plist.size();i++)
+      if(this->preprocess(index, plist[i]) == false)
+	return false;
+
+    return true;
+
+#if 0
     
     // checks that list has only legitime values
     // and it doesn't have duplicates
@@ -3183,6 +3193,7 @@ namespace whiteice
     
     
     return true;
+#endif
   }
 
 
