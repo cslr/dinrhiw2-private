@@ -21,7 +21,7 @@ namespace whiteice
   {
     if(N < 100) return false;
     if(M < 100) return false;
-    if(K <= 1) return false;
+    //if(K <= 1) return false;
 
     // 1. learns N global linear optimizes {u} and {w}
     std::vector< math::vertex<T> > linear_parameters_u;
@@ -235,7 +235,7 @@ namespace whiteice
 	  predict.createCluster("input", train_data.dimension(0));
 
 	  // solves linear optimization problem
-	  if(global_linear_optimizer(train_data, predict, K, A, b) == false){
+	  if(global_linear_optimizer(train_data, predict, A, b) == false){
 	    printf("ERROR: global_linear_optimizer() call failed.\n");
 	    failure = true;
 	    continue;
@@ -310,7 +310,7 @@ namespace whiteice
       dataset<T> predict;
       predict.createCluster("input", 0);
 
-      if(global_linear_optimizer(dmap, predict, K, A, b) == false) return false;
+      if(global_linear_optimizer(dmap, predict, A, b) == false) return false;
 
       if(data_statistics(linear_parameters_u, umean, ustdev) == false)
 	return false;
@@ -322,6 +322,8 @@ namespace whiteice
     // linear optimum solution and solve u = vec(AA,bb), then solve initial weights w
     {
       printf("Global linear optimizer parameter mapping.\n");
+
+      const unsigned int K = data.size(0)/100;
       
       math::matrix<T> AA;
       math::vertex<T> bb;
@@ -329,7 +331,7 @@ namespace whiteice
       dataset<T> predict;
       predict.createCluster("input", 0);
       
-      if(global_linear_optimizer(data, predict, K, AA, bb) == false) return false;
+      if(global_linear_optimizer(data, predict, AA, bb) == false) return false;
       
       // vectorizes AA and bb
       math::vertex<T> u1;
@@ -373,11 +375,11 @@ namespace whiteice
   template <typename T>
   bool global_linear_optimizer(const whiteice::dataset<T>& data,
 			       whiteice::dataset<T>& predict,
-			       const unsigned int K,
+			       //const unsigned int K,
 			       whiteice::math::matrix<T>& A,
 			       whiteice::math::vertex<T>& b)
   {
-    if(K <= 1) return false;
+    //if(K <= 1) return false;
     if(data.getNumberOfClusters() <= 1) return false;
     if(data.size(0) != data.size(1)) return false;
 
@@ -406,6 +408,10 @@ namespace whiteice
     // generates all frequent itemsets dataset
     std::vector< whiteice::math::vertex<T> > result;
     std::vector< whiteice::math::vertex<T> > presult;
+
+    const unsigned int K = data.size(0)/500;
+
+    std::cout << "K = " << K << std::endl;
     
     
     {
@@ -462,7 +468,7 @@ namespace whiteice
     std::vector<dynamic_bitset> fset;
     const double freq_limit = 20.0/xdata.size(); // (estimating mean requires at least 20 data points but 50 should be always enough)
 
-    {
+    if(1){
       list_source<dynamic_bitset>* source = new list_source<dynamic_bitset>(xdata);
       
       whiteice::datamining::FrequentSetsFinder fsfinder(*source, fset, freq_limit);
@@ -484,7 +490,7 @@ namespace whiteice
     // extend datasets to all subsets of frequent sets
     std::set<dynamic_bitset> f;
     
-    {
+    if(1){
       for(unsigned int i=0;i<fset.size();i++){
 	
 	const unsigned int BITS = fset[i].count();
@@ -535,7 +541,7 @@ namespace whiteice
 
     std::cout << "f subsets = " << f.size() << std::endl;
     
-    {
+    if(1){
       result.resize(xdata.size());
 
 #pragma omp parallel for
@@ -620,37 +626,11 @@ namespace whiteice
     // solves linear problem "y = Ax + b", "min(A,b) 0.5*||y - A*x - b||^2"
     // solution is A = Cyx*pseudoinverse(Cxx), b = mean(y) - A*mean(x)
     {
-#if 0
-      math::matrix<T> Cxx, Cyx;
-      math::vertex<T> mx, my;
-
-      if(mean_covariance_estimate(mx, Cxx, result) == false)
-	return false;
-
-      if(mean_crosscorrelation_estimate(mx, my, Cyx, result, ydata) == false)
-	return false;
-
-      if(Cxx.symmetric_pseudoinverse(T(0.0001f)) == false)
-	return false;
-
-      A = Cyx*Cxx;
-      b = my - A*mx;
-#endif
-
       std::cout << "Global optimization." << std::endl;
 
       T error = T(0.0);
       
       linear_optimization_grad(result, ydata, A, b, error);
-
-#if 0
-      for(unsigned int k=0;k<result.size();k++){
-	auto y = A*result[k] + b;
-	error += (data.access(1,k)-y).norm();
-      }
-
-      error /= result.size();
-#endif
 
       std::cout << "optimization error = " << error << std::endl;
 
@@ -823,14 +803,14 @@ namespace whiteice
   template bool global_linear_optimizer
   (const whiteice::dataset< math::blas_real<float> >& data,
    whiteice::dataset< math::blas_real<float> >& predict,
-   const unsigned int K,
+   //const unsigned int K,
    whiteice::math::matrix< math::blas_real<float> >& A,
    whiteice::math::vertex< math::blas_real<float> >& b);
   
   template bool global_linear_optimizer
   (const whiteice::dataset< math::blas_real<double> >& data,
    whiteice::dataset< math::blas_real<double> >& predict,
-   const unsigned int K,
+   //const unsigned int K,
    whiteice::math::matrix< math::blas_real<double> >& A,
    whiteice::math::vertex< math::blas_real<double> >& b);
   

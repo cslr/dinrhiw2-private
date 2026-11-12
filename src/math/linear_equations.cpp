@@ -528,50 +528,173 @@ namespace whiteice
       rng.normal(b);
       rng.normal(A);
 
-      //std::cout << "A = " << A << std::endl;
-      //std::cout << "b = " << b << std::endl;
+      //T delta = T(1.0f), old_delta = T(1.0f);
+      T old_error = T(1.0f);
+      error = T(1.0f);
+      T lrate = T(0.001);
 
-      T delta = T(1.0f), old_delta = T(1.0f);
-      const T lrate = T(0.0001);
+      error = T(0.0f);
       
-      while(delta > 0.001){
+      for(unsigned i=0;i<x.size();i++){
+	auto e = y[i] - A*x[i] - b;
+	error += e.norm();
+      }
+
+      error /= x.size();
+      
+      //const T alpha = T(0.001);
+      const T alpha = T(0.01);
+      const T beta1 = T(0.9);
+      const T beta2 = T(0.999);
+      const T epsilon = T(1e-8);
+
+      matrix<T> mA;
+      matrix<T> vA;
+
+      mA.resize(y[0].size(), x[0].size());
+      vA.resize(y[0].size(), x[0].size());
+      
+      unsigned int itersA = 1;
+      
+      mA.zero();
+      vA.zero();
+
+      vertex<T> mb(y[0].size());
+      vertex<T> vb(y[0].size());
+      unsigned int itersb = 1;
+      
+      mb.zero();
+      vb.zero();
+
+      unsigned int no_improve_iters = 0;
+      
+      while(no_improve_iters < 50){
 	gA.resize(y[0].size(), x[0].size());
 	gb.resize(y[0].size());
 	
 	gA.zero();
 	gb.zero();
 
-	vertex<T> e;
 
-	for(unsigned i=0;i<x.size();i++){
-	  e = A*x[i] + b - y[i];
+#pragma omp parallel
+	{
+	  vertex<T> e;
 
-	  for(unsigned int h=0;h<e.size();h++){
-	    for(unsigned int k=0;k<x[i].size();k++){
-	      gA(h,k) += e[h]*x[i][k];
+	  auto ggA = gA;
+	  auto ggb = gb;
+
+#pragma omp for nowait schedule(static,150)
+	  for(unsigned i=0;i<x.size();i++){
+	    e = A*x[i] + b - y[i];
+	    
+	    for(unsigned int h=0;h<e.size();h++){
+	      for(unsigned int k=0;k<x[i].size();k++){
+		ggA(h,k) += e[h]*x[i][k];
+	      }
 	    }
+	    
+	    ggb += e;
 	  }
-
-	  gb += e;
+	  
+#pragma omp critical
+	  {
+	    gA += ggA;
+	    gb += ggb;
+	  }
+	  
 	}
 
 	gA /= T(x.size());
 	gb /= T(x.size());
 
-	old_delta = delta;
-	delta = frobenius_norm(gA)/T(gA.size())+gb.norm()/T(gb.size());
+	//old_delta = delta;
+	//delta = frobenius_norm(gA)/T(gA.size())+gb.norm()/T(gb.size());
 	// delta = gA.norm()+gb.norm();
 
-	if(old_delta < delta) lrate *= T(0.70f);
-	else if(old_delta > delta) lrate *= T(1.1f);
+	//if(old_delta < delta*0.8) lrate *= T(0.70f);
+	//else if(old_delta > delta) lrate *= T(1.1f);
 
-	std::cout << "delta = " << delta << std::endl;
+	old_error = error;
+	error = T(0.0f);
 
+#pragma omp parallel
+	{
+	  T err = T(0.0f);
+
+#pragma omp for nowait schedule(static, 150)
+	  for(unsigned i=0;i<x.size();i++){
+	    auto e = y[i] - A*x[i] - b;
+	    err += e.norm();
+	  }
+
+#pragma omp critical
+	  {
+	    error += err;
+	  }
+	}
+
+	//if(old_delta < delta*0.8) lrate *= T(0.70f);
+	//else if(old_delta > delta) lrate *= T(1.1f);
+	
+	error /= x.size();
+
+	if(old_error <= error) error = old_error;
+
+	if(old_error <= error) no_improve_iters++;
+	else if(old_error > error) no_improve_iters = 0;
+
+	std::cout << "error = " << error << " no_improve_iters = " << no_improve_iters << std::endl;
+	//std::cout << "lrate = " << lrate << std::endl;
+#if 0
+#pragma omp parallel
+	{
+	  
+#ifdef WINOS
+	  SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+#endif
+	  
+#pragma omp for schedule(static, 150)
+	  for(unsigned int i=0;i<gA.size();i++){
+	    mA[i] = beta1 * mA[i] + (T(1.0) - beta1)*gA[i];
+	    vA[i] = beta2 * vA[i] + (T(1.0) - beta2)*gA[i]*gA[i];
+	    
+	    const T m_hat = mA[i] / (T(1.0) - whiteice::math::pow(beta1[0], T(itersA)[0]));
+	    const T v_hat = vA[i] / (T(1.0) - whiteice::math::pow(beta2[0], T(itersA)[0]));
+	    
+	    A[i] -= (alpha / (whiteice::math::sqrt(v_hat) + epsilon)) * m_hat;
+	  }
+	}
+	
+
+#pragma omp parallel
+	{
+	  
+#ifdef WINOS
+	  SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+#endif
+	  
+#pragma omp for schedule(static, 150)
+	  for(unsigned int i=0;i<gb.size();i++){
+	    mb[i] = beta1 * mb[i] + (T(1.0) - beta1)*gb[i];
+	    vb[i] = beta2 * vb[i] + (T(1.0) - beta2)*gb[i]*gb[i];
+	    
+	    const T m_hat = mb[i] / (T(1.0) - whiteice::math::pow(beta1[0], T(itersb)[0]));
+	    const T v_hat = vb[i] / (T(1.0) - whiteice::math::pow(beta2[0], T(itersb)[0]));
+	    
+	    b[i] -= (alpha / (whiteice::math::sqrt(v_hat) + epsilon)) * m_hat;
+	  }
+	}
+    
+
+	itersA++;
+	itersb++;
+#endif
+	
 	A -= lrate*gA;
 	b -= lrate*gb;
       }
-
-      error = T(0.0f);
+   
+       error = T(0.0f);
 
       for(unsigned i=0;i<x.size();i++){
 	auto e = y[i] - A*x[i] - b;

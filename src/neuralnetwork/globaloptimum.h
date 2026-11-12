@@ -1,5 +1,8 @@
 /*
- * Implements approximately global optimizer pretraining of neural network code.
+ * Simple linear optimization (scoring) of frequent sets from input data, this should do some kind of global optimization but in practice code gives bad results (basic neural network should work better).
+ * Maybe something more is required in processing data (are frequent data sets really frequent, are single variable values in frequent data?)
+ * 
+ * (Implements approximately global optimizer pretraining of neural network code.)
  * 
  * Tomas Ukkonen, tomas.ukkonen@iki.fi, 2020
  *
@@ -36,7 +39,7 @@ namespace whiteice
   template <typename T>
   bool global_linear_optimizer(const whiteice::dataset<T>& data,
 			       whiteice::dataset<T>& predict,
-			       const unsigned int K,
+			       //const unsigned int K,
 			       whiteice::math::matrix<T>& A,
 			       whiteice::math::vertex<T>& b);
   
@@ -88,14 +91,14 @@ namespace whiteice
   extern template bool global_linear_optimizer
     (const whiteice::dataset< math::blas_real<float> >& data,
      whiteice::dataset< math::blas_real<float> >& predict,
-     const unsigned int K,
+     //const unsigned int K,
      whiteice::math::matrix< math::blas_real<float> >& A,
      whiteice::math::vertex< math::blas_real<float> >& b);
   
   extern template bool global_linear_optimizer
     (const whiteice::dataset< math::blas_real<double> >& data,
      whiteice::dataset< math::blas_real<double> >& predict,
-     const unsigned int K,
+     //const unsigned int K,
      whiteice::math::matrix< math::blas_real<double> >& A,
      whiteice::math::vertex< math::blas_real<double> >& b);
   

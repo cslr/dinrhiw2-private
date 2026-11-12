@@ -2999,12 +2999,29 @@ void simple_global_optimum_test()
 
     whiteice::math::vertex<> a;
     whiteice::dataset<> data, predict;
-    const unsigned int K = 10;
+    //const unsigned int K = 10;
 
     whiteice::RNG<> rng;
 
     data.createCluster("input", 10);
     data.createCluster("output", 1);
+
+    whiteice::nnetwork<> rand_net;
+    std::vector<unsigned int> arch;
+    arch.push_back(10);
+    arch.push_back(50);
+    arch.push_back(50);
+    arch.push_back(50);    
+    arch.push_back(1);
+    
+    // rand_net.setArchitecture(arch, whiteice::nnetwork<>::tanh); // sigmoid
+    // rand_net.setArchitecture(arch, whiteice::nnetwork<>::rectifier);
+    rand_net.setArchitecture(arch, whiteice::nnetwork<>::rectifier);
+			     
+    rand_net.randomize(0);
+
+    std::vector< math::vertex<> > input;
+    std::vector< math::vertex<> > output;
 
     a.resize(10);
     rng.normal(a);
@@ -3021,7 +3038,8 @@ void simple_global_optimum_test()
       rng.normal(x);
       rng.normal(x2);
       //rng.normal(y);
-      y[0] = (a*x)[0];
+      //y[0] = (a*x)[0];
+      rand_net.calculate(x, y);
       
       data.add(0, x);
       data.add(1, y);
@@ -3034,7 +3052,7 @@ void simple_global_optimum_test()
     whiteice::math::matrix<> A;
     whiteice::math::vertex<> b;
     
-    global_linear_optimizer(data, predict, K, A, b);
+    global_linear_optimizer(data, predict, A, b);
 
     std::cout << "Optimizer code done." << std::endl;
     
