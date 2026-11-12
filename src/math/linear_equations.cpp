@@ -568,7 +568,7 @@ namespace whiteice
 
       unsigned int no_improve_iters = 0;
       
-      while(no_improve_iters < 50){
+      while(no_improve_iters < 200){
 	gA.resize(y[0].size(), x[0].size());
 	gb.resize(y[0].size());
 	
@@ -645,7 +645,7 @@ namespace whiteice
 
 	std::cout << "error = " << error << " no_improve_iters = " << no_improve_iters << std::endl;
 	//std::cout << "lrate = " << lrate << std::endl;
-#if 0
+#if 1
 #pragma omp parallel
 	{
 	  
@@ -690,8 +690,8 @@ namespace whiteice
 	itersb++;
 #endif
 	
-	A -= lrate*gA;
-	b -= lrate*gb;
+	//A -= lrate*gA;
+	//b -= lrate*gb;
       }
    
        error = T(0.0f);

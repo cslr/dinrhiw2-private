@@ -84,7 +84,7 @@ namespace whiteice
 	else if(BINS > 100) BINS = 100;
 	*/
 	
-	disc[i].bins.resize(BINS);
+	disc[i].bins.resize(BINS+1);
 
 	whiteice::KMeans<double> km;
 
@@ -246,7 +246,7 @@ namespace whiteice
     if(freq_limit < 0.0 || freq_limit >= 1.0) return false;
 
     if(freq_limit == 0.0){
-      freq_limit = 50.0/data.size(); // 50 cases for each variable minimum
+      freq_limit = 30.0/data.size(); // 50 cases for each variable minimum
     }
 
     std::vector<dynamic_bitset> fset;

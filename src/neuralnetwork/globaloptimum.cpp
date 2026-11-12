@@ -409,11 +409,112 @@ namespace whiteice
     std::vector< whiteice::math::vertex<T> > result;
     std::vector< whiteice::math::vertex<T> > presult;
 
-    const unsigned int K = data.size(0)/500;
+    //const unsigned int K = data.size(0)/500;
+    
+    // std::cout << "K = " << K << std::endl;
 
-    std::cout << "K = " << K << std::endl;
+    std::vector< std::vector<std::string> > sdata, sdata2, sdata3;
+    std::vector<struct whiteice::discretization> disc;
+
+    for(unsigned int j=0;j<data.size(0);j++){
+      std::vector<std::string> vec;
+      const math::vertex<T>& v = data.access(0, j);
+      char buffer[80];
+      
+      for(unsigned int k=0;k<v.size();k++){
+	float vi = v[k].c[0];
+	sprintf(buffer, "%f", vi);
+	vec.push_back(std::string(buffer));
+      }
+      
+      sdata3.push_back(vec);
+      ydata.push_back(data.access(1,j));
+    }
+
+    const unsigned int data_count = sdata.size();
+
+    for(unsigned int j=0;j<predict.size(0);j++){
+      std::vector<std::string> vec;
+      const math::vertex<T>& v = predict.access(0, j);
+      char buffer[80];
+      
+      for(unsigned int k=0;k<v.size();k++){
+	float vi = v[k].c[0];
+	sprintf(buffer, "%f", vi);
+	vec.push_back(std::string(buffer));
+      }
+      
+      sdata3.push_back(vec);
+    }
+
+    for(unsigned int j=0;j<data.size(0);j++){
+      sdata.push_back(sdata3[j]);
+    }
+
+    for(unsigned int j=0;j<predict.size(0);j++){
+      sdata2.push_back(sdata3[data_count+j]);
+    }
+
+    if(whiteice::calculate_discretize(sdata3, disc) == false)
+      return false;
+
+    {
+      std::vector< std::vector<double> > bindata;
+
+      if(whiteice::binarize(sdata, disc, bindata) == false){
+	return false;
+      }
+
+      std::vector< std::vector<double> > r;
+      std::set<whiteice::dynamic_bitset> f;
+      
+      if(whiteice::enrich_data(bindata, f, r) == false){	
+	return false;
+      }
+
+      for(unsigned int i=0;i<r.size();i++){
+	whiteice::math::vertex<T> ri;
+	ri.resize(r[i].size());
+
+	for(unsigned int k=0;k<ri.size();k++){
+	  ri[k] = r[i][k];
+	}
+
+	result.push_back(ri);
+      }
+
+      printf("Number of parameters (frequent sets): %d\n", result[0].size());
+    }
     
     
+    {
+      std::vector< std::vector<double> > bindata;
+
+      if(whiteice::binarize(sdata2, disc, bindata) == false){
+	return false;
+      }
+
+      std::vector< std::vector<double> > r;
+      std::set<whiteice::dynamic_bitset> f;
+      
+      if(whiteice::enrich_data(bindata, f, r) == false){	
+	return false;
+      }
+
+      for(unsigned int i=0;i<r.size();i++){
+	whiteice::math::vertex<T> ri;
+	ri.resize(r[i].size());
+
+	for(unsigned int k=0;k<ri.size();k++){
+	  ri[k] = r[i][k];
+	}
+
+	presult.push_back(ri);
+      }
+    }
+
+    
+#if 0
     {
       T mean  = T(0.0f);
       T stdev = T(1.0f);
@@ -621,7 +722,7 @@ namespace whiteice
       }
 
     }
-    
+#endif
     
     // solves linear problem "y = Ax + b", "min(A,b) 0.5*||y - A*x - b||^2"
     // solution is A = Cyx*pseudoinverse(Cxx), b = mean(y) - A*mean(x)
