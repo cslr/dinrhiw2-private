@@ -249,7 +249,7 @@ namespace whiteice
     if(freq_limit < 0.0 || freq_limit >= 1.0) return false;
 
     if(freq_limit == 0.0){
-      freq_limit = 100.0/data.size(); // was: 100, 30 cases for each variable minimum (30 for 10 dimensional data)
+      freq_limit = 30.0/data.size(); // was: 100, 30 cases for each variable minimum (30 for 10 dimensional data)
     }
 
     //std::vector<dynamic_bitset> fset;
@@ -288,73 +288,22 @@ namespace whiteice
 
     //f = fset;
     
-#if 0
-#pragma omp parallel
-    {
-      std::set<dynamic_bitset> fi;
-      
-#pragma omp for nowait schedule(static, 200)
-      for(unsigned int i=0;i<fset.size();i++){
-	
-	const unsigned int BITS = fset[i].count();
-	
-	dynamic_bitset b;
-	b.resize(BITS);
-	b.reset();
-
-	b.inc();
-
-	while(b.none() == false){
-
-	  dynamic_bitset c;
-	  c.resize(fset[i].size());
-	  c.reset();
-
-	  unsigned int k = 0;
-
-	  for(unsigned int l=0;l<fset[i].size();l++){
-	    if(fset[i][l]){
-
-	      if(b[k]) c.set(l, true);
-	      
-	      k++;
-	    }
-	  }
-
-	  fi.insert(c);
-
-	  b.inc();
-	}
-	
-      }
-
-#pragma omp critical
-      {
-	f.insert(fi.begin(), fi.end());
-      }
-    }
-
-    printf("frequent sets done: %d sets.\n", (int)f.size());
-    fflush(stdout);
-#endif
-
 #if 1
     // generates all frequent itemsets dataset
-    {
-      std::vector< whiteice::dynamic_bitset > result;
-      
-      result.resize(data.size());
-      
-#pragma omp parallel for schedule(static, 200)
-      for(unsigned int j=0;j<data.size();j++){
-	dynamic_bitset value;
-	value.resize(f.size()*1);
-	value.reset();
+    std::vector< whiteice::dynamic_bitset > result;    
+    result.resize(data.size());
 
+#pragma omp parallel
+    {
+      dynamic_bitset value;
+      value.resize(f.size());
+      
+#pragma omp for schedule(dynamic, 200)
+      for(unsigned int j=0;j<data.size();j++){
+	value.reset();
 	unsigned int index = 0;
 
 	for(const auto& b : f){
-
 	  bool fdata = true;
 	  
 	  for(unsigned int i=0;i<b.size() && fdata;i++){
@@ -362,16 +311,14 @@ namespace whiteice
 	  }
 
 	  if(fdata) value.set(index, true);
-	  else value.set(index, false);
-	  	  
 	  index++;
 	}
-
+	
 	result[j] = value;
       }
-
-      f = result;
     }
+
+    f = result;
 
     //printf("enrich_data() done: %d\n", (int)result.size());
     //fflush(stdout);

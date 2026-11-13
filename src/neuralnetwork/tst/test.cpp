@@ -2996,11 +2996,13 @@ void simple_global_optimum_test()
 {
   {
     std::cout << "Linear global optimizer code." << std::endl;
+    std::cout << "Global optimizer works fast only with 10.000 datapoints and about 20 variables. need very fast CPU for bigger problems"
+	      << std::endl;
 
     whiteice::math::vertex<> a;
     whiteice::dataset<> data, predict;
     //const unsigned int K = 10;
-    const unsigned int DIM = 100; // 100, 1000 input dimensions cause too many frequent sets for 32 GB RAM
+    const unsigned int DIM = 20; // 100, 1000 input dimensions cause too many frequent sets for 32 GB RAM
 
     whiteice::RNG<> rng;
 
