@@ -3000,15 +3000,16 @@ void simple_global_optimum_test()
     whiteice::math::vertex<> a;
     whiteice::dataset<> data, predict;
     //const unsigned int K = 10;
+    const unsigned int DIM = 300; // 1000 input dimensions cause too many frequent sets for 32 GB RAM
 
     whiteice::RNG<> rng;
 
-    data.createCluster("input", 10);
+    data.createCluster("input", DIM);
     data.createCluster("output", 1);
 
     whiteice::nnetwork<> rand_net;
     std::vector<unsigned int> arch;
-    arch.push_back(10);
+    arch.push_back(DIM);
     arch.push_back(50);
     arch.push_back(50);
     arch.push_back(50);    
@@ -3023,16 +3024,16 @@ void simple_global_optimum_test()
     std::vector< math::vertex<> > input;
     std::vector< math::vertex<> > output;
 
-    a.resize(10);
+    a.resize(DIM);
     rng.normal(a);
 
-    predict.createCluster("input", 10);
+    predict.createCluster("input", DIM);
     
     for(unsigned int i=0;i<10000;i++){ // was 10.000,40.000
       math::vertex<> x, y, x2;
 
-      x.resize(10);
-      x2.resize(10);
+      x.resize(DIM);
+      x2.resize(DIM);
       y.resize(1);
 
       rng.normal(x);
@@ -3055,6 +3056,7 @@ void simple_global_optimum_test()
     global_linear_optimizer(data, predict, A, b);
 
     std::cout << "Optimizer code done." << std::endl;
+    std::cout << "input dim: " << DIM << std::endl;
     
     
     math::matrix<> Cxx, Cyx;

@@ -48,6 +48,7 @@ namespace whiteice
 
     disc.resize(data[0].size());
 
+#pragma omp parallel for
     for(unsigned int i=0;i<disc.size();i++){
       if(elems[i].size() <= 20){
 	disc[i].TYPE = 1;
@@ -169,6 +170,8 @@ namespace whiteice
 		const std::vector<struct discretization>& disc,
 		std::vector< std::vector<double> >& result)
   {
+    // TODO: calculate results as binary bits (dynmic_bitset of input x)
+    
     if(data.size() == 0) return false;
     if(data[0].size() != disc.size()) return false;
 
@@ -246,7 +249,7 @@ namespace whiteice
     if(freq_limit < 0.0 || freq_limit >= 1.0) return false;
 
     if(freq_limit == 0.0){
-      freq_limit = 30.0/data.size(); // 50 cases for each variable minimum
+      freq_limit = 100.0/data.size(); // was: 30 cases for each variable minimum
     }
 
     std::vector<dynamic_bitset> fset;
@@ -279,9 +282,15 @@ namespace whiteice
 
     // extend datasets to all subsets of frequent sets
     // std::set<dynamic_bitset> f;
+
+    printf("frequent sets search done: %d sets.\n", (int)fset.size());
+    fflush(stdout);
     
-    
+#pragma omp parallel
     {
+      std::set<dynamic_bitset> fi;
+      
+#pragma omp for nowait schedule(static, 200)
       for(unsigned int i=0;i<fset.size();i++){
 	
 	const unsigned int BITS = fset[i].count();
@@ -309,15 +318,21 @@ namespace whiteice
 	    }
 	  }
 
-	  f.insert(c);
+	  fi.insert(c);
 
 	  b.inc();
 	}
 	
       }
+
+#pragma omp critical
+      {
+	f.insert(fi.begin(), fi.end());
+      }
     }
 
-    printf("frequent sets done.\n");
+    printf("frequent sets done: %d sets.\n", (int)f.size());
+    fflush(stdout);
 
     // generates all frequent itemsets dataset
     {
@@ -372,6 +387,9 @@ namespace whiteice
 	result[j] = r;
       }
     }
+
+    printf("enrich_data() done: %d\n", (int)result.size());
+    fflush(stdout);
     
     if(result.size() == 0) return false;
     if(result[0].size() == 0) return false;

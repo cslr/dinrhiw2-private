@@ -14,6 +14,7 @@
 #include <iostream>
 #include <math.h>
 
+#include "pfpgrowth.cpp"
 
 namespace whiteice
 {
@@ -29,7 +30,38 @@ namespace whiteice
       min_support = 50.0 / data.size(); // 50 items default freq items
     }
 
+
+    std::vector<std::vector<long long> > transactions;
+
+    for(const auto& di : data){
+      
+      Transaction t;
+      
+      for(const auto& si : di){
+	t.push_back(si);
+      }
+      
+      transactions.push_back(t);      
+    }
+
+    const uint64_t minimum_support_threshold = (uint64_t)round(min_support*data.size());
+
+    auto results = pfpgrowth::parallelFPGrowth(transactions, minimum_support_threshold);
+
+    freq_sets.clear();
+
+    for(auto si = results.rbegin();si != results.rend(); si++){
+      std::set<long long> s;
+
+      for(auto d : si->first)
+	s.insert(d);
+      
+      freq_sets.insert(s);
+    }
     
+    return (freq_sets.size() > 0);
+
+#if 0
     std::vector<Transaction> transactions;
 
     for(const auto& di : data){
@@ -80,6 +112,7 @@ namespace whiteice
     
 
     return (freq_sets.size() > 0);
+#endif
   }
   
 
