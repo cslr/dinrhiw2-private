@@ -155,7 +155,7 @@ namespace whiteice
     math::vertex<T> xdisc;
 
     std::vector< std::vector<std::string> > sdata;
-    std::vector< std::vector<double> > bindata;
+    std::vector< whiteice::dynamic_bitset > bindata;
     std::vector< std::vector<double> > results;
     
     std::vector<std::string> vec;
@@ -316,7 +316,7 @@ namespace whiteice
     
     // load disc here! + XSIZE, YSIZE
     unsigned int XSIZE, YSIZE;
-    std::set< whiteice::dynamic_bitset > fset;
+    std::vector< whiteice::dynamic_bitset > fset;
     std::vector< struct whiteice::discretization > cd;
     math::matrix<T> AA;
     math::vertex<T> bb;
@@ -351,7 +351,7 @@ namespace whiteice
 	  else b.set(k, false);
 	}
 
-	fset.insert(b);
+	fset.push_back(b);
       }
     }
 
@@ -458,8 +458,8 @@ namespace whiteice
       if(thread_running == false) return;
       
       std::vector< std::vector<std::string> > data;
-      std::vector< std::vector<double> > bindata;
-      std::vector< std::vector<double> > xresults;
+      std::vector< whiteice::dynamic_bitset > bindata;
+      //std::vector< std::vector<double> > xresults;
 
       for(unsigned int i=0;i<xdata.size();i++){
 	std::vector<std::string> row;
@@ -494,21 +494,24 @@ namespace whiteice
 	double freq_limit = 0.0;
 	whiteice::math::convert(freq_limit, this->levelOfDetailFreq);
 	
-	if(whiteice::enrich_data(bindata, this->f_itemset, xresults, freq_limit) == false){
+	if(whiteice::enrich_data(bindata, this->f_itemset, freq_limit) == false){
 	  return;
 	}
 	
 	if(thread_running == false) return;
       }
 
-      this->xdata.resize(xresults.size());
+      this->xdata.resize(f_itemset.size());
 
-      for(unsigned int i=0;i<xresults.size();i++){
+      for(unsigned int i=0;i<f_itemset.size();i++){
 	whiteice::math::vertex<T> x;
-	x.resize(xresults[i].size());
+	x.resize(f_itemset[i].size());
 
 	for(unsigned int k=0;k<x.size();k++){
-	  x[k] = xresults[i][k];
+	  if(f_itemset[i][k])
+	    x[k] = 1.0f;
+	  else
+	    x[k] = 0.0f;
 	}
 
 	this->xdata[i] = x;

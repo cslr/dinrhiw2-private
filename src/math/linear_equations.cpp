@@ -77,13 +77,13 @@ namespace whiteice
 				      blas_real<double>& error);
     
 
-    template bool linear_optimization_grad(const std::vector< vertex< blas_real<float> > >& x,
+    template bool linear_optimization_grad(const std::vector< whiteice::dynamic_bitset >& x,
 					   const std::vector< vertex< blas_real<float> > >& y,
 					   matrix< blas_real<float> >& A,
 					   vertex< blas_real<float> >& b,
 					   blas_real<float>& error);
     
-    template bool linear_optimization_grad(const std::vector< vertex< blas_real<double> > >& x,
+    template bool linear_optimization_grad(const std::vector< whiteice::dynamic_bitset >& x,
 					   const std::vector< vertex< blas_real<double> > >& y,
 					   matrix< blas_real<double> >& A,
 					   vertex< blas_real<double> >& b,
@@ -510,7 +510,7 @@ namespace whiteice
      * regularizes matrixes if they are singular to get solution.
      */
     template <typename T>
-    bool linear_optimization_grad(const std::vector< vertex<T> >& x,
+    bool linear_optimization_grad(const std::vector< whiteice::dynamic_bitset >& x,
 				  const std::vector< vertex<T> >& y,
 				  matrix<T>& A, vertex<T>& b, T& error)
     {
@@ -536,7 +536,19 @@ namespace whiteice
       error = T(0.0f);
       
       for(unsigned i=0;i<x.size();i++){
-	auto e = y[i] - A*x[i] - b;
+	//auto e = y[i] - A*x[i] - b;
+
+	vertex<T> e;
+	e.resize(A.ysize());
+	
+	for(unsigned int j=0;j<e.size();j++){
+	  e[j] = b[j] - y[i][j];
+	  
+	  for(unsigned int k=0;k<x[i].size();k++)
+	    if(x[i][k])
+	      e[j] += A(j,k);
+	}
+	
 	error += e.norm();
       }
 
@@ -585,7 +597,18 @@ namespace whiteice
 
 #pragma omp for nowait schedule(static,200)
 	  for(unsigned i=0;i<x.size();i++){
-	    e = A*x[i] + b - y[i];
+
+	    e.resize(A.ysize());
+
+	    for(unsigned int j=0;j<e.size();j++){
+	      e[j] = b[j] - y[i][j];
+
+	      for(unsigned int k=0;k<x[i].size();k++)
+		if(x[i][k])
+		  e[j] += A(j,k);
+	    }
+	    
+	    // e = A*x[i] + b - y[i];
 	    
 	    for(unsigned int h=0;h<e.size();h++){
 	      for(unsigned int k=0;k<x[i].size();k++){
@@ -623,7 +646,20 @@ namespace whiteice
 
 #pragma omp for nowait schedule(static, 200)
 	  for(unsigned i=0;i<x.size();i++){
-	    auto e = y[i] - A*x[i] - b;
+	    //auto e = y[i] - A*x[i] - b;
+
+	    vertex<T> e;
+	    e.resize(A.ysize());
+	    
+	    for(unsigned int j=0;j<e.size();j++){
+	      e[j] = b[j] - y[i][j];
+	      
+	      for(unsigned int k=0;k<x[i].size();k++)
+		if(x[i][k])
+		  e[j] += A(j,k);
+	    }
+	    
+	    
 	    err += e.norm();
 	  }
 
@@ -697,7 +733,19 @@ namespace whiteice
        error = T(0.0f);
 
       for(unsigned i=0;i<x.size();i++){
-	auto e = y[i] - A*x[i] - b;
+	vertex<T> e;
+	e.resize(A.ysize());
+	
+	for(unsigned int j=0;j<e.size();j++){
+	  e[j] = b[j] - y[i][j];
+	  
+	  for(unsigned int k=0;k<x[i].size();k++)
+	    if(x[i][k])
+	      e[j] += A(j,k);
+	}
+
+	//auto e = y[i] - A*x[i] - b;
+	
 	error += e.norm();
       }
 

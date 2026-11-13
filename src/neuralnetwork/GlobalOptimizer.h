@@ -60,7 +60,7 @@ namespace whiteice
     // model
 
     std::vector<struct whiteice::discretization> disc;
-    std::set<whiteice::dynamic_bitset> f_itemset;
+    std::vector<whiteice::dynamic_bitset> f_itemset;
 
     // linear pseudo global optimizer model
     math::matrix<T> A;

@@ -120,7 +120,7 @@ void test_enrich_data()
   }
   */
 
-  std::vector< std::vector<double> > bindata;
+  std::vector< whiteice::dynamic_bitset > bindata;
   
   if(whiteice::binarize(data, disc, bindata) == false){
     std::cout << "ERROR 2" << std::endl;
@@ -138,29 +138,29 @@ void test_enrich_data()
   }
   */
 
-  std::vector< std::vector<double> > results;
-  std::set<whiteice::dynamic_bitset> f;
+  //std::vector< std::vector<double> > results;
+  std::vector<whiteice::dynamic_bitset> f;
 
-  if(whiteice::enrich_data(bindata, f, results) == false){
+  if(whiteice::enrich_data(bindata, f) == false){
     std::cout << "ERROR 3" << std::endl;
     return;
   }
 
-  std::cout << "rows in dataset: " << results.size() << std::endl;
-  if(results.size() > 0)
-    std::cout << "variables per row: " << results[0].size() << std::endl;
+  std::cout << "rows in dataset: " << f.size() << std::endl;
+  if(f.size() > 0)
+    std::cout << "variables per row: " << f[0].size() << std::endl;
 
   std::vector<double> counts;
-  counts.resize(results[0].size());
+  counts.resize(f[0].size());
 
   for(auto& c : counts)
     c = 0.0;
 
-  for(unsigned int i=0;i<results.size();i++){
-    for(unsigned int k=0;k<results[i].size();k++){
-      std::cout << (int)results[i][k];
+  for(unsigned int i=0;i<f.size();i++){
+    for(unsigned int k=0;k<f[i].size();k++){
+      std::cout << (int)f[i][k];
 
-      if(results[i][k]) counts[k]++;
+      if(f[i][k]) counts[k]++;
     }
     
     std::cout << std::endl;

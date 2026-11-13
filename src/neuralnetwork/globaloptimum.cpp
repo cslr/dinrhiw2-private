@@ -406,8 +406,8 @@ namespace whiteice
     std::vector< math::vertex<T> > ydata;
 
     // generates all frequent itemsets dataset
-    std::vector< whiteice::math::vertex<T> > result;
-    std::vector< whiteice::math::vertex<T> > presult;
+    std::vector< whiteice::dynamic_bitset > result;
+    std::vector< whiteice::dynamic_bitset > presult;
 
     //const unsigned int K = data.size(0)/500;
     
@@ -447,297 +447,43 @@ namespace whiteice
       sdata3.push_back(vec);
     }
 
-#if 0
-    for(unsigned int j=0;j<data.size(0);j++){
-      sdata.push_back(sdata3[j]);
-    }
-
-    for(unsigned int j=0;j<predict.size(0);j++){
-      sdata2.push_back(sdata3[data_count+j]);
-    }
-#endif
 
     if(whiteice::calculate_discretize(sdata3, disc) == false)
       return false;
 
     {
-      std::vector< std::vector<double> > bindata;
+      std::vector< whiteice::dynamic_bitset > bindata;
 
       if(whiteice::binarize(sdata3, disc, bindata) == false){
 	return false;
       }
 
-      std::vector< std::vector<double> > r;
-      std::set<whiteice::dynamic_bitset> f;
+      //std::vector< std::vector<double> > r;
+      std::vector<whiteice::dynamic_bitset> f;
+
+      printf("binarize done\n");
       
-      if(whiteice::enrich_data(bindata, f, r) == false){	
+      if(whiteice::enrich_data(bindata, f) == false){	
 	return false;
       }
 
+      printf("enrich done\n");
+
+      assert(f.size() == sdata3.size());
+
       for(unsigned int i=0;i<data_count;i++){
-	whiteice::math::vertex<T> ri;
-	ri.resize(r[i].size());
-
-	for(unsigned int k=0;k<ri.size();k++){
-	  ri[k] = r[i][k];
-	}
-
-	result.push_back(ri);
+	result.push_back(f[i]);
       }
 
-      for(unsigned int i=data_count;i<r.size();i++){
-	whiteice::math::vertex<T> ri;
-	ri.resize(r[i].size());
-
-	for(unsigned int k=0;k<ri.size();k++){
-	  ri[k] = r[i][k];
-	}
-
-	presult.push_back(ri);
+      for(unsigned int i=data_count;i<f.size();i++){
+	presult.push_back(f[i]);
       }
 
+      printf("Number of datapoint %d\n", (int)result.size());
       printf("Number of parameters (frequent sets): %d\n", result[0].size());
     }
     
-#if 0
-    {
-      std::vector< std::vector<double> > bindata;
-
-      if(whiteice::binarize(sdata2, disc, bindata) == false){
-	return false;
-      }
-
-      std::vector< std::vector<double> > r;
-      std::set<whiteice::dynamic_bitset> f;
-      
-      if(whiteice::enrich_data(bindata, f, r) == false){	
-	return false;
-      }
-
-      for(unsigned int i=0;i<r.size();i++){
-	whiteice::math::vertex<T> ri;
-	ri.resize(r[i].size());
-
-	for(unsigned int k=0;k<ri.size();k++){
-	  ri[k] = r[i][k];
-	}
-
-	presult.push_back(ri);
-      }
-    }
-#endif
-
-    
-#if 0
-    {
-      T mean  = T(0.0f);
-      T stdev = T(1.0f);
-
-      for(unsigned int j=0;j<data.size(0);j++){
-	const math::vertex<T>& v = data.access(0, j);
-	
-	whiteice::dynamic_bitset f;
-	f.resize(K*v.size());
-	f.reset();
-	
-
-	for(unsigned int i=0;i<v.size();i++){
-	  int k = discretize(v[i], K, mean, stdev);
-	  f.set(i*K + k, true);
-	}
-
-	// std::cout << "discretized: " << f << std::endl;
-
-#if 0
-	whiteice::math::vertex<T> vv;
-	vv.resize(f.size());
-	for(unsigned int i=0;i<vv.size();i++){
-	  if(f[i]) vv[i] = T(+1.0f);
-	  else if(f[i] == false) vv[i] = T(0.0f);
-	}
-
-	result.push_back(vv);
-#endif	
-
-	xdata.push_back(f);
-	ydata.push_back(data.access(1,j));
-      }
-
-      for(unsigned int j=0;j<predict.size(0);j++){
-	const math::vertex<T>& w = predict.access(0, j);
-	
-	whiteice::dynamic_bitset f2;
-	f2.resize(K*w.size());
-	f2.reset();
-	
-	for(unsigned int i=0;i<w.size();i++){
-	  int k = discretize(w[i], K, mean, stdev);
-	  f2.set(i*K + k, true);	  
-	}
-	
-	pdata.push_back(f2);
-      }
-    }
-    
-    // calculates frequent sets and all subsets
-    std::vector<dynamic_bitset> fset;
-    const double freq_limit = 20.0/xdata.size(); // (estimating mean requires at least 20 data points but 50 should be always enough)
-
-    if(1){
-      list_source<dynamic_bitset>* source = new list_source<dynamic_bitset>(xdata);
-      
-      whiteice::datamining::FrequentSetsFinder fsfinder(*source, fset, freq_limit);
-      assert(fsfinder.find() == true);
-      delete source;
-
-#if 0
-      for(unsigned int i=0;i<xdata.size();i++)
-	std::cout << "xdata: " << xdata[i] << std::endl;
-
-      for(unsigned int i=0;i<fset.size();i++){
-	std::cout << "fset: " << fset[i] << std::endl;
-      }
-#endif
-    }
-
-    std::cout << "f = " << fset.size() << std::endl;
-    
-    // extend datasets to all subsets of frequent sets
-    std::set<dynamic_bitset> f;
-    
-    if(1){
-      for(unsigned int i=0;i<fset.size();i++){
-	
-	const unsigned int BITS = fset[i].count();
-	//const unsigned int BITS = fset[i].size();
-
-	//std::cout << "BITS = " << BITS << std::endl;
-	
-	dynamic_bitset b;
-	b.resize(BITS);
-	b.reset();
-	
-	b.inc();
-
-	while(b.none() == false){
-	  
-	  dynamic_bitset c;
-	  c.resize(fset[i].size());
-	  c.reset();
-
-	  unsigned int k = 0;
-
-	  for(unsigned int l=0;l<fset[i].size();l++){
-	    if(fset[i][l]){
-
-	      if(b[k]) c.set(l, true);
-	      else c.set(l, false);
-	      
-	      k++;
-	    }
-	  }
-
-	  assert(c.size() == fset[i].size());
-
-	  //std::cout << "fset[" << i << "] = " << fset[i] << std::endl;
-
-	  //std::cout << "c = " << c << std::endl;
-
-	  f.insert(c);
-
-	  //std::cout << "f.size() = " << f.size() << std::endl;
-
-	  b.inc();
-	}
-	
-	
-      }
-    }
-
-    std::cout << "f subsets = " << f.size() << std::endl;
-    
-    if(1){
-      result.resize(xdata.size());
-
-#pragma omp parallel for
-      for(unsigned int j=0;j<xdata.size();j++){
-	dynamic_bitset value;
-	value.resize(f.size());
-	value.reset();
-
-	unsigned int index = 0;
-
-	for(const auto& b : f){
-	  bool fdata = false;
-
-	  assert(xdata[j].size() == b.size());
-
-	  for(unsigned int i=0;i<b.size();i++){
-	    if(b[i] && xdata[j][i] == false) fdata = false;
-	    else if(b[i] == true && xdata[j][i] == true) fdata = true;
-	  }
-
-	  if(fdata) value.set(index, true);
-	  else value.set(index, false);
-	  
-	  index++;
-	}
-
-	// std::cout << value << std::endl;
-	
-	// now we have one frequent item
-	
-	whiteice::math::vertex<T> r;
-	r.resize(value.size());
-	
-	for(unsigned int i=0;i<r.size();i++){
-	  if(value[i]) r[i] = T(1.0);
-	  else r[i] = T(0.0);
-	}
-
-	result[j] = r;
-      }
-
-      presult.resize(pdata.size());
-
-#pragma omp parallel for      
-      for(unsigned int j=0;j<pdata.size();j++){
-	dynamic_bitset value;
-	value.resize(f.size());
-	value.reset();
-
-	unsigned int index = 0;
-
-	for(const auto& b : f){
-	  bool fdata = false;
-
-	  for(unsigned int i=0;i<b.size();i++){
-	    if(b[i] && pdata[j][i] == false) fdata = false;
-	    else if(b[i] == true && pdata[j][i] == true) fdata = true;
-	  }
-
-	  if(fdata) value.set(index, true);
-	  else value.set(index, false);
-	  
-	  index++;
-	}
-
-	// now we have one frequent item
-	
-	whiteice::math::vertex<T> r;
-	r.resize(value.size());
-	
-	for(unsigned int i=0;i<r.size();i++){
-	  if(value[i]) r[i] = T(1.0);
-	  else r[i] = T(0.0);
-	}
-
-	presult[j] = r;
-      }
-
-    }
-#endif
-    
+        
     // solves linear problem "y = Ax + b", "min(A,b) 0.5*||y - A*x - b||^2"
     // solution is A = Cyx*pseudoinverse(Cxx), b = mean(y) - A*mean(x)
     {
@@ -754,7 +500,20 @@ namespace whiteice
       std::cout << "optimization error = " << error << std::endl;
 
       for(unsigned int k=0;k<presult.size();k++){
-	auto y = A*presult[k] + b;
+	whiteice::math::vertex<T> y;
+
+	y.resize(A.ysize());
+	y.zero();
+
+	for(unsigned int j=0;j<y.size();j++){
+	  y[j] = b[j];
+	  for(unsigned int i=0;i<A.xsize();i++){
+	    if(presult[k][i])
+	      y[j] += A(j,i);
+	  }
+	}
+	
+	//auto y = A*presult[k] + b;
 
 	predict.add(1, y);
       }

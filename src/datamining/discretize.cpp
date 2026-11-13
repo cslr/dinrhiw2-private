@@ -168,7 +168,7 @@ namespace whiteice
   // discretizes data and creates one-hot-encoding of discrete value in binary
   bool binarize(const std::vector< std::vector<std::string> >& data,
 		const std::vector<struct discretization>& disc,
-		std::vector< std::vector<double> >& result)
+		std::vector< whiteice::dynamic_bitset >& result)
   {
     // TODO: calculate results as binary bits (dynmic_bitset of input x)
     
@@ -190,11 +190,9 @@ namespace whiteice
 
     
     for(unsigned int i=0;i<data.size();i++){
-      std::vector<double> v;
+      whiteice::dynamic_bitset v;
       v.resize(binary_size);
-
-      for(auto& vi : v)
-	vi = 0.0;
+      v.reset();
 
       unsigned int index = 0;
       
@@ -208,7 +206,8 @@ namespace whiteice
 	    if(value < disc[j].bins[counter]) break;
 	  }
 
-	  v[index + counter] = 1.0;
+	  //v[index + counter] = 1.0;
+	  v.set(index+counter, true);
 	  index += disc[j].bins.size()+1;
 	}
 	else if(disc[j].TYPE == 1){
@@ -219,7 +218,8 @@ namespace whiteice
 	      break;
 
 	  if(counter < disc[j].elem.size()){
-	    v[index+counter] = 1.0;
+	    v.set(index+counter, true);
+	    //v[index+counter] = 1.0;
 	  }
 
 	  index += disc[j].elem.size();
@@ -240,19 +240,19 @@ namespace whiteice
 
   
   // creates dataset with frequent sets added as extra-variables
-  bool enrich_data(const std::vector< std::vector<double> >& data,
-		   std::set<whiteice::dynamic_bitset>& f, // frequent sets
-		   std::vector< std::vector<double> >& result,
+  bool enrich_data(const std::vector< whiteice::dynamic_bitset >& data,
+		   std::vector<whiteice::dynamic_bitset>& f, // frequent sets
+		   //std::vector< std::vector<double> >& result,
 		   double freq_limit)
   {
     if(data.size() == 0) return false;
     if(freq_limit < 0.0 || freq_limit >= 1.0) return false;
 
     if(freq_limit == 0.0){
-      freq_limit = 100.0/data.size(); // was: 30 cases for each variable minimum
+      freq_limit = 100.0/data.size(); // was: 100, 30 cases for each variable minimum (30 for 10 dimensional data)
     }
 
-    std::vector<dynamic_bitset> fset;
+    //std::vector<dynamic_bitset> fset;
 
     // calculates frequent itemsets
     {
@@ -273,7 +273,7 @@ namespace whiteice
       
       list_source<dynamic_bitset>* source = new list_source<dynamic_bitset>(dbdata);
       
-      whiteice::datamining::FrequentSetsFinder fsfinder(*source, fset, freq_limit);
+      whiteice::datamining::FrequentSetsFinder fsfinder(*source, f, freq_limit);
       
       fsfinder.find();
 
@@ -283,9 +283,12 @@ namespace whiteice
     // extend datasets to all subsets of frequent sets
     // std::set<dynamic_bitset> f;
 
-    printf("frequent sets search done: %d sets.\n", (int)fset.size());
+    printf("frequent sets search done: %d sets.\n", (int)f.size());
     fflush(stdout);
+
+    //f = fset;
     
+#if 0
 #pragma omp parallel
     {
       std::set<dynamic_bitset> fi;
@@ -333,16 +336,19 @@ namespace whiteice
 
     printf("frequent sets done: %d sets.\n", (int)f.size());
     fflush(stdout);
+#endif
 
+#if 1
     // generates all frequent itemsets dataset
     {
+      std::vector< whiteice::dynamic_bitset > result;
+      
       result.resize(data.size());
       
 #pragma omp parallel for schedule(static, 200)
       for(unsigned int j=0;j<data.size();j++){
 	dynamic_bitset value;
 	value.resize(f.size()*1);
-	//value.resize(f.size()*2);
 	value.reset();
 
 	unsigned int index = 0;
@@ -350,57 +356,41 @@ namespace whiteice
 	for(const auto& b : f){
 
 	  bool fdata = true;
-	  //bool or_data = false;
-
-	  for(unsigned int i=0;i<b.size();i++){
-	    if(b[i] && data[j][i] == 0.0){ fdata = false; }
-	    //if(b[i] && data[j][i] != 0.0){ or_data = true; }
+	  
+	  for(unsigned int i=0;i<b.size() && fdata;i++){
+	    if(b[i] && data[j][i] == false){ fdata = false; }
 	  }
 
 	  if(fdata) value.set(index, true);
 	  else value.set(index, false);
-	  
-	  //if(or_data) value.set(2*index + 1, true);
-	  //else value.set(2*index + 1, false);
-
-	  /*
-	  if(fdata) value.set(4*index + 2, false);
-	  else value.set(4*index + 2, true);
-	  
-	  if(or_data) value.set(4*index + 3, false);
-	  else value.set(4*index + 3, true);
-	  */
-	  
+	  	  
 	  index++;
 	}
 
-	// now we have one frequent item
-
-	std::vector<double> r;
-	r.resize(value.size());
-
-	for(unsigned int i=0;i<r.size();i++){
-	  if(value[i]) r[i] = 1.0;
-	  else r[i] = 0.0;
-	}
-
-	result[j] = r;
+	result[j] = value;
       }
+
+      f = result;
     }
 
-    printf("enrich_data() done: %d\n", (int)result.size());
-    fflush(stdout);
+    //printf("enrich_data() done: %d\n", (int)result.size());
+    //fflush(stdout);
+#endif
     
-    if(result.size() == 0) return false;
-    if(result[0].size() == 0) return false;
+
+    //if(result.size() == 0) return false;
+    //if(result[0].size() == 0) return false;
+
+    if(f.size() == 0) return false;
+    if(f[0].size() == 0) return false;
 
     return true;
   }
 
 
   // creates dataset with frequent sets added as extra-variables
-  bool enrich_data_again(const std::vector< std::vector<double> >& data,
-			 const std::set<whiteice::dynamic_bitset>& f, // frequent sets
+  bool enrich_data_again(const std::vector< whiteice::dynamic_bitset >& data,
+			 const std::vector<whiteice::dynamic_bitset>& f, // frequent sets
 			 std::vector< std::vector<double> >& result)
   {
 
@@ -419,8 +409,8 @@ namespace whiteice
 	  bool or_data = false;
 
 	  for(unsigned int i=0;i<b.size();i++){
-	    if(b[i] && data[j][i] == 0.0){ fdata = false; }
-	    if(b[i] && data[j][i] != 0.0){ or_data = true; }
+	    if(b[i] && data[j][i] == true){ fdata = false; }
+	    if(b[i] && data[j][i] == false){ or_data = true; }
 	  }
 
 	  if(fdata) value.set(2*index, true);

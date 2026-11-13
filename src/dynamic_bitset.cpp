@@ -1,3 +1,5 @@
+#if 0
+
 /*
  * calculate_cleanmask() must be called
  * every time seqlen changes (so that cleanmask
@@ -875,4 +877,4 @@ namespace whiteice
   }
   
 };
-
+#endif

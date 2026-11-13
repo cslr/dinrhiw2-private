@@ -46,8 +46,8 @@ namespace whiteice
       if(xdata.size() != ydata.size()) return false;
 
       std::vector< std::vector<std::string> > data;
-      std::vector< std::vector<double> > bindata;
-      std::vector< std::vector<double> > xresults;
+      std::vector< whiteice::dynamic_bitset > bindata;
+      //std::vector< std::vector<double> > xresults;
 
       std::cout << xdata.size() << std::endl;
 
@@ -72,18 +72,21 @@ namespace whiteice
 	return false;
       }
 
-      if(whiteice::enrich_data(bindata, this->f_itemset, xresults) == false){
+      if(whiteice::enrich_data(bindata, this->f_itemset) == false){
 	return false;
       }
 
-      this->xdata.resize(xresults.size());
+      this->xdata.resize(f_itemset.size());
 
-      for(unsigned int i=0;i<xresults.size();i++){
+      for(unsigned int i=0;i<f_itemset.size();i++){
 	whiteice::math::vertex<T> x;
-	x.resize(xresults[i].size());
+	x.resize(f_itemset[i].size());
 
 	for(unsigned int k=0;k<x.size();k++){
-	  x[k] = xresults[i][k];
+	  if(f_itemset[i][k])
+	    x[k] = 1.0f;
+	  else
+	    x[k] = 0.0f;
 	}
 
 	this->xdata[i] = x;
@@ -188,7 +191,7 @@ namespace whiteice
     math::vertex<T> xdisc;
 
     std::vector< std::vector<std::string> > sdata;
-    std::vector< std::vector<double> > bindata;
+    std::vector< whiteice::dynamic_bitset > bindata;
     std::vector< std::vector<double> > results;
     
     std::vector<std::string> vec;
@@ -319,7 +322,7 @@ namespace whiteice
     
     // load disc here! + XSIZE, YSIZE
     unsigned int XSIZE, YSIZE;
-    std::set< whiteice::dynamic_bitset > fset;
+    std::vector< whiteice::dynamic_bitset > fset;
     std::vector< struct whiteice::discretization > cd;
 
     math::vertex<T> v;
@@ -348,7 +351,7 @@ namespace whiteice
 	  else b.set(k, false);
 	}
 
-	fset.insert(b);
+	fset.push_back(b);
       }
     }
 

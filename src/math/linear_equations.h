@@ -75,7 +75,7 @@ namespace whiteice
      * using gradient descent
      */
     template <typename T>
-    bool linear_optimization_grad(const std::vector< vertex<T> >& x,
+    bool linear_optimization_grad(const std::vector< whiteice::dynamic_bitset >& x,
 				  const std::vector< vertex<T> >& y,
 				  matrix<T>& A, vertex<T>& b, T& error);
     
@@ -145,13 +145,13 @@ namespace whiteice
 					     vertex< blas_real<double> >& b,
 					     blas_real<double>& error);
 
-    extern template bool linear_optimization_grad(const std::vector< vertex< blas_real<float> > >& x,
+    extern template bool linear_optimization_grad(const std::vector< whiteice::dynamic_bitset >& x,
 						  const std::vector< vertex< blas_real<float> > >& y,
 						  matrix< blas_real<float> >& A,
 						  vertex< blas_real<float> >& b,
 						  blas_real<float>& error);
     
-    extern template bool linear_optimization_grad(const std::vector< vertex< blas_real<double> > >& x,
+    extern template bool linear_optimization_grad(const std::vector< whiteice::dynamic_bitset >& x,
 						  const std::vector< vertex< blas_real<double> > >& y,
 						  matrix< blas_real<double> >& A,
 						  vertex< blas_real<double> >& b,

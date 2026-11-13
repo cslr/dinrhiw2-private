@@ -34,18 +34,18 @@ namespace whiteice
   // discretizes data and creates one-hot-encoding of discrete value in binary
   bool binarize(const std::vector< std::vector<std::string> >& data,
 		const std::vector<struct discretization>& disc,
-		std::vector< std::vector<double> >& result);
+		std::vector< whiteice::dynamic_bitset >& result);
 
 
   // creates dataset with frequent sets added as extra-variables
-  bool enrich_data(const std::vector< std::vector<double> >& binary_data,
-		   std::set<whiteice::dynamic_bitset>& f, // frequent sets
-		   std::vector< std::vector<double> >& result,
+  bool enrich_data(const std::vector< whiteice::dynamic_bitset >& binary_data,
+		   std::vector<whiteice::dynamic_bitset>& f, // frequent sets
+		   //std::vector< std::vector<double> >& result,
 		   double freq_limit = 0.00); // 0 = automatic freq limit
   
   // creates dataset with frequent sets added as extra-variables
-  bool enrich_data_again(const std::vector< std::vector<double> >& binary_data,
-			 const std::set<whiteice::dynamic_bitset>& f, // frequent sets
+  bool enrich_data_again(const std::vector< whiteice::dynamic_bitset >& binary_data,
+			 const std::vector<whiteice::dynamic_bitset>& f, // frequent sets
 			 std::vector< std::vector<double> >& result);
 
 
