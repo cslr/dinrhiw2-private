@@ -317,12 +317,17 @@ namespace whiteice
       }
     }
 
+    printf("frequent sets done.\n");
+
     // generates all frequent itemsets dataset
     {
+      result.resize(data.size());
+      
+#pragma omp parallel for schedule(static, 200)
       for(unsigned int j=0;j<data.size();j++){
 	dynamic_bitset value;
-	//value.resize(f.size()*1);
-	value.resize(f.size()*2);
+	value.resize(f.size()*1);
+	//value.resize(f.size()*2);
 	value.reset();
 
 	unsigned int index = 0;
@@ -330,18 +335,18 @@ namespace whiteice
 	for(const auto& b : f){
 
 	  bool fdata = true;
-	  bool or_data = false;
+	  //bool or_data = false;
 
 	  for(unsigned int i=0;i<b.size();i++){
 	    if(b[i] && data[j][i] == 0.0){ fdata = false; }
-	    if(b[i] && data[j][i] != 0.0){ or_data = true; }
+	    //if(b[i] && data[j][i] != 0.0){ or_data = true; }
 	  }
 
-	  if(fdata) value.set(2*index, true);
-	  else value.set(2*index, false);
+	  if(fdata) value.set(index, true);
+	  else value.set(index, false);
 	  
-	  if(or_data) value.set(2*index + 1, true);
-	  else value.set(2*index + 1, false);
+	  //if(or_data) value.set(2*index + 1, true);
+	  //else value.set(2*index + 1, false);
 
 	  /*
 	  if(fdata) value.set(4*index + 2, false);
@@ -364,7 +369,7 @@ namespace whiteice
 	  else r[i] = 0.0;
 	}
 
-	result.push_back(r);
+	result[j] = r;
       }
     }
     

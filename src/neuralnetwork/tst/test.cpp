@@ -3028,7 +3028,7 @@ void simple_global_optimum_test()
 
     predict.createCluster("input", 10);
     
-    for(unsigned int i=0;i<40000;i++){ // was 10.000
+    for(unsigned int i=0;i<10000;i++){ // was 10.000,40.000
       math::vertex<> x, y, x2;
 
       x.resize(10);

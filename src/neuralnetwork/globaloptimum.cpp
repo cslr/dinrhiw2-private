@@ -431,7 +431,7 @@ namespace whiteice
       ydata.push_back(data.access(1,j));
     }
 
-    const unsigned int data_count = sdata.size();
+    const unsigned int data_count = sdata3.size();
 
     for(unsigned int j=0;j<predict.size(0);j++){
       std::vector<std::string> vec;
@@ -447,6 +447,7 @@ namespace whiteice
       sdata3.push_back(vec);
     }
 
+#if 0
     for(unsigned int j=0;j<data.size(0);j++){
       sdata.push_back(sdata3[j]);
     }
@@ -454,6 +455,7 @@ namespace whiteice
     for(unsigned int j=0;j<predict.size(0);j++){
       sdata2.push_back(sdata3[data_count+j]);
     }
+#endif
 
     if(whiteice::calculate_discretize(sdata3, disc) == false)
       return false;
@@ -461,7 +463,7 @@ namespace whiteice
     {
       std::vector< std::vector<double> > bindata;
 
-      if(whiteice::binarize(sdata, disc, bindata) == false){
+      if(whiteice::binarize(sdata3, disc, bindata) == false){
 	return false;
       }
 
@@ -472,7 +474,7 @@ namespace whiteice
 	return false;
       }
 
-      for(unsigned int i=0;i<r.size();i++){
+      for(unsigned int i=0;i<data_count;i++){
 	whiteice::math::vertex<T> ri;
 	ri.resize(r[i].size());
 
@@ -483,10 +485,21 @@ namespace whiteice
 	result.push_back(ri);
       }
 
+      for(unsigned int i=data_count;i<r.size();i++){
+	whiteice::math::vertex<T> ri;
+	ri.resize(r[i].size());
+
+	for(unsigned int k=0;k<ri.size();k++){
+	  ri[k] = r[i][k];
+	}
+
+	presult.push_back(ri);
+      }
+
       printf("Number of parameters (frequent sets): %d\n", result[0].size());
     }
     
-    
+#if 0
     {
       std::vector< std::vector<double> > bindata;
 
@@ -512,6 +525,7 @@ namespace whiteice
 	presult.push_back(ri);
       }
     }
+#endif
 
     
 #if 0
@@ -727,6 +741,10 @@ namespace whiteice
     // solves linear problem "y = Ax + b", "min(A,b) 0.5*||y - A*x - b||^2"
     // solution is A = Cyx*pseudoinverse(Cxx), b = mean(y) - A*mean(x)
     {
+      sdata.clear();
+      sdata2.clear();
+      sdata3.clear();
+      
       std::cout << "Global optimization." << std::endl;
 
       T error = T(0.0);

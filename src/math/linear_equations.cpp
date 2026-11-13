@@ -583,7 +583,7 @@ namespace whiteice
 	  auto ggA = gA;
 	  auto ggb = gb;
 
-#pragma omp for nowait schedule(static,150)
+#pragma omp for nowait schedule(static,200)
 	  for(unsigned i=0;i<x.size();i++){
 	    e = A*x[i] + b - y[i];
 	    
@@ -621,7 +621,7 @@ namespace whiteice
 	{
 	  T err = T(0.0f);
 
-#pragma omp for nowait schedule(static, 150)
+#pragma omp for nowait schedule(static, 200)
 	  for(unsigned i=0;i<x.size();i++){
 	    auto e = y[i] - A*x[i] - b;
 	    err += e.norm();
@@ -653,7 +653,7 @@ namespace whiteice
 	  SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
 #endif
 	  
-#pragma omp for schedule(static, 150)
+#pragma omp for schedule(static, 200)
 	  for(unsigned int i=0;i<gA.size();i++){
 	    mA[i] = beta1 * mA[i] + (T(1.0) - beta1)*gA[i];
 	    vA[i] = beta2 * vA[i] + (T(1.0) - beta2)*gA[i]*gA[i];
@@ -673,7 +673,7 @@ namespace whiteice
 	  SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
 #endif
 	  
-#pragma omp for schedule(static, 150)
+#pragma omp for schedule(static, 200)
 	  for(unsigned int i=0;i<gb.size();i++){
 	    mb[i] = beta1 * mb[i] + (T(1.0) - beta1)*gb[i];
 	    vb[i] = beta2 * vb[i] + (T(1.0) - beta2)*gb[i]*gb[i];
