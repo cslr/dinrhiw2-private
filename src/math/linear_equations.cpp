@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <exception>
 #include <stdexcept>
+#include <set>
 
 #include "linear_equations.h"
 #include "matrix.h"
@@ -516,6 +517,26 @@ namespace whiteice
     {
       if(x.size() != y.size()) return false;
       if(x.size() == 0 || y.size() == 0) return false;
+      
+      std::vector< std::set<unsigned int> > sx; // sparse x
+      
+      {
+	sx.resize(x.size());
+	
+#pragma omp parallel for schedule(dynamic, 200)
+	for(unsigned int i=0;i<x.size();i++){
+	  std::set<unsigned int> sparse;
+	  
+	  for(unsigned int j=0;j<x[i].size();j++)
+	    if(x[i][j]) sparse.insert(j);
+
+	  //std::cout << "sparse size: " << sparse.size() << std::endl;
+	  
+	  sx[i] = sparse;
+	}
+      }
+        
+      // generates all frequent itemsets dataset
 
       matrix<T> gA;
       vertex<T> gb;
@@ -543,10 +564,10 @@ namespace whiteice
 	
 	for(unsigned int j=0;j<e.size();j++){
 	  e[j] = b[j] - y[i][j];
+
+	  for(const auto& k : sx[i])
+	    e[j] += A(j, k);
 	  
-	  for(unsigned int k=0;k<x[i].size();k++)
-	    if(x[i][k])
-	      e[j] += A(j,k);
 	}
 	
 	error += e.norm();
@@ -603,9 +624,8 @@ namespace whiteice
 	    for(unsigned int j=0;j<e.size();j++){
 	      e[j] = b[j] - y[i][j];
 
-	      for(unsigned int k=0;k<x[i].size();k++)
-		if(x[i][k])
-		  e[j] += A(j,k);
+	      for(const auto& k : sx[i])
+		e[j] += A(j, k);
 	    }
 	    
 	    // e = A*x[i] + b - y[i];
@@ -653,10 +673,9 @@ namespace whiteice
 	    
 	    for(unsigned int j=0;j<e.size();j++){
 	      e[j] = b[j] - y[i][j];
-	      
-	      for(unsigned int k=0;k<x[i].size();k++)
-		if(x[i][k])
-		  e[j] += A(j,k);
+
+	      for(const auto& k : sx[i])
+		e[j] += A(j, k);
 	    }
 	    
 	    
@@ -738,10 +757,9 @@ namespace whiteice
 	
 	for(unsigned int j=0;j<e.size();j++){
 	  e[j] = b[j] - y[i][j];
-	  
-	  for(unsigned int k=0;k<x[i].size();k++)
-	    if(x[i][k])
-	      e[j] += A(j,k);
+
+	  for(const auto& k : sx[i])
+	    e[j] += A(j, k);
 	}
 
 	//auto e = y[i] - A*x[i] - b;

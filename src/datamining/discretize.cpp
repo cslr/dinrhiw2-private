@@ -249,7 +249,7 @@ namespace whiteice
     if(freq_limit < 0.0 || freq_limit >= 1.0) return false;
 
     if(freq_limit == 0.0){
-      freq_limit = 30.0/data.size(); // was: 100, 30 cases for each variable minimum (30 for 10 dimensional data)
+      freq_limit = 50.0/data.size(); // was: 100, 30 cases for each variable minimum (30 for 10 dimensional data)
     }
 
     //std::vector<dynamic_bitset> fset;
@@ -286,28 +286,46 @@ namespace whiteice
     printf("frequent sets search done: %d sets.\n", (int)f.size());
     fflush(stdout);
 
-    //f = fset;
+
+    std::vector< std::set<unsigned int> > sf; // sparse representation of frequent sets (dirty slow hack)
+    
+    {
+      sf.resize(f.size());
+
+#pragma omp parallel for schedule(dynamic, 200)
+      for(unsigned int i=0;i<f.size();i++){
+	std::set<unsigned int> sparse;
+
+	for(unsigned int j=0;j<f[i].size();j++)
+	  if(f[i][j]) sparse.insert(j);
+
+	sf[i] = sparse;
+      }
+    }
     
 #if 1
     // generates all frequent itemsets dataset
-    std::vector< whiteice::dynamic_bitset > result;    
+    std::vector< whiteice::dynamic_bitset > result;
     result.resize(data.size());
 
 #pragma omp parallel
     {
       dynamic_bitset value;
-      value.resize(f.size());
+      value.resize(sf.size());
       
 #pragma omp for schedule(dynamic, 200)
       for(unsigned int j=0;j<data.size();j++){
 	value.reset();
 	unsigned int index = 0;
 
-	for(const auto& b : f){
+	for(const auto& b : sf){
 	  bool fdata = true;
 	  
-	  for(unsigned int i=0;i<b.size() && fdata;i++){
-	    if(b[i] && data[j][i] == false){ fdata = false; }
+	  for(const auto& bi : b){
+	    if(data[j][bi] == false){
+	      fdata = false;
+	      break;
+	    }
 	  }
 
 	  if(fdata) value.set(index, true);
