@@ -570,7 +570,7 @@ namespace whiteice
 	  
 	}
 	
-	error += e.norm();
+	error += e.norm()/e.size();
       }
 
       error /= x.size();
@@ -679,7 +679,7 @@ namespace whiteice
 	    }
 	    
 	    
-	    err += e.norm();
+	    err += e.norm()/e.size();
 	  }
 
 #pragma omp critical
@@ -764,7 +764,7 @@ namespace whiteice
 
 	//auto e = y[i] - A*x[i] - b;
 	
-	error += e.norm();
+	error += e.norm()/e.size();
       }
 
       error /= x.size();

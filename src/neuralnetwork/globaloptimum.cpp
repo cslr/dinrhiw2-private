@@ -391,15 +391,11 @@ namespace whiteice
     if(dn[0] != whiteice::dataset<T>::dnMeanVarianceNormalization)
       return false;
 
-    if(predict.getNumberOfClusters() != 1) return false;
-    
     std::vector< enum whiteice::dataset<T>::data_normalization > pl;
     pl.push_back(whiteice::dataset<T>::dnMeanVarianceNormalization); // predicted dataset should have same statistics as data
     
     predict.convert(0, pl);
     predict.createCluster("predicted", data.dimension(1));
-    
-    
     
     // discretizes problem variables (only input)
     std::vector< whiteice::dynamic_bitset > xdata, pdata;
@@ -497,8 +493,9 @@ namespace whiteice
       
       linear_optimization_grad(result, ydata, A, b, error);
 
-      std::cout << "optimization error = " << error << std::endl;
-
+      std::cout << "optimization error = " << error << std::endl;      
+      
+      
       for(unsigned int k=0;k<presult.size();k++){
 	whiteice::math::vertex<T> y;
 

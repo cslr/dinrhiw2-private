@@ -2995,6 +2995,80 @@ void nngraddescent_complex_test()
 void simple_global_optimum_test()
 {
   {
+    std::cout << "Cryptographic SHA HASH PREDICTION CODE" << std::endl;
+
+    whiteice::dataset<> data, predict;
+
+    data.createCluster("input", 10);
+    data.createCluster("output", 10);
+
+    predict.createCluster("input", 10);
+
+    whiteice::math::matrix<> A;
+    whiteice::math::vertex<> b;
+
+    if(data.importAscii("hash_train_input.csv", 0, 0, true) == false)
+      printf("DATA IMPORT FAIL\n");
+    
+    if(data.importAscii("hash_train_output.csv", 1, 0, true) == false)
+      printf("DATA IMPORT FAIL 2\n");
+    
+    std::vector< math::vertex<> > x, x2, x3, y, y2, y3;
+
+    data.getData(0, x);
+    data.getData(1, y);
+    
+    data.clearData(0);
+    data.clearData(1);
+
+    for(unsigned int i=0;i<40000;i++){
+      x2.push_back(x[i]);
+      data.add(0, x[i]);
+      data.add(1, y[i]);
+    }
+    
+    for(unsigned int i=40000;i<50000;i++){
+      x3.push_back(x[i]);
+      y3.push_back(y[i]);
+      predict.add(0, x[i]);
+    }
+    
+    std::cout << "data size: " << data.size(0) << " data dim: " << data.dimension(0) << std::endl;
+    std::cout << "data size: " << data.size(1) << " data dim: " << data.dimension(1) << std::endl;
+
+
+    data.preprocess(0);
+    //data.preprocess(1);
+    
+    if(global_linear_optimizer(data, predict, A, b) == false){
+      printf("Optimizer FAILED\n");
+      return;
+    }
+
+   std::cout << A.ysize() << "," << A.xsize() << std::endl;
+   std::cout << b.size() << std::endl;
+   std::cout << y3[0].size() << std::endl;
+   std::cout << predict[0].size() << std::endl;
+
+    whiteice::math::blas_real<> error = 0.0;
+
+    assert(predict.size(1) == y3.size());
+
+    for(unsigned int i=0;i<predict.size(1);i++){
+      auto e = (y3[i] - predict.access(1, i));
+
+      error += e.norm()/e.size();
+    }
+
+    error /= predict.size(0);
+
+    std::cout << "Validation dataset error: " << error << std::endl;
+    
+  }
+
+  return;
+  
+  {
     std::cout << "Linear global optimizer code." << std::endl;
     std::cout << "Global optimizer works fast only with 10.000 datapoints and about 20 variables. need very fast CPU for bigger problems"
 	      << std::endl;

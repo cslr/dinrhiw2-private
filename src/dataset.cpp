@@ -2446,6 +2446,7 @@ namespace whiteice
 	lines++;
       }
     }
+
     
     free(buffer);
     fclose(fp);
