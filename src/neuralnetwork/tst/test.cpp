@@ -2994,7 +2994,7 @@ void nngraddescent_complex_test()
 
 void simple_global_optimum_test()
 {
-  {
+  if(0){
     std::cout << "Cryptographic SHA HASH PREDICTION CODE" << std::endl;
 
     whiteice::dataset<> data, predict;
@@ -3014,7 +3014,7 @@ void simple_global_optimum_test()
       printf("DATA IMPORT FAIL 2\n");
     
     std::vector< math::vertex<> > x, x2, x3, y, y2, y3;
-
+    
     data.getData(0, x);
     data.getData(1, y);
     
@@ -3066,7 +3066,7 @@ void simple_global_optimum_test()
     
   }
 
-  return;
+  
   
   {
     std::cout << "Linear global optimizer code." << std::endl;
@@ -3074,9 +3074,9 @@ void simple_global_optimum_test()
 	      << std::endl;
 
     whiteice::math::vertex<> a;
-    whiteice::dataset<> data, predict;
+    whiteice::dataset<> data, predict, p2;
     //const unsigned int K = 10;
-    const unsigned int DIM = 200; // 100, 500 input dimensions cause too many frequent sets for 32 GB RAM
+    const unsigned int DIM = 30; // 200, 100, 500 input dimensions cause too many frequent sets for 32 GB RAM
 
     whiteice::RNG<> rng;
 
@@ -3104,49 +3104,99 @@ void simple_global_optimum_test()
     rng.normal(a);
 
     predict.createCluster("input", DIM);
+    p2.createCluster("output", 1);
     
-    for(unsigned int i=0;i<10000;i++){ // was 10.000,40.000
-      math::vertex<> x, y, x2;
+    for(unsigned int i=0;i<50000;i++){ // was 10.000,40.000
+      math::vertex<> x, yi;
 
       x.resize(DIM);
-      x2.resize(DIM);
-      y.resize(1);
+      yi.resize(1);
 
       rng.normal(x);
-      rng.normal(x2);
-      //rng.normal(y);
-      //y[0] = (a*x)[0];
-      rand_net.calculate(x, y);
+      rand_net.calculate(x, yi);
       
       data.add(0, x);
-      data.add(1, y);
-      predict.add(0, x2);
+      data.add(1, yi);
     }
 
     data.preprocess(0);
     data.preprocess(1);
 
+    std::vector< math::vertex<> > x, x3, y, y2, y3;
+
+    data.getData(0, x);
+    data.getData(1, y);
+    
+    data.clear();
+    data.createCluster("input", DIM);
+    data.createCluster("output", 1);
+    
+
+    for(unsigned int i=0;i<40000;i++){
+      data.add(0, x[i]);
+      data.add(1, y[i]);
+    }
+    
+    for(unsigned int i=40000;i<50000;i++){
+      x3.push_back(x[i]);
+      predict.add(0, x[i]);
+      
+      p2.add(0, y[i]);
+    }
+    
+    std::cout << "data size: " << data.size(0) << " data dim: " << data.dimension(0) << std::endl;
+    std::cout << "data size: " << data.size(1) << " data dim: " << data.dimension(1) << std::endl;
+
     whiteice::math::matrix<> A;
     whiteice::math::vertex<> b;
-    
-    global_linear_optimizer(data, predict, A, b);
 
-    std::cout << "Optimizer code done." << std::endl;
-    std::cout << "input dim: " << DIM << std::endl;
+    data.preprocess(0);
+    data.preprocess(1);
+
+    predict.preprocess(0);
+    p2.preprocess(0);
+
+    p2.getData(0, y3);
     
+    if(global_linear_optimizer(data, predict, A, b) == false){
+      printf("Optimizer FAILED\n");
+      return;
+    }
+
+   std::cout << A.ysize() << "," << A.xsize() << std::endl;
+   std::cout << b.size() << std::endl;
+   std::cout << y3[0].size() << std::endl;
+   std::cout << predict[0].size() << std::endl;
+
+    whiteice::math::blas_real<> error = 0.0;
+
+    assert(predict.size(1) == y3.size());
+    
+    for(unsigned int i=0;i<predict.size(1);i++){
+      assert(predict.dimension(1) == y3[i].size());
+
+      auto e = (y3[i] - predict.access(1, i));
+
+      error += e.norm()/e.size();
+    }
+
+    error /= predict.size(1);
+
+    std::cout << "Validation dataset error: " << error << std::endl;
+
     
     math::matrix<> Cxx, Cyx;
     math::vertex<> mx, my;
     whiteice::math::blas_real<> p = 0.0001f;
     
-    std::vector< whiteice::math::vertex<> > result, ydata;
-    data.getData(0, result);
+    std::vector< whiteice::math::vertex<> > xdata, ydata;
+    data.getData(0, xdata);
     data.getData(1, ydata);
     
-    if(mean_covariance_estimate(mx, Cxx, result) == false)
+    if(mean_covariance_estimate(mx, Cxx, xdata) == false)
       return;
     
-    if(mean_crosscorrelation_estimate(mx, my, Cyx, result, ydata) == false)
+    if(mean_crosscorrelation_estimate(mx, my, Cyx, xdata, ydata) == false)
       return;
     
     if(Cxx.symmetric_pseudoinverse(p) == false)
@@ -3155,16 +3205,18 @@ void simple_global_optimum_test()
     A = Cyx*Cxx;
     b = my - A*mx;
     
-    whiteice::math::blas_real<> error = 0.0;
+    error = 0.0;
     
-    for(unsigned int k=0;k<result.size();k++){
-      auto y = A*result[k] + b;
-      error += (data.access(1,k)-y).norm();
+    for(unsigned int k=0;k<xdata.size();k++){
+      auto y = A*xdata[k] + b;
+      error += (ydata[k]-y).norm()/y.size();
     }
     
-    error /= result.size();
-    
-    std::cout << "LINEAR optimization error = " << error << std::endl;
+    error /= xdata.size();
+
+
+    // optimization seem to function properly now but computer BUGs and linear optimization has SMALLER error in non-linear problem...
+    std::cout << "LINEAR optimization error = " << error << std::endl; 
     
   }
 

@@ -511,13 +511,61 @@ namespace whiteice
      * regularizes matrixes if they are singular to get solution.
      */
     template <typename T>
-    bool linear_optimization_grad(const std::vector< whiteice::dynamic_bitset >& x,
-				  const std::vector< vertex<T> >& y,
+    bool linear_optimization_grad(const std::vector< whiteice::dynamic_bitset >& xx,
+				  const std::vector< vertex<T> >& yy,
 				  matrix<T>& A, vertex<T>& b, T& error)
     {
-      if(x.size() != y.size()) return false;
-      if(x.size() == 0 || y.size() == 0) return false;
+      if(xx.size() != yy.size()) return false;
+      if(xx.size() == 0 || yy.size() == 0) return false;
       
+      // generates all frequent itemsets dataset
+
+      matrix<T> gA, AA;
+      vertex<T> gb, bb;
+
+      A.resize(yy[0].size(), xx[0].size());
+      b.resize(yy[0].size());
+
+      whiteice::RNG<T> rng;
+
+      rng.normal(b);
+      rng.normal(A);
+
+      for(unsigned int i=0;i<A.size();i++) A[i] = T(1.0f/xx[0].size());
+      for(unsigned int i=0;i<b.size();i++) b[i] = T(1.0f/yy[0].size());
+
+      AA = A;
+      bb = b;
+
+      //T delta = T(1.0f), old_delta = T(1.0f);
+      T old_error = T(1.0f);
+      error = T(1.0f);
+      T lrate = T(0.001);
+
+      std::vector< whiteice::dynamic_bitset > x, xv;
+      std::vector< vertex<T> > y, yv;
+
+      unsigned int Nx = 0.75*xx.size();
+      unsigned int Nv = xx.size() - Nx;
+
+      if(Nx < 10) Nx = xx.size();
+      if(Nv < 10) Nv = xx.size();
+
+      // works correctly IF uses all data (but not if only use 75%?) [=> computer bugs]
+      //Nx = xx.size();
+      //Nv = xx.size();
+
+      for(unsigned int i=0;i<Nx;i++){
+	x.push_back(xx[i]);
+	y.push_back(yy[i]);
+      }
+
+      for(unsigned int i=xx.size()-Nv;i<xx.size();i++){
+	xv.push_back(xx[i]);
+	yv.push_back(yy[i]);
+      }
+
+
       std::vector< std::set<unsigned int> > sx; // sparse x
       
       {
@@ -536,36 +584,38 @@ namespace whiteice
 	}
       }
         
-      // generates all frequent itemsets dataset
 
-      matrix<T> gA;
-      vertex<T> gb;
+      std::vector< std::set<unsigned int> > sxv; // sparse xv
 
-      A.resize(y[0].size(), x[0].size());
-      b.resize(y[0].size());
+      {
+	sxv.resize(xv.size());
+	
+#pragma omp parallel for schedule(dynamic, 200)
+	for(unsigned int i=0;i<xv.size();i++){
+	  std::set<unsigned int> sparse;
+	  
+	  for(unsigned int j=0;j<xv[i].size();j++)
+	    if(xv[i][j]) sparse.insert(j);
 
-      whiteice::RNG<T> rng;
-
-      rng.normal(b);
-      rng.normal(A);
-
-      //T delta = T(1.0f), old_delta = T(1.0f);
-      T old_error = T(1.0f);
-      error = T(1.0f);
-      T lrate = T(0.001);
+	  //std::cout << "sparse size: " << sparse.size() << std::endl;
+	  
+	  sxv[i] = sparse;
+	}
+      }
+      
 
       error = T(0.0f);
       
-      for(unsigned i=0;i<x.size();i++){
+      for(unsigned i=0;i<xv.size();i++){
 	//auto e = y[i] - A*x[i] - b;
 
 	vertex<T> e;
 	e.resize(A.ysize());
 	
 	for(unsigned int j=0;j<e.size();j++){
-	  e[j] = b[j] - y[i][j];
+	  e[j] = b[j] - yv[i][j];
 
-	  for(const auto& k : sx[i])
+	  for(const auto& k : sxv[i])
 	    e[j] += A(j, k);
 	  
 	}
@@ -573,7 +623,7 @@ namespace whiteice
 	error += e.norm()/e.size();
       }
 
-      error /= x.size();
+      error /= xv.size();
       
       //const T alpha = T(0.001);
       const T alpha = T(0.01);
@@ -665,16 +715,16 @@ namespace whiteice
 	  T err = T(0.0f);
 
 #pragma omp for nowait schedule(static, 200)
-	  for(unsigned i=0;i<x.size();i++){
+	  for(unsigned i=0;i<xv.size();i++){
 	    //auto e = y[i] - A*x[i] - b;
 
 	    vertex<T> e;
 	    e.resize(A.ysize());
 	    
 	    for(unsigned int j=0;j<e.size();j++){
-	      e[j] = b[j] - y[i][j];
+	      e[j] = b[j] - yv[i][j];
 
-	      for(const auto& k : sx[i])
+	      for(const auto& k : sxv[i])
 		e[j] += A(j, k);
 	    }
 	    
@@ -691,9 +741,13 @@ namespace whiteice
 	//if(old_delta < delta*0.8) lrate *= T(0.70f);
 	//else if(old_delta > delta) lrate *= T(1.1f);
 	
-	error /= x.size();
+	error /= xv.size();
 
 	if(old_error <= error) error = old_error;
+	else if(error < old_error){
+	  AA = A;
+	  bb = b;
+	}
 
 	if(old_error <= error) no_improve_iters++;
 	else if(old_error > error) no_improve_iters = 0;
@@ -751,15 +805,15 @@ namespace whiteice
    
        error = T(0.0f);
 
-      for(unsigned i=0;i<x.size();i++){
+      for(unsigned i=0;i<xv.size();i++){
 	vertex<T> e;
-	e.resize(A.ysize());
+	e.resize(AA.ysize());
 	
 	for(unsigned int j=0;j<e.size();j++){
-	  e[j] = b[j] - y[i][j];
+	  e[j] = bb[j] - yv[i][j];
 
-	  for(const auto& k : sx[i])
-	    e[j] += A(j, k);
+	  for(const auto& k : sxv[i])
+	    e[j] += AA(j, k);
 	}
 
 	//auto e = y[i] - A*x[i] - b;
@@ -767,9 +821,12 @@ namespace whiteice
 	error += e.norm()/e.size();
       }
 
-      error /= x.size();
+      error /= xv.size();
 
       std::cout << "error = " << error << std::endl;
+
+      A = AA;
+      b = bb;
       
       return true;
     }

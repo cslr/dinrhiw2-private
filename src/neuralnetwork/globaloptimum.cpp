@@ -515,6 +515,11 @@ namespace whiteice
 	predict.add(1, y);
       }
     }
+
+
+    std::vector< enum whiteice::dataset<T>::data_normalization > dn1;
+    if(data.getPreprocessings(1, dn1) == false) return false;
+    predict.convert(1, dn1);
     
 
     return true;
