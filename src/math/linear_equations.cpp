@@ -540,7 +540,7 @@ namespace whiteice
       //T delta = T(1.0f), old_delta = T(1.0f);
       T old_error = T(1.0f);
       error = T(1.0f);
-      T lrate = T(0.001);
+      T lrate = T(0.01);
 
       std::vector< whiteice::dynamic_bitset > x, xv;
       std::vector< vertex<T> > y, yv;
@@ -551,7 +551,7 @@ namespace whiteice
       if(Nx < 10) Nx = xx.size();
       if(Nv < 10) Nv = xx.size();
 
-      // works correctly IF uses all data (but not if only use 75%?) [=> computer bugs]
+      // works correctly IF uses all data (but not if only use 75%?) [=> computer bugs?]
       //Nx = xx.size();
       //Nv = xx.size();
 
@@ -661,14 +661,12 @@ namespace whiteice
 
 #pragma omp parallel
 	{
-	  vertex<T> e;
-
 	  auto ggA = gA;
 	  auto ggb = gb;
 
 #pragma omp for nowait schedule(static,200)
 	  for(unsigned i=0;i<x.size();i++){
-
+	    vertex<T> e;
 	    e.resize(A.ysize());
 
 	    for(unsigned int j=0;j<e.size();j++){
@@ -738,13 +736,45 @@ namespace whiteice
 	  }
 	}
 
+	error /= xv.size();
+
+	T error_train = T(0.0f);
+
+#pragma omp parallel
+	{
+	  T err = T(0.0f);
+
+#pragma omp for nowait schedule(static, 200)
+	  for(unsigned i=0;i<x.size();i++){
+	    //auto e = y[i] - A*x[i] - b;
+
+	    vertex<T> e;
+	    e.resize(A.ysize());
+	    
+	    for(unsigned int j=0;j<e.size();j++){
+	      e[j] = b[j] - y[i][j];
+
+	      for(const auto& k : sx[i])
+		e[j] += A(j, k);
+	    }
+	    
+	    
+	    err += e.norm()/e.size();
+	  }
+
+#pragma omp critical
+	  {
+	    error_train += err;
+	  }
+	}
+
+	error_train /= x.size();
+
 	//if(old_delta < delta*0.8) lrate *= T(0.70f);
 	//else if(old_delta > delta) lrate *= T(1.1f);
 	
-	error /= xv.size();
-
-	if(old_error <= error) error = old_error;
-	else if(error < old_error){
+	//if(old_error <= error) ; //error = old_error;
+	if(error < old_error){
 	  AA = A;
 	  bb = b;
 	}
@@ -752,7 +782,7 @@ namespace whiteice
 	if(old_error <= error) no_improve_iters++;
 	else if(old_error > error) no_improve_iters = 0;
 
-	std::cout << "error = " << error << " no_improve_iters = " << no_improve_iters << std::endl;
+	std::cout << "error = " << error << " error_train = " << error_train << " no_improve_iters = " << no_improve_iters << std::endl;
 	//std::cout << "lrate = " << lrate << std::endl;
 #if 1
 #pragma omp parallel
@@ -795,8 +825,8 @@ namespace whiteice
 	}
     
 
-	itersA++;
-	itersb++;
+	//itersA++;
+	//itersb++;
 #endif
 	
 	//A -= lrate*gA;

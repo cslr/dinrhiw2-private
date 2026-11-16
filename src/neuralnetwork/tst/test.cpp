@@ -2994,7 +2994,7 @@ void nngraddescent_complex_test()
 
 void simple_global_optimum_test()
 {
-  if(1){
+  if(0){
     std::cout << "Cryptographic SHA HASH PREDICTION CODE" << std::endl;
 
     whiteice::dataset<> data, predict;
@@ -3068,7 +3068,7 @@ void simple_global_optimum_test()
 
   
   
-  if(0){
+  if(1){
     std::cout << "Linear global optimizer code." << std::endl;
     std::cout << "Global optimizer works fast only with 10.000 datapoints and about 20 variables. need very fast CPU for bigger problems"
 	      << std::endl;
