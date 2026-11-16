@@ -70,6 +70,7 @@ namespace whiteice
 	const double DIV = sqrt(ROWS*data.size());
 
 	double B = data.size()/DIV; // 4000.0;
+	//B = data.size()/10;
 	//B = math::pow(B, 1.0/2.0); 
 
 	unsigned int BINS = (unsigned int)round(B);
