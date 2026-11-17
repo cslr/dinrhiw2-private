@@ -16,7 +16,11 @@ namespace whiteice
     unsigned int TYPE;
 
     // TYPE == 0
-    std::vector<float> bins; // BIN+1 bins between: bin[i-1] < x < bin[i]
+    //std::vector<float> bins; // BIN+1 bins between: bin[i-1] < x < bin[i]
+
+    // discretization boxes left and right value (BINS bins)
+    std::vector<float> boxL;
+    std::vector<float> boxR;
 
     // TYPE == 1
     std::vector<std::string> elem; // i element is elem[i] string
@@ -29,7 +33,7 @@ namespace whiteice
 
   // calculates discretization of data
   bool calculate_discretize(const std::vector< std::vector<std::string> >& data,
-			    std::vector<struct discretization>& disc);
+			    std::vector<struct discretization>& disc, bool overlap = true);
 
   // discretizes data and creates one-hot-encoding of discrete value in binary
   bool binarize(const std::vector< std::vector<std::string> >& data,

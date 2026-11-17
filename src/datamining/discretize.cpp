@@ -20,7 +20,7 @@ namespace whiteice
   //////////////////////////////////////////////////////////////////////
 
   bool calculate_discretize(const std::vector< std::vector<std::string> >& data,
-			    std::vector<struct discretization>& disc)
+			    std::vector<struct discretization>& disc, bool overlap) // overlap tell if discretized variables should overlap in continuous range
   {
     if(data.size() == 0) return false;
 
@@ -48,7 +48,7 @@ namespace whiteice
 
     disc.resize(data[0].size());
 
-#pragma omp parallel for
+    //#pragma omp parallel for
     for(unsigned int i=0;i<disc.size();i++){
       if(elems[i].size() <= 20){
 	disc[i].TYPE = 1;
@@ -66,18 +66,25 @@ namespace whiteice
 
 	// pairs of items has on average 10.0 rows/freq
 	// [not enough of frequent item which is 20.0] 
-	const double ROWS = 50.0;  // was: 50
-	const double DIV = sqrt(ROWS*data.size());
+	//const double ROWS = 50.0;  // was: 50
+	//const double DIV = sqrt(ROWS*data.size());
+	const double DIV = 1000.0; // 3000,3100
 
 	double B = data.size()/DIV; // 4000.0;
-	//B = data.size()/10;
-	//B = math::pow(B, 1.0/2.0); 
+	//B = data.size()/100;
+	//B = math::pow(B, 1.0/2.0);
+
+	std::cout << "DIV " << DIV << std::endl;
 
 	unsigned int BINS = (unsigned int)round(B);
-	std::cout << "BINS: " << BINS << std::endl;
+	//BINS = 256;
+	
 	
 	if(BINS < 2) BINS = 2;
-	else if(BINS > 100) BINS = 100;
+	//else if(BINS > 300) BINS = 300;
+	
+	std::cout << "BINS: " << BINS << std::endl;
+
 
 	/*
 	unsigned int BINS = data.size() / 1000; // was 200, 300, 500 don't work
@@ -85,8 +92,9 @@ namespace whiteice
 	if(BINS < 2) BINS = 2;
 	else if(BINS > 100) BINS = 100;
 	*/
-	
-	disc[i].bins.resize(BINS+1);
+
+	disc[i].boxL.resize(BINS);
+	disc[i].boxR.resize(BINS);
 
 	whiteice::KMeans<double> km;
 
@@ -113,11 +121,35 @@ namespace whiteice
 	}
 	
 	//std::cout << "BINS: ";
-	unsigned long long index = 0;
+	//unsigned long long index = 0;
+
+	auto iter = numset.begin();
+	auto prev_iter = iter;
+	auto next_iter = iter;
+	next_iter++;
+
+	for(unsigned int k=0;k<numset.size();k++,iter++){
+	  if(k==0){ disc[i].boxL[k] = -INFINITY; }
+	  else{ disc[i].boxL[k] = *prev_iter; prev_iter++; }
+
+	  if(overlap == true){
+	    if(k==numset.size()-1) disc[i].boxR[k] = INFINITY;
+	    else{ disc[i].boxR[k] = *next_iter; next_iter++; }
+	  }
+	  else{
+	    if(k==numset.size()-1) disc[i].boxR[k] = INFINITY;
+	    else{ disc[i].boxR[k] = *iter; next_iter++; }
+	  }
+
+	  //std::cout << "BIN " << disc[i].boxL[k] << " , " << disc[i].boxR[k] << std::endl;
+	}
+
+#if 0
 	double prev = -INFINITY;
 	for(const auto& n : numset){
 	  if(prev > -INFINITY){
-	    disc[i].bins[index] = (n+prev)/2.0;
+	    disc[i].boxL[index] = (n+prev)/2.0;
+	    disc[i].boxR[index] = 
 	    index++;
 	  }
 	  prev = n;
@@ -125,33 +157,9 @@ namespace whiteice
 	  //std::cout << n << " ";
 	}
 
-	disc[i].bins[index] = INFINITY; // last bin 
-	
-	//std::cout << std::endl;
-
-	
-
-	/*
-	double mean = 0.0;
-	double stdev = 0.0;
-
-	for(const auto& s : numbers[i]){
-	  mean += s;
-	  stdev += s*s;
-	}
-
-	mean /= numbers[i].size();
-	stdev /= numbers[i].size();
-	stdev -= mean*mean;
-
-	double binstart = 6.0*stdev;
-	double binwide = binstart/(BINS/2);
-
-	for(unsigned int j=0;j<(BINS/2);j++){
-	  disc[i].bins[j] = -binstart/2.0 + binwide*j;
-	}
-	*/
-	
+	disc[i].bins[index] = INFINITY; // last bin
+#endif
+		
       }
       else{
 	disc[i].TYPE = 2;
@@ -180,7 +188,7 @@ namespace whiteice
 
     for(const auto& d : disc){
       if(d.TYPE == 0){
-	binary_size += d.bins.size()+1;
+	binary_size += d.boxR.size();
       }
       else if(d.TYPE == 1){
 	binary_size += d.elem.size();
@@ -202,14 +210,18 @@ namespace whiteice
 	  char* p = NULL;
 	  double value = strtod(data[i][j].c_str(), &p);
 
-	  unsigned int counter = 0;
-	  for(counter = 0;counter<disc[j].bins.size();counter++){
-	    if(value < disc[j].bins[counter]) break;
-	  }
+	  std::set<unsigned int> indexes;
+
+	  for(unsigned int c=0;c<disc[j].boxR.size();c++)
+	    if(disc[j].boxL[c] <= value && disc[j].boxR[c] >= value)
+	      indexes.insert(c);
 
 	  //v[index + counter] = 1.0;
-	  v.set(index+counter, true);
-	  index += disc[j].bins.size()+1;
+
+	  for(const auto& c : indexes)
+	    v.set(index + c, true);
+	  
+	  index += disc[j].boxR.size();
 	}
 	else if(disc[j].TYPE == 1){
 
@@ -250,7 +262,7 @@ namespace whiteice
     if(freq_limit < 0.0 || freq_limit >= 1.0) return false;
 
     if(freq_limit == 0.0){
-      freq_limit = 50.0/data.size(); // was: 100, 30 cases for each variable minimum (30 for 10 dimensional data)
+      freq_limit = 30.0/data.size(); // was: 50, 100, 30 cases for each variable minimum (30 for 10 dimensional data)
     }
 
     //std::vector<dynamic_bitset> fset;

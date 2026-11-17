@@ -62,7 +62,7 @@
 #include "SGD_recurrent_nnetwork.h"
 
 #include "LinearKCluster.h"
-#include "GeneralKCluster.h"
+//#include "GeneralKCluster.h"
 
 #include "rUHMC.h"
 
@@ -1379,6 +1379,7 @@ void r_hmc_test() // tests recurrent Hamiltonian Monte Carlo sampling..
 
 void general_kcluster_test() // unit tests GeneralKCluster class
 {
+#if 0
   // tests code with superresolution< blas_complex<> > class
   std::cout << "General K-Cluster test" << std::endl;
 
@@ -1543,6 +1544,7 @@ void general_kcluster_test() // unit tests GeneralKCluster class
   }
 
   std::cout << "GeneralKCluster class UNIT tests DONE." << std::endl;
+#endif
 }
 
 
@@ -3076,7 +3078,7 @@ void simple_global_optimum_test()
     whiteice::math::vertex<> a;
     whiteice::dataset<> data, predict, p2;
     //const unsigned int K = 10;
-    const unsigned int DIM = 30; // 200, 100, 500 input dimensions cause too many frequent sets for 32 GB RAM
+    const unsigned int DIM = 10; // 30, 200, 100, 500 input dimensions cause too many frequent sets for 32 GB RAM
 
     whiteice::RNG<> rng;
 
@@ -3105,8 +3107,10 @@ void simple_global_optimum_test()
 
     predict.createCluster("input", DIM);
     p2.createCluster("output", 1);
+
+    const unsigned DATASIZE = 50000; // 50.000
     
-    for(unsigned int i=0;i<50000;i++){ // was 10.000,40.000
+    for(unsigned int i=0;i<DATASIZE;i++){ // was 10.000,40.000
       math::vertex<> x, yi;
 
       x.resize(DIM);
@@ -3132,12 +3136,12 @@ void simple_global_optimum_test()
     data.createCluster("output", 1);
     
 
-    for(unsigned int i=0;i<40000;i++){
+    for(unsigned int i=0;i<DATASIZE-10000;i++){
       data.add(0, x[i]);
       data.add(1, y[i]);
     }
     
-    for(unsigned int i=40000;i<50000;i++){
+    for(unsigned int i=DATASIZE-10000;i<DATASIZE;i++){
       x3.push_back(x[i]);
       predict.add(0, x[i]);
       
@@ -3177,7 +3181,7 @@ void simple_global_optimum_test()
 
       auto e = (y3[i] - predict.access(1, i));
 
-      error += e.norm()/e.size();
+      error += e.norm()/sqrt(e.size());
     }
 
     error /= predict.size(1);
@@ -3209,15 +3213,40 @@ void simple_global_optimum_test()
     
     for(unsigned int k=0;k<xdata.size();k++){
       auto y = A*xdata[k] + b;
-      error += (ydata[k]-y).norm()/y.size();
+      auto e = (ydata[k]-y);
+
+      whiteice::math::blas_real<float> err = 0.0f;
+
+      for(unsigned int j=0;j<e.size();j++)
+	err += whiteice::math::abs(e[j]);
+      
+      error += err/e.size();
     }
     
     error /= xdata.size();
 
 
     // optimization seem to function properly now but computer BUGs and linear optimization has SMALLER error in non-linear problem...
-    std::cout << "LINEAR optimization error = " << error << std::endl; 
+    std::cout << "LINEAR optimization error = " << error << std::endl;
+
+    // tries to learn problem with new neural net
+    rand_net.randomize(0);
+
+    whiteice::math::NNGradDescent<> grad;
+
+    grad.setMNE(true);
+    grad.startOptimize(data, rand_net, 1);
     
+    while(grad.isRunning()){
+      sleep(1);
+
+      whiteice::math::blas_real<float> error;
+      unsigned int N = 0;
+
+      if(grad.getSolutionStatistics(error, N)){
+	std::cout << "NN error: " << error << " iters: " << N << std::endl;
+      }
+    }
   }
 
   return;

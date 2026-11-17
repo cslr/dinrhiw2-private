@@ -6,6 +6,7 @@
  * 
  */
 
+#if 0
 #ifndef __whiteice__GlobalOptimizer_h
 #define __whiteice__GlobalOptimizer_h
 
@@ -93,4 +94,5 @@ namespace whiteice
 }
 
 
+#endif
 #endif

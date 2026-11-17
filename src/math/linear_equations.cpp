@@ -526,21 +526,22 @@ namespace whiteice
       A.resize(yy[0].size(), xx[0].size());
       b.resize(yy[0].size());
 
-      whiteice::RNG<T> rng;
+      //whiteice::RNG<T> rng;
 
-      rng.normal(b);
-      rng.normal(A);
-
+      //rng.normal(b);
+      //rng.normal(A);
+      
       for(unsigned int i=0;i<A.size();i++) A[i] = T(1.0f/xx[0].size());
       for(unsigned int i=0;i<b.size();i++) b[i] = T(1.0f/yy[0].size());
-
+      
+      
       AA = A;
       bb = b;
 
       //T delta = T(1.0f), old_delta = T(1.0f);
       T old_error = T(1.0f);
       error = T(1.0f);
-      T lrate = T(0.01);
+      //T lrate = T(0.01);
 
       std::vector< whiteice::dynamic_bitset > x, xv;
       std::vector< vertex<T> > y, yv;
@@ -619,8 +620,12 @@ namespace whiteice
 	    e[j] += A(j, k);
 	  
 	}
+
+	T err = T(0.0f);
+	for(unsigned int j=0;j<e.size();j++)
+	  err += whiteice::math::abs(e[j]);
 	
-	error += e.norm()/e.size();
+	error += err/e.size();
       }
 
       error /= xv.size();
@@ -652,6 +657,7 @@ namespace whiteice
       unsigned int no_improve_iters = 0;
       
       while(no_improve_iters < 200){
+
 	gA.resize(y[0].size(), x[0].size());
 	gb.resize(y[0].size());
 	
@@ -680,7 +686,8 @@ namespace whiteice
 	    
 	    for(unsigned int h=0;h<e.size();h++){
 	      for(unsigned int k=0;k<x[i].size();k++){
-		ggA(h,k) += e[h]*x[i][k];
+		//ggA(h,k) += e[h]*x[i][k] + A(h,k); // regularizer
+		ggA(h,k) += e[h]*x[i][k]; // WITHOUT regularizer (overfits in training dataset)
 	      }
 	    }
 	    
@@ -725,9 +732,12 @@ namespace whiteice
 	      for(const auto& k : sxv[i])
 		e[j] += A(j, k);
 	    }
+
+	    T err2 = T(0.0f);
+	    for(unsigned int j=0;j<e.size();j++)
+	      err2 += whiteice::math::abs(e[j]);
 	    
-	    
-	    err += e.norm()/e.size();
+	    err += err2/e.size();
 	  }
 
 #pragma omp critical
@@ -757,9 +767,12 @@ namespace whiteice
 	      for(const auto& k : sx[i])
 		e[j] += A(j, k);
 	    }
+
+	    T err2 = T(0.0f);
+	    for(unsigned int j=0;j<e.size();j++)
+	      err2 += whiteice::math::abs(e[j]);
 	    
-	    
-	    err += e.norm()/e.size();
+	    err += err2/e.size();
 	  }
 
 #pragma omp critical
@@ -773,7 +786,7 @@ namespace whiteice
 	//if(old_delta < delta*0.8) lrate *= T(0.70f);
 	//else if(old_delta > delta) lrate *= T(1.1f);
 	
-	//if(old_error <= error) ; //error = old_error;
+	if(old_error <= error) error = old_error;
 	if(error < old_error){
 	  AA = A;
 	  bb = b;
@@ -825,8 +838,8 @@ namespace whiteice
 	}
     
 
-	//itersA++;
-	//itersb++;
+	itersA++;
+	itersb++;
 #endif
 	
 	//A -= lrate*gA;
@@ -848,7 +861,11 @@ namespace whiteice
 
 	//auto e = y[i] - A*x[i] - b;
 	
-	error += e.norm()/e.size();
+	T err2 = T(0.0f);
+	for(unsigned int j=0;j<e.size();j++)
+	  err2 += whiteice::math::abs(e[j]);
+	
+	error += err2/e.size();
       }
 
       error /= xv.size();

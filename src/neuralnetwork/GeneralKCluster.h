@@ -3,6 +3,7 @@
  * 
  */
 
+#if 0
 #ifndef __whiteice__GeneralKCluster_h
 #define __whiteice__GeneralKCluster_h
 
@@ -80,4 +81,5 @@ namespace whiteice
 }
 
 
+#endif
 #endif

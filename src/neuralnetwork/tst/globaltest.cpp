@@ -44,6 +44,7 @@ using namespace whiteice;
 
 int main()
 {
+#if 0
   std::cout << "global optimizer test cases" << std::endl;
   
   whiteice::logging.setPrintOutput(false);
@@ -367,6 +368,6 @@ int main()
 #endif
 
   
-    
+#endif    
   return 0;
 }

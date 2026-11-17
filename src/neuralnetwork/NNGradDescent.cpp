@@ -739,7 +739,12 @@ namespace whiteice
 	
 	// divides per output dimension
 	// [error is per one dimension so it is more comparable]
-	error /= T((float)dtest.access(1,0).size());
+	if(mne){
+	  error /= whiteice::math::sqrt(T((float)dtest.access(1,0).size()));
+	}
+	else{
+	  error /= T((float)dtest.access(1,0).size());
+	}
 	
       }
       else{
@@ -801,8 +806,9 @@ namespace whiteice
 	    //}
 	    
 	  }
-	  
+
 	  esum /= T((float)dtest.size(0));
+	  
 	  // esum /= T((float)MINIBATCHSIZE);
 	  
 #pragma omp critical
@@ -813,7 +819,12 @@ namespace whiteice
 	
 	// divides per output dimension
 	// [error is per one dimension so it is more comparable]
-	error /= T((float)dtest.access(1,0).size());
+	if(mne){
+	  error /= whiteice::math::sqrt(T((float)dtest.access(1,0).size()));
+	}
+	else{
+	  error /= T((float)dtest.access(1,0).size());
+	}
 	
       }
 
