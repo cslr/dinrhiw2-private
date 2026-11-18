@@ -65,10 +65,16 @@ namespace whiteice
 	disc[i].TYPE = 0;
 
 	// pairs of items has on average 10.0 rows/freq
-	// [not enough of frequent item which is 20.0] 
-	//const double ROWS = 50.0;  // was: 50
-	//const double DIV = sqrt(ROWS*data.size());
-	const double DIV = 1000.0; // 3000,3100
+	// [not enough of frequent item which is 20.0]
+
+
+	// probability of (dim(x)/4) itemset is ROWS/data.size(), calculates single item average probability
+	// and calculates number of rows of single item (DIV)
+	const double ROWS = 1000.0;  // was: 50, 1000
+	const double p = ROWS/data.size();
+	double DIV = pow(p, 4.0f/((float)data[0].size()));
+	DIV *= data.size();
+	//const double DIV = 3100.0; // 3000,3100,1000
 
 	double B = data.size()/DIV; // 4000.0;
 	//B = data.size()/100;
@@ -82,6 +88,8 @@ namespace whiteice
 	
 	if(BINS < 2) BINS = 2;
 	//else if(BINS > 300) BINS = 300;
+
+	//BINS = 10;
 	
 	std::cout << "BINS: " << BINS << std::endl;
 
@@ -130,11 +138,11 @@ namespace whiteice
 
 	for(unsigned int k=0;k<numset.size();k++,iter++){
 	  if(k==0){ disc[i].boxL[k] = -INFINITY; }
-	  else{ disc[i].boxL[k] = *prev_iter; prev_iter++; }
+	  else{ disc[i].boxL[k] = (*prev_iter + *iter)/2.0f; prev_iter++; }
 
 	  if(overlap == true){
 	    if(k==numset.size()-1) disc[i].boxR[k] = INFINITY;
-	    else{ disc[i].boxR[k] = *next_iter; next_iter++; }
+	    else{ disc[i].boxR[k] = (*next_iter + *iter)/2.0f; next_iter++; }
 	  }
 	  else{
 	    if(k==numset.size()-1) disc[i].boxR[k] = INFINITY;

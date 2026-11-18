@@ -3078,7 +3078,7 @@ void simple_global_optimum_test()
     whiteice::math::vertex<> a;
     whiteice::dataset<> data, predict, p2;
     //const unsigned int K = 10;
-    const unsigned int DIM = 10; // 30, 200, 100, 500 input dimensions cause too many frequent sets for 32 GB RAM
+    const unsigned int DIM = 10; // 10, 30, 200, 100, 500 input dimensions cause too many frequent sets for 32 GB RAM
 
     whiteice::RNG<> rng;
 
